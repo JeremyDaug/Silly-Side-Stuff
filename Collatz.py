@@ -2,6 +2,8 @@
 Collatz conjecture calculator window.
 """
 
+import time
+
 
 class Collatz:
     def __init__(self):
@@ -191,7 +193,6 @@ Coll = Collatz()
 def print_all():
     print('Number: %d' % Coll.num)
     print('In Binary: %s' % bin(Coll.num))
-    print('In Hexary: %d' % int(str(Coll.num), 5))
     print('Next Number: %d' % Coll.collatz_step())
     print('Steps to 1: %d' % Coll.steps_to_1())
     print('Adjacent Numbers: ', Coll.adjacent_numbers())
@@ -245,6 +246,11 @@ if __name__ == '__main__':
                     print_all()
                 else:
                     print('Invalid action for this number.')
+            elif str(text).lower() == 'print Binary List'.lower():
+                temp = Coll.collatz_list()
+                for i in temp:
+                    print('{:7d} : {:>20}'.format(int(i), bin(i)[2:]))
+                    time.sleep(1)
             elif str(text).lower() == 'vertical List'.lower():
                 for i in Coll.collatz_list():
                     print(i)
