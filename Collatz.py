@@ -190,6 +190,8 @@ Coll = Collatz()
 
 def print_all():
     print('Number: %d' % Coll.num)
+    print('In Binary: %s' % bin(Coll.num))
+    print('In Hexary: %d' % int(str(Coll.num), 5))
     print('Next Number: %d' % Coll.collatz_step())
     print('Steps to 1: %d' % Coll.steps_to_1())
     print('Adjacent Numbers: ', Coll.adjacent_numbers())
