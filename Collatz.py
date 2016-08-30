@@ -256,6 +256,10 @@ if __name__ == '__main__':
                     print(i)
             elif str(text).lower() == 'next prime'.lower():
                 print(Coll.next_prime())
+            elif str(text).lower() == 'prime list'.lower():
+                temp = Coll.collatz_list()
+                for i in temp:
+                    print('{:10d} : {}'.format(int(i), Coll.prime_factorization(i)))
             elif str(text).lower() == 'prime factorization'.lower():
                 print(Coll.prime_factorization())
             elif str(text).lower() == 'factors'.lower():
