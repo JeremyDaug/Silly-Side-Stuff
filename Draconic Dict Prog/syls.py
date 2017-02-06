@@ -111,19 +111,19 @@ class data:
         return
 
     def lookup_def(self, txt):
-        return self.stuff['dictionary'][self.out(txt)]
+        return self.dictionary[self.out(txt)]
 
     def update_taken(self, txt):
-        self.stuff['taken'].append(txt)
-        self.stuff['available'].remove(txt)
+        self.taken.append(txt)
+        self.available.remove(txt)
 
-    def dictionary(self):
+    def dictionary_menu(self):
         print('Entering Dictionary menu')
         done = False
         while not done:
             txt = input('>>>')
             if txt == 'show dictionary':
-                for i, j in self.stuff['dictionary'].items():
+                for i, j in self.dictionary.items():
                     print('%s : %s' % (i, j))
             elif txt == 'quit':
                 return 'quit'
@@ -142,7 +142,7 @@ class data:
                         print('invalid Syllables:' + str(invalid))
                         if '/' in take:
                             print('Do not include slashes, only dashes.')
-                    elif self.out(take) in self.stuff['dictionary'].keys():
+                    elif self.out(take) in self.dictionary.keys():
                         p = '%s is taken. \n%s : %s' % (take,
                                                         self.out(take),
                                                         self.lookup_def(take))
@@ -154,17 +154,17 @@ class data:
                         self.add_def(take)
             elif txt == 'change definition':
                 txt = input('What word?\n>>>')
-                if self.out(txt) in self.stuff['dictionary'].keys():
+                if self.out(txt) in self.dictionary.keys():
                     n_def = input('What\'s the new definition\n>>>')
-                    self.stuff['dictionary'][self.out(txt)] = [n_def]
-            elif self.out(txt) in self.stuff['dictionary'].keys():
+                    self.dictionary[self.out(txt)] = [n_def]
+            elif self.out(txt) in self.dictionary.keys():
                 print('In dictionary.\n%s : %s' % (self.out(txt),
                                                    self.lookup_def(txt)))
         return
 
     def add_def(self, word):
         text = input('What does %s mean?\n>>>')
-        self.stuff['dictionary'][self.out(word)] = text
+        self.dictionary[self.out(word)] = text
 
     def word_collision(self, word):
         return []
@@ -172,7 +172,7 @@ class data:
     def check_syllables(self, check):
         ret = []
         for i in check:
-            if i not in self.stuff['syllables']:
+            if i not in self.syllables:
                 ret.append(i)
         return ret
 
@@ -182,6 +182,5 @@ class data:
 
 if __name__ == '__main__':
     # load from pickle
-    curr = data()
-    curr.load()
+    curr = data(True)
     curr.main()
