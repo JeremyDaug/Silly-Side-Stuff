@@ -79,6 +79,10 @@ class data:
             elif txt == 'quit':
                 print('goodbye')
                 done = True
+            elif txt == 'reset':
+                txt = input('If you are sure input Y.\n>>>')
+                if txt == 'Y':
+                    self.reset()
             elif txt == 'find word':
                 res = self.word_search()
                 if res == 'quit':
@@ -89,16 +93,22 @@ class data:
                 info = input(prompt)
                 if info not in ['undo', 'cancel']:
                     self.update_taken(txt)
-                    self.dictionary[self.out(txt)] = info
+                    self.dictionary[txt] = info
             elif txt in self.taken:
                 print('Already taken.')
                 print('%s : %s' % (self.out(txt), self.lookup_def(txt)))
             else:
-                self.output_help()
+                self.main_help()
         self.quit()
         return
 
-    def output_help(self):
+    def reset(self):
+        self.available = self.syllables
+        self.taken = []
+        self.dictionary = dict()
+        self.tags = dict()
+
+    def main_help(self):
         print('''Invalid input.
         Valid inputs are:
         show available,
@@ -111,7 +121,7 @@ class data:
         return
 
     def lookup_def(self, txt):
-        return self.dictionary[self.out(txt)]
+        return self.dictionary[txt]
 
     def update_taken(self, txt):
         self.taken.append(txt)
@@ -123,48 +133,103 @@ class data:
         while not done:
             txt = input('>>>')
             if txt == 'show dictionary':
-                for i, j in self.dictionary.items():
-                    print('%s : %s' % (i, j))
+                for i in self.dictionary.keys():
+                    self.print_word_info(i)
             elif txt == 'quit':
                 return 'quit'
             elif txt == 'back':
                 print('Returning to syllable menu.')
                 done = True
             elif txt == 'find word':
-                self.word_search()
+                ret = self.word_search()
+                if ret == 'quit':
+                    return ret
             elif txt == 'add':
-                take = input('What would you like to add?')
-                if take not in ['cancel', 'undo']:
-                    split = take.split('-')
+                txt = input('What would you like to add?')
+                if txt not in ['cancel', 'undo']:
+                    word = txt
+                    split = txt.split('-')
                     invalid = self.check_syllables(split)
-                    collision = self.word_collision(take)
+                    collision = self.word_collision(txt)
                     if invalid:
                         print('invalid Syllables:' + str(invalid))
-                        if '/' in take:
+                        if '/' in word:
                             print('Do not include slashes, only dashes.')
-                    elif self.out(take) in self.dictionary.keys():
-                        p = '%s is taken. \n%s : %s' % (take,
-                                                        self.out(take),
-                                                        self.lookup_def(take))
+                    elif txt in self.dictionary.keys():
+                        p = '%s is taken. \n%s : %s' % (self.out(txt),
+                                                        self.out(txt),
+                                                        self.lookup_def(txt))
                         print(p)
                     elif collision:
-                        print('%s had a collision with %s.' % (self.out(take),
+                        print('%s had a collision with %s.' % (self.out(txt),
                                                                collision))
                     else:
-                        self.add_def(take)
+                        self.add_def(txt)
+                        input()  # TODO
+                        self.add_tags(word)
+            elif txt == 'show tags':
+                self.existing_tags()
+            elif txt == 'create tag':
+                self.create_tag()
+            elif txt == 'add tags':
+                txt = input('What word are we tagging.')
+                if txt in self.dictionary.keys():
+                    self.add_tags(txt)
+                else:
+                    print('%s does not exist yet.' % self.out(txt))
             elif txt == 'change definition':
                 txt = input('What word?\n>>>')
-                if self.out(txt) in self.dictionary.keys():
+                if txt in self.dictionary.keys():
                     n_def = input('What\'s the new definition\n>>>')
-                    self.dictionary[self.out(txt)] = [n_def]
-            elif self.out(txt) in self.dictionary.keys():
-                print('In dictionary.\n%s : %s' % (self.out(txt),
-                                                   self.lookup_def(txt)))
+                    self.dictionary[txt] = n_def
+            elif txt in self.dictionary.keys():
+                self.print_word_info(txt)
         return
 
+    def print_word_info(self, word):
+        fin = '%s\n Definition: %s\nTags: %s' % (self.out(word), self.lookup_def(word), self.get_tags(word))
+        print(fin)
+        return
+
+    def get_tags(self, word):
+        tags = [x for x in self.tags.keys() if word in self.tags[x]]
+        return str(tags)
+
+    def existing_tags(self):
+        if self.tags:
+            print('Current Tags:')
+            for i in self.tags.keys():
+                print(i)
+        else:
+            print('No tags currently exist.')
+
+    def create_tag(self):
+        self.existing_tags()
+        tag = input('What is the new tag?\n>>>')
+        if tag in self.tags.keys():
+            print('Tag %s already exists.' % tag)
+        else:
+            self.tags[tag] = []
+        return
+
+    def add_tags(self, word):
+        print('Current Tags: \n%s' % self.existing_tags())
+        txt = input('Are there any tags Y/N?')
+        if txt == 'Y':
+            print('Current Valid Tags:')
+            for i in self.tags.keys():
+                print(i)
+            txt = input('Separate tags by Commas.\n>>>')
+            tags = txt.split(', ')
+            for i in tags:
+                if i not in self.tags.keys():
+                    print('Tag does not exist.')
+                else:
+                    self.tags[i].append(word)
+
     def add_def(self, word):
-        text = input('What does %s mean?\n>>>')
-        self.dictionary[self.out(word)] = text
+        text = input('What does %s mean?\n>>>' % word)
+        self.dictionary[word] = text
 
     def word_collision(self, word):
         return []
@@ -177,6 +242,12 @@ class data:
         return ret
 
     def word_search(self):
+        print('In word search menu.')
+        done = False
+        while not done:
+            txt = input('>>>')
+            if txt == 'quit':
+                return 'quit'
         return
 
 
