@@ -1,21 +1,15 @@
 from random import choice
 import pickle
+import tkinter as tk
+from Scrollbox import ScrollList
 
 consonants = ['th', 's', 'z', 't', 'd', 'R', 'r', 'l', 'sh', 'hl', 'rr', 'c',
               'j', 'k', 'g', 't\'', 'k\'', 's\'', 'h\'', 'h', 'ts', 'ch', 'ks',
               'dg']
 vowels = ['a', 'i', 'u', 'w', 'ai', 'ia', 'uw', 'wu']
 
-# for con in consonants:
-#     for vowel in vowels:
-#         ret = '/'+con+vowel+'/'+'\n'+'/'+vowel+con+'/'
-#         print(ret)
-#
-# for vowel in vowels:
-#     print('/'+vowel+'/')
 
-
-class data:
+class DictionaryApp:
     def __init__(self, from_load):
         self.syllables = []
         self.taken = []
@@ -31,6 +25,67 @@ class data:
             self.taken = []
             self.available = [x for x in self.syllables]
             self.dictionary = {}
+
+        # window setup
+        self.root = tk.Tk()
+        self.root.title('Draconic Dictionary')
+
+        # setup variables
+        self.SylSearchVar = tk.StringVar()
+        self.SylSearchVar.trace_variable('w', self.search_syl)
+
+        # what's in the window.
+        # All syllables
+        self.SylSearchLbl = tk.Label(self.root, text='Syllable Search Box')
+        self.SylSearchBox = tk.Entry(self.root,
+                                     textvariable=self.SylSearchVar)
+        self.SylLbl = tk.Label(self.root, text='Syllable List')
+        self.SylScrollList = ScrollList(self.root,
+                                        contains=['/%s/' % x for x in self.syllables])
+        # Taken syllables
+        self.TakenLbl = tk.Label(self.root, text='Taken Syllables')
+        self.TakenList = ScrollList(self.root,
+                                    contains=['/%s/' % x for x in self.taken])
+        # Available Syllables
+        self.AvailableLbl = tk.Label(self.root, text='Available Syllables')
+        self.AvailableList = ScrollList(self.root,
+                                        contains=['/%s/' % x for x in self.available])
+
+        self.set_binds()
+        self.grid()
+        return
+
+    def set_binds(self):
+        self.SylScrollList.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
+        return
+
+    def syllable_selected(self, *events):
+
+        return
+
+    def search_syl(self, *events):
+        self.SylScrollList.delete(0, tk.END)
+        text = self.SylSearchVar.get()
+        if text == '':
+            for i in self.syllables:
+                self.SylScrollList.insert(tk.END, self.out(i))
+        else:
+            shortList = [x for x in self.syllables if text in x]
+            for i in shortList:
+                self.SylScrollList.insert(tk.END, self.out(i))
+        return
+
+    def grid(self):
+        if True:  # Syllable Search box.
+            self.SylSearchLbl.grid(row=0, column=0, sticky=tk.W)
+            self.SylSearchBox.grid(row=1, column=0)
+            self.SylLbl.grid(row=2, column=0, sticky=tk.W)
+            self.SylScrollList.grid(row=3, column=0, sticky=tk.N,
+                                    rowspan=5, columnspan=1)
+            self.TakenLbl.grid(row=0, column=1)
+            self.TakenList.grid(row=1, column=1, rowspan=7)
+            self.AvailableLbl.grid(row=0, column=2)
+            self.AvailableList.grid(row=1, column=2, rowspan=7)
         return
 
     def load(self):
@@ -51,13 +106,18 @@ class data:
         temp['tags'] = self.tags
         pickle.dump(temp, open('data.p', 'wb'))
 
-    def out(self, ret):
+    @staticmethod
+    def out(ret):
         return '/'+ret+'/'
+
+    def mainloop(self):
+        self.root.mainloop()
+        return
 
     def main(self):
         done = False
         while not done:
-            txt = input('>>')
+            txt = input('>>>')
             if txt == 'show taken':
                 for i in self.taken:
                     print(self.out(i))
@@ -87,13 +147,28 @@ class data:
                 res = self.word_search()
                 if res == 'quit':
                     done = True
+            elif txt == 'delete':
+                self.delete_word()
+            elif txt == 'add':
+                txt = input('What would you like to add?')
+                if txt not in ['cancel', 'undo']:
+                    word = txt
+                    self.update_taken(word)
+                    collision = self.word_collision(txt)
+                    if word not in self.syllables:
+                        print('Invalid Syllable.')
+                    elif txt in self.dictionary.keys():
+                        p = '%s is taken. \n%s : %s' % (self.out(txt),
+                                                        self.out(txt),
+                                                        self.lookup_def(txt))
+                        print(p)
+                    elif collision:
+                        print('%s had a collision with %s.' % (self.out(txt),
+                                                               collision))
+                    else:
+                        self.add_word(word, txt)
             elif txt in self.available:
-                prompt = 'What has taken it? \n' \
-                         'To cancel input \'cancel\' or \'undo\'\n>>>'
-                info = input(prompt)
-                if info not in ['undo', 'cancel']:
-                    self.update_taken(txt)
-                    self.dictionary[txt] = info
+                print('%s is available.')
             elif txt in self.taken:
                 print('Already taken.')
                 print('%s : %s' % (self.out(txt), self.lookup_def(txt)))
@@ -103,6 +178,9 @@ class data:
         return
 
     def reset(self):
+        self.syllables = [x + y for x in consonants for y in vowels]
+        self.syllables.extend([y + x for x in consonants for y in vowels])
+        self.syllables.extend(vowels)
         self.available = self.syllables
         self.taken = []
         self.dictionary = dict()
@@ -164,9 +242,9 @@ class data:
                         print('%s had a collision with %s.' % (self.out(txt),
                                                                collision))
                     else:
-                        self.add_def(txt)
-                        input()  # TODO
-                        self.add_tags(word)
+                        self.add_word(word, txt)
+            elif txt == 'delete word':
+                self.delete_word()
             elif txt == 'show tags':
                 self.existing_tags()
             elif txt == 'create tag':
@@ -184,10 +262,45 @@ class data:
                     self.dictionary[txt] = n_def
             elif txt in self.dictionary.keys():
                 self.print_word_info(txt)
+            else:
+                self.dictionary_help()
+        return
+
+    def dictionary_help(self):
+        p = 'Invalid command, valid options:\n'
+        p += 'change definition\n'
+        p += 'show dictionary\n'
+        p += 'add tags\n'
+        p += 'create tag\n'
+        p += 'show tags\n'
+        p += 'add\n'
+        p += 'quit\n'
+        p += 'find word\n'
+        p += 'any existing word\n'
+        print(p)
+        return
+
+    def add_word(self, word, txt):
+        self.add_def(txt)
+        prompt = input('Are their any tag Y/N')
+        if prompt == 'Y':
+            self.add_tags(word)
+        return
+
+    def delete_word(self):
+        word = input('What do you want to delete?\n>>>')
+        if word in self.dictionary.keys():
+            self.dictionary.pop(word)
+        if word in self.taken:
+            self.taken.remove(word)
+            self.available.append(word)
+        print('%s removed.' % word)
         return
 
     def print_word_info(self, word):
-        fin = '%s\n Definition: %s\nTags: %s' % (self.out(word), self.lookup_def(word), self.get_tags(word))
+        fin = '%s\n Definition: %s\nTags: %s' % (self.out(word),
+                                                 self.lookup_def(word),
+                                                 self.get_tags(word))
         print(fin)
         return
 
@@ -205,27 +318,28 @@ class data:
 
     def create_tag(self):
         self.existing_tags()
-        tag = input('What is the new tag?\n>>>')
-        if tag in self.tags.keys():
-            print('Tag %s already exists.' % tag)
-        else:
-            self.tags[tag] = []
+        tag = input('What is the new tag? Separate them with ,\n>>>')
+        tags = tag.split(', ')
+        print(tags)
+        for ta in tags:
+            if ta in self.tags.keys():
+                print('Tag %s already exists.' % ta)
+            else:
+                self.tags[ta] = []
+            print('%s added.' % ta)
         return
 
     def add_tags(self, word):
-        print('Current Tags: \n%s' % self.existing_tags())
-        txt = input('Are there any tags Y/N?')
-        if txt == 'Y':
-            print('Current Valid Tags:')
-            for i in self.tags.keys():
-                print(i)
-            txt = input('Separate tags by Commas.\n>>>')
-            tags = txt.split(', ')
-            for i in tags:
-                if i not in self.tags.keys():
-                    print('Tag does not exist.')
-                else:
-                    self.tags[i].append(word)
+        print('Current Tags: \n%s' % self.get_tags(word))
+        self.existing_tags()
+        txt = input('Separate tags by Commas.\n>>>')
+        tags = txt.split(', ')
+        for i in tags:
+            if i not in self.tags.keys():
+                print('Tag %s does not exist.' % i)
+            else:
+                self.tags[i].append(word)
+        return
 
     def add_def(self, word):
         text = input('What does %s mean?\n>>>' % word)
@@ -253,5 +367,5 @@ class data:
 
 if __name__ == '__main__':
     # load from pickle
-    curr = data(True)
-    curr.main()
+    curr = DictionaryApp(True)
+    curr.mainloop()
