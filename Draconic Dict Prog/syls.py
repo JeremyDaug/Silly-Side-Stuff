@@ -33,6 +33,7 @@ class DictionaryApp:
         # setup variables
         self.SylSearchVar = tk.StringVar()
         self.SylSearchVar.trace_variable('w', self.search_syl)
+        self.ChosenSylVar = tk.StringVar()
 
         # what's in the window.
         # All syllables
@@ -50,6 +51,16 @@ class DictionaryApp:
         self.AvailableLbl = tk.Label(self.root, text='Available Syllables')
         self.AvailableList = ScrollList(self.root,
                                         contains=['/%s/' % x for x in self.available])
+        # Chosen Syllable info.
+        self.ChosenFrame = tk.Frame(self.root)
+        self.ChosenLbl = tk.Label(self.ChosenFrame, text='Chosen Syllable Info')
+        self.ChosenSylBox = tk.Entry(self.ChosenFrame, state='readonly',
+                                     textvariable=self.ChosenSylVar,
+                                     readonlybackground='white')
+        self.ChosenSylDefLbl = tk.Label(self.ChosenFrame, text='Definition')
+        self.ChosenSylDef = tk.Text(self.ChosenFrame)
+        self.ChosenSylTagsLbl = tk.Label(self.ChosenFrame, text='Tags')
+        self.ChosenSylTags = ScrollList(self.ChosenFrame)
 
         self.set_binds()
         self.grid()
@@ -82,10 +93,20 @@ class DictionaryApp:
             self.SylLbl.grid(row=2, column=0, sticky=tk.W)
             self.SylScrollList.grid(row=3, column=0, sticky=tk.N,
                                     rowspan=5, columnspan=1)
+
             self.TakenLbl.grid(row=0, column=1)
             self.TakenList.grid(row=1, column=1, rowspan=7)
+
             self.AvailableLbl.grid(row=0, column=2)
             self.AvailableList.grid(row=1, column=2, rowspan=7)
+
+            self.ChosenFrame.grid(row=8, column=0, columnspan=10)
+            self.ChosenLbl.grid(row=0, column=0)
+            self.ChosenSylBox.grid(row=1, column=0, sticky=tk.N)
+            self.ChosenSylDefLbl.grid(row=0, column=1)
+            self.ChosenSylDef.grid(row=1, column=1)
+            self.ChosenSylTagsLbl.grid(row=0, column=4)
+            self.ChosenSylTags.grid(row=1, column=4)
         return
 
     def load(self):
