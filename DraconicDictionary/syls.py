@@ -1,7 +1,8 @@
-from random import choice
 import pickle
 import tkinter as tk
+from random import choice
 from tkinter import ttk
+
 from Scrollbox import ScrollList
 
 consonants = ['th', 's', 'z', 't', 'd', 'R', 'r', 'l', 'sh', 'hl', 'rr', 'c',
@@ -110,6 +111,7 @@ class DictionaryApp:
 
 
         #### Dictionary Tab
+        self.DictChosenVar = tk.StringVar()
         self.DictTab = tk.Frame(self.Tabs)
         # Current Words
         self.DictLbl = tk.Label(self.DictTab, text='Current Words')
@@ -117,6 +119,13 @@ class DictionaryApp:
                                    ['/%s/' % x for x in self.dictionary.keys()])
         self.DictSearchLbl = tk.Label(self.DictTab, text='Search Box')
         self.DictSearchBox = tk.Entry(self.DictTab, textvariable=self.DictSearchVar)
+        # Chosen Words
+        self.ChosenWordLbl = tk.Label(self.DictTab, text='Current Word')
+        self.ChosenWordBox = tk.Entry(self.DictTab, textvariable=self.DictChosenVar)
+        # Definition
+        self.ChosenWordDef = tk.Text(self.DictTab)
+        # Tags
+        self.ChosenWordTags = ScrollList(self.DictTab)
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
