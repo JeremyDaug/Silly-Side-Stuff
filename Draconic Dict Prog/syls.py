@@ -62,8 +62,12 @@ class DictionaryApp:
         self.ChosenSylDefLbl = tk.Label(self.ChosenFrame, text='Definition')
         self.ChosenSylDef = tk.Text(self.ChosenFrame)
         # Chosen Syllable Create Destroy buttons
-        self.SaveSylButton = tk.Button(self.ChosenFrame, text='Add Syllable Info')
-        self.DeleteSylButton = tk.Button(self.ChosenFrame, text='')
+        self.SaveSylButton = tk.Button(self.ChosenFrame,
+                                       text='Add Syllable Info',
+                                       command=self.SaveSyl)
+        self.DeleteSylButton = tk.Button(self.ChosenFrame,
+                                         text='Clear This Syllable',
+                                         command=self.DeleteSyl)
         ## Tag editor
         # Chosen List
         self.ChosenSylTagsLbl = tk.Label(self.ChosenFrame, text='Tags')
@@ -93,6 +97,15 @@ class DictionaryApp:
         self.grid()
         return
 
+    def update_taken_available(self):
+        self.TakenList.delete(0, tk.END)
+        self.AvailableList.delete(0, tk.END)
+        for i in self.taken:
+            self.TakenList.insert(tk.END, self.out(i))
+        for i in self.available:
+            self.AvailableList.insert(tk.END, self.out(i))
+        return
+
     def search_tags(self, *event):
         self.AllTagsList.delete(0, tk.END)
         text = self.CreateTagVar.get()
@@ -109,11 +122,6 @@ class DictionaryApp:
         self.SylScrollList.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
         self.TakenList.bind_listbox('<<ListboxSelect>>', self.taken_selected)
         self.AvailableList.bind_listbox('<<ListboxSelect>>', self.available_selected)
-        self.AllTagsList.bind_listbox('<<ListboxSelect>>', self.tag_selected)
-        return
-
-    def tag_selected(self, *event):
-        self.CreateTagVar.set(self.AllTagsList.curitem())
         return
 
     def delete_tag(self, *event):
@@ -182,7 +190,10 @@ class DictionaryApp:
         self.ChosenSylBox.grid(row=1, column=0, sticky=tk.N)
         # Definition
         self.ChosenSylDefLbl.grid(row=0, column=1)
-        self.ChosenSylDef.grid(row=1, column=1)
+        self.ChosenSylDef.grid(row=1, column=1, columnspan=2)
+        # Syllable create/destroy
+        self.SaveSylButton.grid(row=4, column=1)
+        self.DeleteSylButton.grid(row=4, column=2)
         # Syl Tags List
         self.ChosenSylTagsLbl.grid(row=0, column=4)
         self.ChosenSylTags.grid(row=1, column=4, rowspan=2, sticky=tk.N+tk.S)
@@ -198,6 +209,35 @@ class DictionaryApp:
         self.CreateDeleteTagBox.grid(row=4, column=6)
         self.CreateTagButton.grid(row=0, column=0)
         self.DeleteTagButton.grid(row=0, column=1)
+        return
+
+    def SaveSyl(self, *events):
+        syl = self.ChosenSylVar.get().replace('/', '')
+        if syl not in self.taken:
+            self.taken.append(syl)
+        if syl in self.available:
+            self.available.remove(syl)
+        self.dictionary[syl] = self.ChosenSylDef.get('0.0', tk.END)
+        for i in self.ChosenSylTags.get(0, tk.END):
+            if syl not in self.tags[i]:
+                self.tags[i].append(syl)
+        self.update_taken_available()
+        return
+
+    def DeleteSyl(self, *events):
+        syl = self.ChosenSylVar.get().replace('/', '')
+        if syl in self.taken:
+            self.taken.remove(syl)
+        if syl not in self.available:
+            self.available.append(syl)
+        if syl in self.dictionary.keys():
+            self.dictionary.pop(syl)
+        for i in self.ChosenSylTags.get(0, tk.END):
+            if syl in self.tags[i]:
+                self.tags[i].remove(syl)
+        self.update_taken_available()
+        self.ChosenSylDef.delete('0.0', tk.END)
+        self.ChosenSylTags.delete(0, tk.END)
         return
 
     def load(self):
@@ -240,51 +280,12 @@ class DictionaryApp:
     def lookup_def(self, txt):
         return self.dictionary[txt]
 
-    def update_taken(self, txt):
-        self.taken.append(txt)
-        self.available.remove(txt)
-
-    def add_word(self, word, txt):
-        self.add_def(txt)
-        prompt = input('Are their any tag Y/N')
-        if prompt == 'Y':
-            self.add_tags(word)
-        return
-
-    def delete_word(self):
-        word = input('What do you want to delete?\n>>>')
-        if word in self.dictionary.keys():
-            self.dictionary.pop(word)
-        if word in self.taken:
-            self.taken.remove(word)
-            self.available.append(word)
-        print('%s removed.' % word)
-        return
-
-    def print_word_info(self, word):
-        fin = '%s\n Definition: %s\nTags: %s' % (self.out(word),
-                                                 self.lookup_def(word),
-                                                 self.get_tags(word))
-        print(fin)
-        return
-
     def get_tags(self, word):
         tags = [x for x in self.tags.keys() if word in self.tags[x]]
         return tags
 
-    def existing_tags(self):
-        if self.tags:
-            print('Current Tags:')
-            for i in self.tags.keys():
-                print(i)
-        else:
-            print('No tags currently exist.')
-
     def create_tag(self, *events):
         tag = self.CreateTagVar.get()
-        print(tag)
-        print(self.tags.keys())
-        print(tag not in self.tags.keys())
         if tag not in self.tags.keys():
             self.tags[tag] = []
             self.AllTagsList.insert(tk.END, tag)
@@ -292,40 +293,28 @@ class DictionaryApp:
 
     def add_tag(self, *events):
         tag = self.AllTagsList.curitem()
-        word = self.ChosenSylVar.get()
+        word = self.ChosenSylVar.get().replace('/', '')
         if word not in self.tags[tag]:
             self.tags[tag].append(word)
+        self.update_chosen_tags(word)
+        return
+
+    def update_chosen_tags(self, word):
+        self.ChosenSylTags.delete(0, tk.END)
+        for i in self.get_tags(word):
+            self.ChosenSylTags.insert(tk.END, i)
         return
 
     def remove_tag(self, *events):
         tag = self.ChosenSylTags.curitem()
-        word = self.ChosenSylVar.get()
+        word = self.ChosenSylVar.get().replace('/', '')
         if word in self.tags[tag]:
             self.tags[tag].remove(word)
+        self.update_chosen_tags(word)
         return
-
-    def add_def(self, word):
-        text = input('What does %s mean?\n>>>' % word)
-        self.dictionary[word] = text
 
     def word_collision(self, word):
         return []
-
-    def check_syllables(self, check):
-        ret = []
-        for i in check:
-            if i not in self.syllables:
-                ret.append(i)
-        return ret
-
-    def word_search(self):
-        print('In word search menu.')
-        done = False
-        while not done:
-            txt = input('>>>')
-            if txt == 'quit':
-                return 'quit'
-        return
 
 
 if __name__ == '__main__':
