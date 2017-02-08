@@ -1,6 +1,7 @@
 from random import choice
 import pickle
 import tkinter as tk
+from tkinter import ttk
 from Scrollbox import ScrollList
 
 consonants = ['th', 's', 'z', 't', 'd', 'R', 'r', 'l', 'sh', 'hl', 'rr', 'c',
@@ -30,37 +31,51 @@ class DictionaryApp:
         self.root = tk.Tk()
         self.root.title('Draconic Dictionary')
 
+        self.Tabs = ttk.Notebook(self.root)
+
+        # SylTab Section
+        self.SylTab = tk.Frame(self.Tabs)
         # setup variables
         self.SylSearchVar = tk.StringVar()
         self.SylSearchVar.trace_variable('w', self.search_syl)
         self.ChosenSylVar = tk.StringVar()
         self.CreateTagVar = tk.StringVar()
         self.CreateTagVar.trace_variable('w', self.search_tags)
+        self.DictSearchVar = tk.StringVar()
+        self.DictSearchVar.trace_variable('w', self.search_dictionary)
 
-        # what's in the window.
-        # All syllables
-        self.SylSearchLbl = tk.Label(self.root, text='Syllable Search Box')
-        self.SylSearchBox = tk.Entry(self.root,
+        #### what's in the window.
+        #### All syllables
+        self.SylSearchLbl = tk.Label(self.SylTab, text='Syllable Search Box')
+        self.SylSearchBox = tk.Entry(self.SylTab,
                                      textvariable=self.SylSearchVar)
-        self.SylLbl = tk.Label(self.root, text='Syllable List')
-        self.SylScrollList = ScrollList(self.root,
+        self.SylLbl = tk.Label(self.SylTab, text='Syllable List')
+        self.SylScrollList = ScrollList(self.SylTab,
                                         contains=['/%s/' % x for x in self.syllables])
         # Taken syllables
-        self.TakenLbl = tk.Label(self.root, text='Taken Syllables')
-        self.TakenList = ScrollList(self.root,
+        self.TakenLbl = tk.Label(self.SylTab, text='Taken Syllables')
+        self.TakenList = ScrollList(self.SylTab,
                                     contains=['/%s/' % x for x in self.taken])
         # Available Syllables
-        self.AvailableLbl = tk.Label(self.root, text='Available Syllables')
-        self.AvailableList = ScrollList(self.root,
+        self.AvailableLbl = tk.Label(self.SylTab, text='Available Syllables')
+        self.AvailableList = ScrollList(self.SylTab,
                                         contains=['/%s/' % x for x in self.available])
+        # Random buttons
+        self.RandomButtons = tk.Frame(self.SylTab)
+        self.RandomSylButton = tk.Button(self.RandomButtons, text='Random Syllable',
+                                         command=self.random_syl)
+        self.RandomTakenButton = tk.Button(self.RandomButtons, text='Random Taken Syllable',
+                                           command=self.random_taken)
+        self.RandomAvailableButton = tk.Button(self.RandomButtons, text='Random Available Syllable',
+                                               command=self.random_available)
         # Chosen Syllable info.
-        self.ChosenFrame = tk.Frame(self.root)
+        self.ChosenFrame = tk.Frame(self.SylTab)
         self.ChosenLbl = tk.Label(self.ChosenFrame, text='Chosen Syllable Info')
         self.ChosenSylBox = tk.Entry(self.ChosenFrame, state='readonly',
                                      textvariable=self.ChosenSylVar,
                                      readonlybackground='white')
         self.ChosenSylDefLbl = tk.Label(self.ChosenFrame, text='Definition')
-        self.ChosenSylDef = tk.Text(self.ChosenFrame)
+        self.ChosenSylDef = tk.Text(self.ChosenFrame, wrap=tk.WORD)
         # Chosen Syllable Create Destroy buttons
         self.SaveSylButton = tk.Button(self.ChosenFrame,
                                        text='Add Syllable Info',
@@ -93,8 +108,101 @@ class DictionaryApp:
                                          text='Delete Tag',
                                          command=self.delete_tag)
 
+
+        #### Dictionary Tab
+        self.DictTab = tk.Frame(self.Tabs)
+        # Current Words
+        self.DictLbl = tk.Label(self.DictTab, text='Current Words')
+        self.DictList = ScrollList(self.DictTab,
+                                   ['/%s/' % x for x in self.dictionary.keys()])
+        self.DictSearchLbl = tk.Label(self.DictTab, text='Search Box')
+        self.DictSearchBox = tk.Entry(self.DictTab, textvariable=self.DictSearchVar)
+
+        #### Tab Setups
+        self.Tabs.add(self.SylTab, text='Syllable Tab')
+        self.Tabs.add(self.DictTab, text='Dictionary Tab')
+        self.Tabs.grid(row=0, column=0)
+
         self.set_binds()
-        self.grid()
+        self.SylGrid()
+        self.DictGrid()
+        return
+
+    def DictGrid(self):
+        self.DictLbl.grid(row=0, column=0)
+        self.DictList.grid(row=1, column=0)
+        self.DictSearchLbl.grid(row=2, column=0)
+        self.DictSearchBox.grid(row=3, column=0)
+
+    def SylGrid(self):
+        self.SylSearchLbl.grid(row=0, column=0, sticky=tk.W)
+        self.SylSearchBox.grid(row=1, column=0)
+        self.SylLbl.grid(row=2, column=0, sticky=tk.W)
+        self.SylScrollList.grid(row=3, column=0, sticky=tk.N,
+                                rowspan=5, columnspan=1)
+        # Taken Syllables
+        self.TakenLbl.grid(row=0, column=1)
+        self.TakenList.grid(row=1, column=1, rowspan=7)
+        # Available Syllables
+        self.AvailableLbl.grid(row=0, column=2)
+        self.AvailableList.grid(row=1, column=2, rowspan=7)
+        # Random Buttons
+        self.RandomButtons.grid(row=3, column=3)
+        self.RandomSylButton.grid(row=0, column=0)
+        self.RandomTakenButton.grid(row=1, column=0)
+        self.RandomAvailableButton.grid(row=2, column=0)
+        # Chosen Frame Data
+        self.ChosenFrame.grid(row=8, column=0, columnspan=9)
+        # Chosen Syllable Box
+        self.ChosenLbl.grid(row=0, column=0)
+        self.ChosenSylBox.grid(row=1, column=0, sticky=tk.N)
+        # Definition
+        self.ChosenSylDefLbl.grid(row=0, column=1)
+        self.ChosenSylDef.grid(row=1, column=1, columnspan=2)
+        # Syllable create/destroy
+        self.SaveSylButton.grid(row=4, column=1)
+        self.DeleteSylButton.grid(row=4, column=2)
+        # Syl Tags List
+        self.ChosenSylTagsLbl.grid(row=0, column=4)
+        self.ChosenSylTags.grid(row=1, column=4, rowspan=2, sticky=tk.N+tk.S)
+        # Add remove tag buttons
+        self.TagAddRemoveBox.grid(row=1, column=5)
+        self.AddTagButton.grid(row=0, column=0, sticky=tk.S)
+        self.RemoveTagButton.grid(row=1, column=0, sticky=tk.N)
+        # All tags list
+        self.AllTagsLbl.grid(row=0, column=6)
+        self.AllTagsList.grid(row=1, column=6, rowspan=2, sticky=tk.N+tk.S)
+        self.CreateTagBox.grid(row=3, column=6)
+        # Create Delete Tag buttons
+        self.CreateDeleteTagBox.grid(row=4, column=6)
+        self.CreateTagButton.grid(row=0, column=0)
+        self.DeleteTagButton.grid(row=0, column=1)
+        return
+
+    def search_dictionary(self, *events):
+        val = self.DictSearchVar.get().replace('/', '')
+        self.DictList.delete(0, tk.END)
+        for i in self.dictionary.keys():
+            if val in i:
+                self.DictList.insert(tk.END, self.out(i))
+        return
+
+    def random_syl(self, *events):
+        res = choice(self.syllables)
+        self.ChosenSylVar.set(self.out(res))
+        self.update_chosen_syl(self.out(res), res)
+        return
+
+    def random_taken(self, *events):
+        res = choice(self.taken)
+        self.ChosenSylVar.set(self.out(res))
+        self.update_chosen_syl(self.out(res), res)
+        return
+
+    def random_available(self, *events):
+        res = choice(self.available)
+        self.ChosenSylVar.set(self.out(res))
+        self.update_chosen_syl(self.out(res), res)
         return
 
     def update_taken_available(self):
@@ -169,46 +277,6 @@ class DictionaryApp:
             shortList = [x for x in self.syllables if text in x]
             for i in shortList:
                 self.SylScrollList.insert(tk.END, self.out(i))
-        return
-
-    def grid(self):
-        self.SylSearchLbl.grid(row=0, column=0, sticky=tk.W)
-        self.SylSearchBox.grid(row=1, column=0)
-        self.SylLbl.grid(row=2, column=0, sticky=tk.W)
-        self.SylScrollList.grid(row=3, column=0, sticky=tk.N,
-                                rowspan=5, columnspan=1)
-        # Taken Syllables
-        self.TakenLbl.grid(row=0, column=1)
-        self.TakenList.grid(row=1, column=1, rowspan=7)
-        # Available Syllables
-        self.AvailableLbl.grid(row=0, column=2)
-        self.AvailableList.grid(row=1, column=2, rowspan=7)
-        # Chosen Frame Data
-        self.ChosenFrame.grid(row=8, column=0, columnspan=9)
-        # Chosen Syllable Box
-        self.ChosenLbl.grid(row=0, column=0)
-        self.ChosenSylBox.grid(row=1, column=0, sticky=tk.N)
-        # Definition
-        self.ChosenSylDefLbl.grid(row=0, column=1)
-        self.ChosenSylDef.grid(row=1, column=1, columnspan=2)
-        # Syllable create/destroy
-        self.SaveSylButton.grid(row=4, column=1)
-        self.DeleteSylButton.grid(row=4, column=2)
-        # Syl Tags List
-        self.ChosenSylTagsLbl.grid(row=0, column=4)
-        self.ChosenSylTags.grid(row=1, column=4, rowspan=2, sticky=tk.N+tk.S)
-        # Add remove tag buttons
-        self.TagAddRemoveBox.grid(row=1, column=5)
-        self.AddTagButton.grid(row=0, column=0, sticky=tk.S)
-        self.RemoveTagButton.grid(row=1, column=0, sticky=tk.N)
-        # All tags list
-        self.AllTagsLbl.grid(row=0, column=6)
-        self.AllTagsList.grid(row=1, column=6, rowspan=2, sticky=tk.N+tk.S)
-        self.CreateTagBox.grid(row=3, column=6)
-        # Create Delete Tag buttons
-        self.CreateDeleteTagBox.grid(row=4, column=6)
-        self.CreateTagButton.grid(row=0, column=0)
-        self.DeleteTagButton.grid(row=0, column=1)
         return
 
     def SaveSyl(self, *events):
