@@ -112,6 +112,8 @@ class DictionaryApp:
 
         #### Dictionary Tab
         self.DictChosenVar = tk.StringVar()
+        self.DictTagSearchVar = tk.StringVar()
+        self.DictTagSearchVar.trace_variable('w', self.search_tags_dict)
         self.DictTab = tk.Frame(self.Tabs)
         # Current Words
         self.DictLbl = tk.Label(self.DictTab, text='Current Words')
@@ -121,11 +123,30 @@ class DictionaryApp:
         self.DictSearchBox = tk.Entry(self.DictTab, textvariable=self.DictSearchVar)
         # Chosen Words
         self.ChosenWordLbl = tk.Label(self.DictTab, text='Current Word')
-        self.ChosenWordBox = tk.Entry(self.DictTab, textvariable=self.DictChosenVar)
+        self.ChosenWordBox = tk.Entry(self.DictTab, textvariable=self.DictChosenVar, state='readonly',
+                                      readonlybackground='white')
         # Definition
         self.ChosenWordDef = tk.Text(self.DictTab)
         # Tags
         self.ChosenWordTags = ScrollList(self.DictTab)
+        # Add remove Tags
+        self.DictTagButtonBox = tk.Frame(self.DictTab)
+        self.WordAddTagButton = tk.Button(self.DictTagButtonBox, text='<<', command=self.add_word_tag)
+        self.WordDeleteTagButton = tk.Button(self.DictTagButtonBox, text='>>', command=self.delete_word_tag)
+        # All tags
+        self.DictTagsList = ScrollList(self.DictTab, self.tags.keys())
+        # Tag Search box
+        self.DictTagSearch = tk.Entry(self.DictTab, textvariable=self.DictTagSearchVar)
+        # Add Delete Tags
+        self.DictAddDelTagBox = tk.Frame(self.DictTab)
+        self.DictAddTagButton = tk.Button(self.DictAddDelTagBox, text='Add Tag', command=self.dict_add_tag)
+        self.DictDeleteTagButton = tk.Button(self.DictAddDelTagBox, text='Delete Tag', command=self.dict_delete_tag)
+        # Save Clear Word Data
+        self.SaveClearBox = tk.Frame(self.DictTab)
+        self.SaveWordButton = tk.Button(self.SaveClearBox, text='Save Definition', command=self.save_word_def)
+        self.ClearWordButton = tk.Button(self.SaveClearBox, text='Delete Word from Dictionary',
+                                         command=self.delete_word)
+
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
@@ -137,11 +158,31 @@ class DictionaryApp:
         self.DictGrid()
         return
 
+    def set_binds(self):
+        self.SylScrollList.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
+        self.TakenList.bind_listbox('<<ListboxSelect>>', self.taken_selected)
+        self.AvailableList.bind_listbox('<<ListboxSelect>>', self.available_selected)
+        self.DictList.bind_listbox('<<ListboxSelect>>', self.word_selected)
+        return
+
     def DictGrid(self):
         self.DictLbl.grid(row=0, column=0)
         self.DictList.grid(row=1, column=0)
         self.DictSearchLbl.grid(row=2, column=0)
         self.DictSearchBox.grid(row=3, column=0)
+        self.ChosenWordLbl.grid(row=4, column=0)
+        self.ChosenWordBox.grid(row=5, column=0, sticky=tk.N)
+        self.ChosenWordDef.grid(row=5, column=1)
+        self.ChosenWordTags.grid(row=5, column=2, sticky=tk.N+tk.S)
+        self.DictTagButtonBox.grid(row=5, column=3)
+        self.WordAddTagButton.grid(row=0, column=0)
+        self.WordDeleteTagButton.grid(row=1, column=0)
+        self.DictTagsList.grid(row=5, column=4, sticky=tk.N+tk.S)
+        self.DictTagSearch.grid(row=6, column=4)
+        self.SaveClearBox.grid(row=6, column=1)
+        self.SaveWordButton.grid(row=0, column=0)
+        self.ClearWordButton.grid(row=0, column=1)
+        return
 
     def SylGrid(self):
         self.SylSearchLbl.grid(row=0, column=0, sticky=tk.W)
@@ -186,6 +227,80 @@ class DictionaryApp:
         self.CreateDeleteTagBox.grid(row=4, column=6)
         self.CreateTagButton.grid(row=0, column=0)
         self.DeleteTagButton.grid(row=0, column=1)
+        return
+
+    def save_word_def(self, *events):
+        word = self.DictChosenVar.get().replace('/', '')
+        self.dictionary[word] = self.ChosenWordDef.get('0.0', tk.END)
+        return
+
+    def delete_word(self, *events):
+        word = self.DictChosenVar.get().replace('/', '')
+        self.dictionary.pop(word)
+        self.delete_word_from_tags()
+        return
+
+    def delete_word_from_tags(self):
+        
+        return
+
+    def dict_add_tag(self, *events):
+        tag = self.DictTagSearchVar.get()
+        if tag not in self.tags.keys():
+            self.tags[tag] = []
+        self.DictTagsList.delete(0, tk.END)
+        for i in self.tags.keys():
+            self.DictTagsList.insert(tk.END, i)
+        return
+
+    def dict_delete_tag(self, *events):
+        tag = self.DictTagsList.curitem()
+        if tag in self.tags.keys():
+            self.tags.pop(tag)
+        self.DictTagsList.delete(0, tk.END)
+        for i in self.tags.keys():
+            self.DictTagsList.insert(tk.END, i)
+        return
+
+    def search_tags_dict(self, *events):
+        search = self.DictTagSearchVar.get()
+        self.DictTagsList.delete(0, tk.END)
+        for i in self.tags.keys():
+            if search in i:
+                self.DictTagsList.insert(tk.END, i)
+        return
+
+    def word_selected(self, *events):
+        word = self.DictList.curitem().replace('/', '')
+        self.DictChosenVar.set(self.out(word))
+        self.ChosenWordDef.delete('0.0', tk.END)
+        if word in self.dictionary.keys():
+            self.ChosenWordDef.insert(tk.END, self.lookup_def(word))
+        self.ChosenWordTags.delete(0, tk.END)
+        for i in self.get_tags(word):
+            self.ChosenWordTags.insert(tk.END, i)
+        return
+
+    def add_word_tag(self, *events):
+        tag = self.DictTagsList.curitem()
+        word = self.DictChosenVar.get().replace('/', '')
+        if word not in self.tags[tag]:
+            self.tags[tag].append(word)
+        self.update_word_tags(word)
+        return
+
+    def update_word_tags(self, word):
+        self.ChosenWordTags.delete(0, tk.END)
+        for i in self.get_tags(word):
+            self.ChosenWordTags.insert(tk.END, i)
+        return
+
+    def delete_word_tag(self, *events):
+        tag = self.ChosenWordTags.curitem()
+        word = self.DictChosenVar.get().replace('/', '')
+        if word in self.tags[tag]:
+            self.tags[tag].remove(word)
+        self.update_word_tags(word)
         return
 
     def search_dictionary(self, *events):
@@ -233,12 +348,6 @@ class DictionaryApp:
             shortList = [x for x in self.tags.keys() if text in x]
             for i in shortList:
                 self.AllTagsList.insert(tk.END, i)
-        return
-
-    def set_binds(self):
-        self.SylScrollList.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
-        self.TakenList.bind_listbox('<<ListboxSelect>>', self.taken_selected)
-        self.AvailableList.bind_listbox('<<ListboxSelect>>', self.available_selected)
         return
 
     def delete_tag(self, *event):
@@ -299,6 +408,13 @@ class DictionaryApp:
             if syl not in self.tags[i]:
                 self.tags[i].append(syl)
         self.update_taken_available()
+        self.update_dictionary_list()
+        return
+
+    def update_dictionary_list(self):
+        self.DictList.delete(0, tk.END)
+        for i in self.dictionary.keys():
+            self.DictList.insert(tk.END, self.out(i))
         return
 
     def DeleteSyl(self, *events):
@@ -315,6 +431,7 @@ class DictionaryApp:
         self.update_taken_available()
         self.ChosenSylDef.delete('0.0', tk.END)
         self.ChosenSylTags.delete(0, tk.END)
+        self.update_dictionary_list()
         return
 
     def load(self):
