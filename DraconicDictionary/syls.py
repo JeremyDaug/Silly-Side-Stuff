@@ -9,6 +9,10 @@ consonants = ['th', 's', 'z', 't', 'd', 'R', 'r', 'l', 'sh', 'hl', 'rr', 'c',
               'j', 'k', 'g', 't\'', 'k\'', 's\'', 'h\'', 'h', 'ts', 'ch', 'ks',
               'dg']
 vowels = ['a', 'i', 'u', 'w', 'ai', 'ia', 'uw', 'wu']
+WordAffixOrder = ['Grammar Affix', 'Factuality Affix', 'Negative Affix',
+                  'Intensity Affix', 'Progressive Affix', 'Root',
+                  'Recurrence Affix', 'Time Affix', 'Numeric Affix',
+                  'Gender Affix']
 
 
 class DictionaryApp:
@@ -146,7 +150,12 @@ class DictionaryApp:
         self.SaveWordButton = tk.Button(self.SaveClearBox, text='Save Definition', command=self.save_word_def)
         self.ClearWordButton = tk.Button(self.SaveClearBox, text='Delete Word from Dictionary',
                                          command=self.delete_word)
-
+        # Word Crafting
+        self.TypeBoxVar = tk.StringVar()
+        self.TypeBoxVar.trace_variable('w', self.type_box_checker)
+        self.WordCraftBox = tk.Frame(self.DictTab)
+        self.TypeBoxLbl = tk.Label(self.WordCraftBox, text='New Word Box')
+        self.TypeBox = tk.Entry(self.WordCraftBox, textvariable=self.TypeBoxVar)
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
@@ -158,11 +167,17 @@ class DictionaryApp:
         self.DictGrid()
         return
 
+    def type_box_checker(self):
+        return
+
     def set_binds(self):
         self.SylScrollList.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
         self.TakenList.bind_listbox('<<ListboxSelect>>', self.taken_selected)
         self.AvailableList.bind_listbox('<<ListboxSelect>>', self.available_selected)
         self.DictList.bind_listbox('<<ListboxSelect>>', self.word_selected)
+        return
+
+    def WordCraftBoxGrid(self):
         return
 
     def DictGrid(self):
@@ -182,6 +197,7 @@ class DictionaryApp:
         self.SaveClearBox.grid(row=6, column=1)
         self.SaveWordButton.grid(row=0, column=0)
         self.ClearWordButton.grid(row=0, column=1)
+        self.WordCraftBoxGrid()
         return
 
     def SylGrid(self):
@@ -237,16 +253,21 @@ class DictionaryApp:
     def delete_word(self, *events):
         word = self.DictChosenVar.get().replace('/', '')
         self.dictionary.pop(word)
-        self.delete_word_from_tags()
+        self.delete_word_from_tags(word)
+        if word in self.taken:
+            self.taken.remove(word)
+            self.available.append(word)
         return
 
-    def delete_word_from_tags(self):
-        
+    def delete_word_from_tags(self, word):
+        for i in self.tags.keys():
+            if word in self.tags[i]:
+                self.tags[i].remove(word)
         return
 
     def dict_add_tag(self, *events):
         tag = self.DictTagSearchVar.get()
-        if tag not in self.tags.keys():
+        if tag not in self.tags.keys() and tag != '':
             self.tags[tag] = []
         self.DictTagsList.delete(0, tk.END)
         for i in self.tags.keys():
@@ -480,7 +501,7 @@ class DictionaryApp:
 
     def create_tag(self, *events):
         tag = self.CreateTagVar.get()
-        if tag not in self.tags.keys():
+        if tag not in self.tags.keys() and tag != '':
             self.tags[tag] = []
             self.AllTagsList.insert(tk.END, tag)
         return
