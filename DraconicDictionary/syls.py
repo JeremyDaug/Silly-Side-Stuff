@@ -113,7 +113,6 @@ class DictionaryApp:
                                          text='Delete Tag',
                                          command=self.delete_tag)
 
-
         #### Dictionary Tab
         self.DictChosenVar = tk.StringVar()
         self.DictTagSearchVar = tk.StringVar()
@@ -156,6 +155,7 @@ class DictionaryApp:
         self.WordCraftBox = tk.Frame(self.DictTab)
         self.TypeBoxLbl = tk.Label(self.WordCraftBox, text='New Word Box')
         self.TypeBox = tk.Entry(self.WordCraftBox, textvariable=self.TypeBoxVar)
+        self.AddWordButton = tk.Button(self.WordCraftBox, text='Create Word')
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
@@ -167,7 +167,14 @@ class DictionaryApp:
         self.DictGrid()
         return
 
-    def type_box_checker(self):
+    def type_box_checker(self, *events):
+        word = self.TypeBoxVar.get().replace('/', '')
+        syls = word.split('-')
+        for i in syls:
+            if i not in self.syllables or self.word_collision(word):
+                self.TypeBox.config(bg='red')
+                return
+        self.TypeBox.config(bg='white')
         return
 
     def set_binds(self):
@@ -178,6 +185,9 @@ class DictionaryApp:
         return
 
     def WordCraftBoxGrid(self):
+        self.WordCraftBox.grid(row=0, column=1)
+        self.TypeBoxLbl.grid(row=0, column=0)
+        self.TypeBox.grid(row=1, column=0)
         return
 
     def DictGrid(self):
@@ -457,7 +467,7 @@ class DictionaryApp:
 
     def load(self):
         temp = pickle.load(open('data.p', 'rb'))
-        self.syllables = temp['syllables']
+        self.reset_syllables()
         self.taken = temp['taken']
         self.available = temp['available']
         self.dictionary = temp['dictionary']
@@ -483,10 +493,14 @@ class DictionaryApp:
         self.quit()
         return
 
-    def reset(self):
+    def reset_syllables(self):
         self.syllables = [x + y for x in consonants for y in vowels]
         self.syllables.extend([y + x for x in consonants for y in vowels])
         self.syllables.extend(vowels)
+        return
+
+    def reset(self):
+        self.reset_syllables()
         self.available = self.syllables
         self.taken = []
         self.dictionary = dict()
@@ -529,10 +543,16 @@ class DictionaryApp:
         return
 
     def word_collision(self, word):
-        return []
+        return True
+
+    def word_variants(self, word='a'):
+        affixes = [x for x in self.tags.keys() if 'Affix' in x]
+
+        return
 
 
 if __name__ == '__main__':
     # load from pickle
     curr = DictionaryApp(True)
-    curr.mainloop()
+    curr.word_variants()
+    # curr.mainloop()
