@@ -11,7 +11,7 @@ consonants = ['th', 's', 'z', 't', 'd', 'R', 'r', 'l', 'sh', 'hl', 'rr', 'c',
 vowels = ['a', 'i', 'u', 'w', 'ai', 'ia', 'uw', 'wu']
 WordAffixOrder = ['Grammar Affix', 'Factuality Affix', 'Negative Affix',
                   'Intensity Affix', 'Progressive Affix', 'Root',
-                  'Recurrence Affix', 'Time Affix', 'Numeric Affix',
+                  'Recurrence Affix', 'Temporal Affix', 'Numeric Affix',
                   'Gender Affix']
 
 
@@ -546,8 +546,10 @@ class DictionaryApp:
         return True
 
     def word_variants(self, word='a'):
-        affixes = [x for x in self.tags.keys() if 'Affix' in x]
-
+        affixes = [[x for x in self.tags[tag]] for tag in WordAffixOrder if tag != 'Root']
+        for i in affixes:
+            i.append('')
+        print(affixes)
         return
 
 
