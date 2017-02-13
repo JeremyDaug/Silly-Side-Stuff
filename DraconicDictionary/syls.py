@@ -169,8 +169,10 @@ class DictionaryApp:
 
     def type_box_checker(self, *events):
         word = self.TypeBoxVar.get().replace('/', '')
+        print(word)
         syls = word.split('-')
         for i in syls:
+            print(i in self.syllables)
             if i not in self.syllables or self.word_collision(word):
                 self.TypeBox.config(bg='red')
                 return
@@ -543,7 +545,7 @@ class DictionaryApp:
         return
 
     def word_collision(self, word):
-        return True
+        return False
 
     def word_variants(self, word='a'):
         affixes = [[x for x in self.tags[tag]] for tag in WordAffixOrder if tag != 'Root']
@@ -556,5 +558,4 @@ class DictionaryApp:
 if __name__ == '__main__':
     # load from pickle
     curr = DictionaryApp(True)
-    curr.word_variants()
-    # curr.mainloop()
+    curr.mainloop()
