@@ -2,7 +2,6 @@ import pickle
 import tkinter as tk
 from random import choice
 from tkinter import ttk
-import itertools
 
 from Scrollbox import ScrollList
 
@@ -10,7 +9,8 @@ consonants = ['th', 's', 'z', 't', 'd', 'R', 'r', 'l', 'sh', 'hl', 'rr', 'c',
               'j', 'k', 'g', 't\'', 'k\'', 's\'', 'h\'', 'h', 'ts', 'ch', 'ks',
               'dg']
 vowels = ['a', 'i', 'u', 'w', 'ai', 'ia', 'uw', 'wu']
-WordAffixOrder = ['Grammar Affix', 'Factuality Affix', 'Negative Affix',
+WordAffixOrder = ['Grammar Affix', 'Prepositional Flag', 'Prepositional/Clause Affix',
+                  'Factuality Affix', 'Negative Affix',
                   'Intensity Affix', 'Progressive Affix', 'Root',
                   'Recurrence Affix', 'Temporal Affix', 'Numeric Affix',
                   'Gender Affix']
@@ -186,6 +186,9 @@ class DictionaryApp:
         elif collision == 'Variant':
             self.TypeBox.config(bg='yellow')
             self.ErrorVar.set('Word is variant of another word.')
+        elif collision == 'Improper Affix Order':
+            self.TypeBox.config(bg='yellow')
+            self.ErrorVar.set('Word uses improper affixes,\nopen but be warned.')
         else:
             self.TypeBox.config(bg='white')
             self.ErrorVar.set('')
@@ -204,6 +207,9 @@ class DictionaryApp:
         self.TypeBox.grid(row=1, column=0)
         self.ErrorLbl.grid(row=1, column=2)
         return
+
+    def help(self):
+        return 'To delete a flag you must type it\'s full name and hit delete.'
 
     def DictGrid(self):
         self.DictLbl.grid(row=0, column=0)
@@ -487,6 +493,7 @@ class DictionaryApp:
         self.available = temp['available']
         self.dictionary = temp['dictionary']
         self.tags = temp['tags']
+        # TODO ensure all the important tags are there.
         return
 
     def quit(self):
@@ -560,9 +567,7 @@ class DictionaryApp:
     def word_collision(self, word):
         if word in self.dictionary.keys():
             return 'Collision'
-        if self.word_variant(word):
-            return 'Variant'
-        return ''
+        return self.word_variant(word)
 
     def word_variant(self, word='ik-sha-adg-u'):
         syls = word.split('-')
@@ -571,10 +576,38 @@ class DictionaryApp:
         sylType = []
         for syl in syls:
             sylTags = self.get_tags(syl)
+            root = True
             for tag in sylTags:
-                if 'Affix' in tag:
+                if 'Affix' in tag or 'Flag' in tag:
                     sylType.append(tag)
-        return True
+                    root = False
+            if root:
+                sylType.append('Root')
+        # get their order number.
+        tagOrder = []
+        for x in sylType:
+            tagOrder.append(WordAffixOrder.index(x))
+        print(tagOrder)
+        if sorted(tagOrder):
+            return 'Variant'
+        else:
+            ret = 'Improper Affix Order'
+        rootord = WordAffixOrder.index('Root')
+        if self.dup_affixes(tagOrder):
+            ret = 'Duplicate Affixes'
+
+        return ret
+
+    def dup_affixes(self, tagOrder):
+        rootord = WordAffixOrder.index('Root')
+        seen = set()
+        for i in tagOrder:
+            if i == tagOrder:
+                continue
+            elif i in seen:
+                return True
+            seen.add(i)
+        return False
 
 
 if __name__ == '__main__':
