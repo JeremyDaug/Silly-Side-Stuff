@@ -2,6 +2,7 @@ import pickle
 import tkinter as tk
 from random import choice
 from tkinter import ttk
+import itertools
 
 from Scrollbox import ScrollList
 
@@ -151,10 +152,13 @@ class DictionaryApp:
                                          command=self.delete_word)
         # Word Crafting
         self.TypeBoxVar = tk.StringVar()
+        self.ErrorVar = tk.StringVar()
         self.TypeBoxVar.trace_variable('w', self.type_box_checker)
         self.WordCraftBox = tk.Frame(self.DictTab)
         self.TypeBoxLbl = tk.Label(self.WordCraftBox, text='New Word Box')
-        self.TypeBox = tk.Entry(self.WordCraftBox, textvariable=self.TypeBoxVar)
+        self.TypeBox = tk.Entry(self.WordCraftBox,
+                                textvariable=self.TypeBoxVar)
+        self.ErrorLbl = tk.Label(self.WordCraftBox, textvariable=self.ErrorVar)
         self.AddWordButton = tk.Button(self.WordCraftBox, text='Create Word')
 
         #### Tab Setups
@@ -169,14 +173,22 @@ class DictionaryApp:
 
     def type_box_checker(self, *events):
         word = self.TypeBoxVar.get().replace('/', '')
-        print(word)
         syls = word.split('-')
         for i in syls:
-            print(i in self.syllables)
-            if i not in self.syllables or self.word_collision(word):
+            if i not in self.syllables:
                 self.TypeBox.config(bg='red')
+                self.ErrorVar.set('Invalid Syllable %s' % i)
                 return
-        self.TypeBox.config(bg='white')
+        collision = self.word_collision(word)
+        if collision == 'Collision':
+            self.TypeBox.config(bg='red')
+            self.ErrorVar.set('Word already taken')
+        elif collision == 'Variant':
+            self.TypeBox.config(bg='yellow')
+            self.ErrorVar.set('Word is variant of another word.')
+        else:
+            self.TypeBox.config(bg='white')
+            self.ErrorVar.set('')
         return
 
     def set_binds(self):
@@ -190,6 +202,7 @@ class DictionaryApp:
         self.WordCraftBox.grid(row=0, column=1)
         self.TypeBoxLbl.grid(row=0, column=0)
         self.TypeBox.grid(row=1, column=0)
+        self.ErrorLbl.grid(row=1, column=2)
         return
 
     def DictGrid(self):
@@ -545,17 +558,27 @@ class DictionaryApp:
         return
 
     def word_collision(self, word):
-        return False
+        if word in self.dictionary.keys():
+            return 'Collision'
+        if self.word_variant(word):
+            return 'Variant'
+        return ''
 
-    def word_variants(self, word='a'):
-        affixes = [[x for x in self.tags[tag]] for tag in WordAffixOrder if tag != 'Root']
-        for i in affixes:
-            i.append('')
-        print(affixes)
-        return
+    def word_variant(self, word='ik-sha-adg-u'):
+        syls = word.split('-')
+        # For each syllable, check if it's an affix then check if they are
+        # arranged such that they would be another word's variant.
+        sylType = []
+        for syl in syls:
+            sylTags = self.get_tags(syl)
+            for tag in sylTags:
+                if 'Affix' in tag:
+                    sylType.append(tag)
+        return True
 
 
 if __name__ == '__main__':
     # load from pickle
     curr = DictionaryApp(True)
+    curr.word_variant()
     curr.mainloop()
