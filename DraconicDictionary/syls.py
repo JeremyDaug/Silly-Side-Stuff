@@ -180,6 +180,7 @@ class DictionaryApp:
                 self.ErrorVar.set('Invalid Syllable %s' % i)
                 return
         collision = self.word_collision(word)
+        print(collision)
         if collision == 'Collision':
             self.TypeBox.config(bg='red')
             self.ErrorVar.set('Word already taken')
@@ -188,7 +189,10 @@ class DictionaryApp:
             self.ErrorVar.set('Word is variant of another word.')
         elif collision == 'Improper Affix Order':
             self.TypeBox.config(bg='yellow')
-            self.ErrorVar.set('Word uses improper affixes,\nopen but be warned.')
+            self.ErrorVar.set('Word uses improper affixes, open but be warned.')
+        elif collision == 'Duplicate Affixes':
+            self.TypeBox.config(bg='yellow')
+            self.ErrorVar.set('Duplicate Affixes, viable, but questionable.')
         else:
             self.TypeBox.config(bg='white')
             self.ErrorVar.set('')
@@ -588,21 +592,20 @@ class DictionaryApp:
         for x in sylType:
             tagOrder.append(WordAffixOrder.index(x))
         print(tagOrder)
-        if sorted(tagOrder):
+        is_sorted = all(tagOrder[i] <= tagOrder[i+1] for i in range(len(tagOrder)-1))
+        if is_sorted and not self.dup_affixes(tagOrder):
             return 'Variant'
         else:
             ret = 'Improper Affix Order'
-        rootord = WordAffixOrder.index('Root')
         if self.dup_affixes(tagOrder):
             ret = 'Duplicate Affixes'
-
         return ret
 
     def dup_affixes(self, tagOrder):
         rootord = WordAffixOrder.index('Root')
         seen = set()
         for i in tagOrder:
-            if i == tagOrder:
+            if i == rootord:
                 continue
             elif i in seen:
                 return True
