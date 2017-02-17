@@ -159,7 +159,7 @@ class DictionaryApp:
         self.TypeBox = tk.Entry(self.WordCraftBox,
                                 textvariable=self.TypeBoxVar)
         self.ErrorLbl = tk.Label(self.WordCraftBox, textvariable=self.ErrorVar)
-        self.AddWordButton = tk.Button(self.WordCraftBox, text='Create Word')
+        self.AddWordButton = tk.Button(self.WordCraftBox, text='Add Word') # TODO Complete Me
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
@@ -169,6 +169,14 @@ class DictionaryApp:
         self.set_binds()
         self.SylGrid()
         self.DictGrid()
+        return
+
+    def WordCraftBoxGrid(self):
+        self.WordCraftBox.grid(row=0, column=1)
+        self.TypeBoxLbl.grid(row=0, column=0)
+        self.TypeBox.grid(row=1, column=0)
+        self.ErrorLbl.grid(row=1, column=2)
+        self.AddWordButton.grid(row=2, column=0)
         return
 
     def type_box_checker(self, *events):
@@ -203,13 +211,6 @@ class DictionaryApp:
         self.TakenList.bind_listbox('<<ListboxSelect>>', self.taken_selected)
         self.AvailableList.bind_listbox('<<ListboxSelect>>', self.available_selected)
         self.DictList.bind_listbox('<<ListboxSelect>>', self.word_selected)
-        return
-
-    def WordCraftBoxGrid(self):
-        self.WordCraftBox.grid(row=0, column=1)
-        self.TypeBoxLbl.grid(row=0, column=0)
-        self.TypeBox.grid(row=1, column=0)
-        self.ErrorLbl.grid(row=1, column=2)
         return
 
     def help(self):
