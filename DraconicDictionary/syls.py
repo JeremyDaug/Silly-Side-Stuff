@@ -156,6 +156,8 @@ class DictionaryApp:
         self.TypeBoxVar = tk.StringVar()
         self.ErrorVar = tk.StringVar()
         self.TypeBoxVar.trace_variable('w', self.type_box_checker)
+        self.UntakenSylsVar = tk.StringVar()
+        self.UntakenSylsVar.trace_variable('w', self.search_untaken_syls)
         self.WordCraftBox = tk.Frame(self.DictTab)
         self.TypeBoxLbl = tk.Label(self.WordCraftBox, text='New Word Box')
         self.TypeBox = tk.Entry(self.WordCraftBox,
@@ -163,6 +165,9 @@ class DictionaryApp:
         self.ErrorLbl = tk.Label(self.WordCraftBox, textvariable=self.ErrorVar)
         self.AddWordButton = tk.Button(self.WordCraftBox, text='View Word',
                                        command=self.dict_add_word)
+        self.UntakenSylsBox = tk.Frame(self.WordCraftBox)
+        self.UntakenSylsList = ScrollList(self.UntakenSylsBox, self.get_available_syls())
+        self.UntakenSylsSearch = tk.Entry(self.UntakenSylsBox, textvariable=self.UntakenSylsVar)
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
@@ -174,8 +179,31 @@ class DictionaryApp:
         self.DictGrid()
         return
 
+    def WordCraftBoxGrid(self):
+        self.WordCraftBox.grid(row=0, column=1)
+        self.TypeBoxLbl.grid(row=0, column=0)
+        self.TypeBox.grid(row=1, column=0)
+        self.ErrorLbl.grid(row=3, column=0)
+        self.AddWordButton.grid(row=2, column=0)
+        self.UntakenSylsBox.grid(row=1, column=2, rowspan=4)
+        self.UntakenSylsList.grid(row=0, column=0)
+        self.UntakenSylsSearch.grid(row=1, column=0)
+        return
+
+    def search_untaken_syls(self, *events):
+        word = self.UntakenSylsVar.get()
+        self.UntakenSylsList.delete(0, tk.END)
+        for i in self.get_available_syls():
+            if word in i:
+                self.UntakenSylsList.insert(tk.END, i)
+        return
+
+    def get_available_syls(self):
+        return ['/%s/' % syl for syl in self.syllables if syl not in self.dictionary.keys()]
+
     def dict_add_word(self, *events):
         word = self.TypeBoxVar.get().strip('/')
+        res, root = self.word_variant(word)
         if word in self.dictionary.keys():
             print('in dictionary')
             self.DictChosenVar.set(self.out(word))
@@ -185,22 +213,15 @@ class DictionaryApp:
             self.ChosenWordTags.delete(0, tk.END)
             for i in self.get_tags(word):
                 self.ChosenWordTags.insert(tk.END, i)
-        elif self.word_variant(word):
+        elif res == 'Variant':
             print('word variant')
             self.DictChosenVar.set(self.out(word))
             self.ChosenWordDef.delete('0.0', tk.END)
-            if word in self.dictionary.keys():
+            if root in self.dictionary.keys():
+                print('word in dict')
                 self.ChosenWordDef.insert(tk.END, 'Word Variant') # TODO LATER create a function to explain a variant.
             self.ChosenWordTags.delete(0, tk.END)
-        return
-
-    def WordCraftBoxGrid(self):
-        self.WordCraftBox.grid(row=0, column=1)
-        self.TypeBoxLbl.grid(row=0, column=0)
-        self.TypeBox.grid(row=1, column=0)
-        self.ErrorLbl.grid(row=1, column=2)
-        self.AddWordButton.grid(row=2, column=0)
-        return
+        retur
 
     def type_box_checker(self, *events):
         word = self.TypeBoxVar.get().replace('/', '')
@@ -210,14 +231,16 @@ class DictionaryApp:
                 self.TypeBox.config(bg='red')
                 self.ErrorVar.set('Invalid Syllable %s' % i)
                 return
-        collision = self.word_collision(word)
-        print(collision)
+        collision, root = self.word_collision(word)
         if collision == 'Collision':
             self.TypeBox.config(bg='red')
             self.ErrorVar.set('Word already taken')
-        elif collision == 'Variant':
+        elif collision == 'Variant' and root in self.dictionary.keys():
             self.TypeBox.config(bg='yellow')
             self.ErrorVar.set('Word is variant of another word.')
+        elif collision == 'Variant' and root not in self.dictionary.keys():
+            self.TypeBox.config(bg='yellow')
+            self.ErrorVar.set('Word is variant, but %s is available.' % root)
         elif collision == 'Improper Affix Order':
             self.TypeBox.config(bg='yellow')
             self.ErrorVar.set('Word uses improper affixes, open but be warned.')
@@ -237,6 +260,16 @@ class DictionaryApp:
         self.TakenList.bind_listbox('<<ListboxSelect>>', self.taken_selected)
         self.AvailableList.bind_listbox('<<ListboxSelect>>', self.available_selected)
         self.DictList.bind_listbox('<<ListboxSelect>>', self.word_selected)
+        self.UntakenSylsList.bind_listbox('<<ListboxSelect>>', self.add_to_craft)
+        return
+
+    def add_to_craft(self, *events):
+        word = self.TypeBoxVar.get()
+        if word:
+            if word[-1] != '-':
+                word += '-'
+        word += self.UntakenSylsList.curitem().replace('/', '')
+        self.TypeBoxVar.set(word)
         return
 
     def help(self):
@@ -308,16 +341,13 @@ class DictionaryApp:
         return
 
     def save_word_def(self, *events):
-        print('Save word def')
         word = self.DictChosenVar.get().replace('/', '')
-        print(word)
         is_variant = self.word_variant(word)
-        print(is_variant)
         if is_variant != 'Variant':
-            print('Added to dict')
             self.dictionary[word] = self.ChosenWordDef.get('0.0', tk.END)
         else:
             tk.messagebox.showinfo('Info', 'Word is a variant, cannot add to dictionary.')
+        self.update_dictionary_list()
         return
 
     def delete_word(self, *events):
@@ -606,8 +636,8 @@ class DictionaryApp:
 
     def word_collision(self, word):
         if word in self.dictionary.keys():
-            return 'Collision'
-        return self.word_variant(word)[0]
+            return 'Collision', ''
+        return self.word_variant(word)
 
     def word_variant(self, word='ik-u-ri-ci-i'):
         # For each syllable, check if it's an affix then check if they are
@@ -634,7 +664,10 @@ class DictionaryApp:
         # do checks for the end
         is_sorted = all(tagOrder[i] <= tagOrder[i+1] for i in range(len(tagOrder)-1))
         if is_sorted and not self.dup_affixes(tagOrder):
-            ret = 'Variant'
+            if all([x == 7 for x in tagOrder]):
+                ret = ''
+            else:
+                ret = 'Variant'
         else:
             ret = 'Improper Affix Order'
         if self.dup_affixes(tagOrder):
@@ -642,8 +675,14 @@ class DictionaryApp:
         elif lone_flag:
             ret = 'Lone Flag'
         root_word = [x for x in syls if syls.index(x) >= word_root[0] and syls.index(x) <= word_root[1]]
-        print(root_word)
-        return ret, word_root
+        ret_word = ''
+        for i in root_word:
+            ret_word += i + '-'
+        ret_word = ret_word[0:-1]
+        # print(word)
+        # print(tagOrder)
+        # print(ret, word_root, root_word, ret_word)
+        return ret, ret_word
 
     def get_root_bounds(self, tagOrder):
         word_root = [-1, 100000]
@@ -657,16 +696,16 @@ class DictionaryApp:
                 word_root[0] = index
             elif tag < max(seen):
                 word_root[0] = index
-            elif tagOrder[index] == 1 and tagOrder[index+1] != 2:
-                print('lone_flag')
-                word_root[0] = index
-                lone_flag = True
+            elif index+1 < len(tagOrder):
+                if tagOrder[index] == 1 and tagOrder[index+1] != 2:
+                    word_root[0] = index
+                    lone_flag = True
             if word_root[0] > -1:
                 break
             seen.add(tag)
         # going down
         seen = set()
-        seen.add(len(tagOrder)+3)
+        seen.add(100)
         for tag, index in zip(reversed(tagOrder), reversed(range(len(tagOrder)))):
             if tag in seen or tag <= 7:
                 word_root[1] = index
@@ -692,5 +731,4 @@ class DictionaryApp:
 if __name__ == '__main__':
     # load from pickle
     curr = DictionaryApp(True)
-    curr.word_variant()
     curr.mainloop()
