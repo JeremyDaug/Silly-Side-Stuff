@@ -224,6 +224,9 @@ class DictionaryApp:
         elif collision == 'Duplicate Affixes':
             self.TypeBox.config(bg='yellow')
             self.ErrorVar.set('Duplicate Affixes, viable, but questionable.')
+        elif collision == 'Lone Flag':
+            self.TypeBox.config(bg='yellow')
+            self.ErrorVar.set('Lone prepositional flag, can be valid.')
         else:
             self.TypeBox.config(bg='white')
             self.ErrorVar.set('')
@@ -604,38 +607,75 @@ class DictionaryApp:
     def word_collision(self, word):
         if word in self.dictionary.keys():
             return 'Collision'
-        return self.word_variant(word)
+        return self.word_variant(word)[0]
 
-    def word_variant(self, word='ik-u-ksai-ri-adg-u-ci-i'):
-        syls = word.split('-')
+    def word_variant(self, word='ik-u-ri-ci-i'):
         # For each syllable, check if it's an affix then check if they are
         # arranged such that they would be another word's variant.
-        print('word variant call')
-        print(word)
+        syls = word.split('-')
         sylType = []
+        tagOrder = []
+        word_root = [-1, 100000]  # holds the indices of the root words.
         for syl in syls:
             sylTags = self.get_tags(syl)
             root = True
+            # get the affix for the syllable
             for tag in sylTags:
                 if 'Affix' in tag or 'Flag' in tag:
                     sylType.append(tag)
                     root = False
+            # if no affix or flag, it's a root.
             if root:
                 sylType.append('Root')
-        # get their order number.
-        tagOrder = []
-        for x in sylType:
-            tagOrder.append(WordAffixOrder.index(x))
-        print(tagOrder)
+            # Get the position in affix order
+            tagOrder.append(WordAffixOrder.index(sylType[-1]))
+        # get the root syllables (cut away until it is found.
+        word_root[0], word_root[1], lone_flag = self.get_root_bounds(tagOrder)
+        # do checks for the end
         is_sorted = all(tagOrder[i] <= tagOrder[i+1] for i in range(len(tagOrder)-1))
         if is_sorted and not self.dup_affixes(tagOrder):
-            return 'Variant'
+            ret = 'Variant'
         else:
             ret = 'Improper Affix Order'
         if self.dup_affixes(tagOrder):
             ret = 'Duplicate Affixes'
-        print(ret)
-        return ret
+        elif lone_flag:
+            ret = 'Lone Flag'
+        root_word = [x for x in syls if syls.index(x) >= word_root[0] and syls.index(x) <= word_root[1]]
+        print(root_word)
+        return ret, word_root
+
+    def get_root_bounds(self, tagOrder):
+        word_root = [-1, 100000]
+        # Looking for flags without appropriate affixes.
+        lone_flag = False
+        # going up
+        seen = set()
+        seen.add(-1)
+        for tag, index in zip(tagOrder, range(len(tagOrder))):
+            if tag in seen or tag >= 7:
+                word_root[0] = index
+            elif tag < max(seen):
+                word_root[0] = index
+            elif tagOrder[index] == 1 and tagOrder[index+1] != 2:
+                print('lone_flag')
+                word_root[0] = index
+                lone_flag = True
+            if word_root[0] > -1:
+                break
+            seen.add(tag)
+        # going down
+        seen = set()
+        seen.add(len(tagOrder)+3)
+        for tag, index in zip(reversed(tagOrder), reversed(range(len(tagOrder)))):
+            if tag in seen or tag <= 7:
+                word_root[1] = index
+                break
+            elif tag > min(seen):
+                word_root[1] = index
+                break
+            seen.add(tag)
+        return word_root[0], word_root[1], lone_flag
 
     def dup_affixes(self, tagOrder):
         rootord = WordAffixOrder.index('Root')
