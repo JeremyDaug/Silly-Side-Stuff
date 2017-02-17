@@ -2,6 +2,8 @@ import pickle
 import tkinter as tk
 from random import choice
 from tkinter import ttk
+import tkinter.messagebox
+
 
 from Scrollbox import ScrollList
 
@@ -159,7 +161,8 @@ class DictionaryApp:
         self.TypeBox = tk.Entry(self.WordCraftBox,
                                 textvariable=self.TypeBoxVar)
         self.ErrorLbl = tk.Label(self.WordCraftBox, textvariable=self.ErrorVar)
-        self.AddWordButton = tk.Button(self.WordCraftBox, text='Add Word') # TODO Complete Me
+        self.AddWordButton = tk.Button(self.WordCraftBox, text='View Word',
+                                       command=self.dict_add_word)
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
@@ -169,6 +172,26 @@ class DictionaryApp:
         self.set_binds()
         self.SylGrid()
         self.DictGrid()
+        return
+
+    def dict_add_word(self, *events):
+        word = self.TypeBoxVar.get().strip('/')
+        if word in self.dictionary.keys():
+            print('in dictionary')
+            self.DictChosenVar.set(self.out(word))
+            self.ChosenWordDef.delete('0.0', tk.END)
+            if word in self.dictionary.keys():
+                self.ChosenWordDef.insert(tk.END, self.lookup_def(word))
+            self.ChosenWordTags.delete(0, tk.END)
+            for i in self.get_tags(word):
+                self.ChosenWordTags.insert(tk.END, i)
+        elif self.word_variant(word):
+            print('word variant')
+            self.DictChosenVar.set(self.out(word))
+            self.ChosenWordDef.delete('0.0', tk.END)
+            if word in self.dictionary.keys():
+                self.ChosenWordDef.insert(tk.END, 'Word Variant') # TODO LATER create a function to explain a variant.
+            self.ChosenWordTags.delete(0, tk.END)
         return
 
     def WordCraftBoxGrid(self):
@@ -282,8 +305,16 @@ class DictionaryApp:
         return
 
     def save_word_def(self, *events):
+        print('Save word def')
         word = self.DictChosenVar.get().replace('/', '')
-        self.dictionary[word] = self.ChosenWordDef.get('0.0', tk.END)
+        print(word)
+        is_variant = self.word_variant(word)
+        print(is_variant)
+        if is_variant != 'Variant':
+            print('Added to dict')
+            self.dictionary[word] = self.ChosenWordDef.get('0.0', tk.END)
+        else:
+            tk.messagebox.showinfo('Info', 'Word is a variant, cannot add to dictionary.')
         return
 
     def delete_word(self, *events):
@@ -293,6 +324,7 @@ class DictionaryApp:
         if word in self.taken:
             self.taken.remove(word)
             self.available.append(word)
+        self.update_dictionary_list()
         return
 
     def delete_word_from_tags(self, word):
@@ -574,10 +606,12 @@ class DictionaryApp:
             return 'Collision'
         return self.word_variant(word)
 
-    def word_variant(self, word='ik-sha-adg-u'):
+    def word_variant(self, word='ik-u-ksai-ri-adg-u-ci-i'):
         syls = word.split('-')
         # For each syllable, check if it's an affix then check if they are
         # arranged such that they would be another word's variant.
+        print('word variant call')
+        print(word)
         sylType = []
         for syl in syls:
             sylTags = self.get_tags(syl)
@@ -600,6 +634,7 @@ class DictionaryApp:
             ret = 'Improper Affix Order'
         if self.dup_affixes(tagOrder):
             ret = 'Duplicate Affixes'
+        print(ret)
         return ret
 
     def dup_affixes(self, tagOrder):
