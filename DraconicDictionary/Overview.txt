@@ -1,0 +1,13 @@
+Goals
+- Be a feature complete dictionary, able to search in english, by definitions, tags, the word itself,
+and various other things.
+- Be relatively user friendly in it's interface to complete this.
+
+Features
+- Variant formation. Give the ability to take a word, discect it and see what each affix means in a grammatical sense.
+- Random Word generation. Give the ability to create new words from scratch easily.
+- Word construction. Make it easy to construct words from other words and syllables that already exist.
+- Search functions to find almost anything one could need in either using or editing the language.
+
+Possible other features
+- Full translation, unlikely due to complexity of the task, but not impossible.
