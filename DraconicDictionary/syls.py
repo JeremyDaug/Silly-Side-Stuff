@@ -175,6 +175,10 @@ class DictionaryApp:
         self.OptionsSearch = tk.Entry(self.OptionsBox, textvariable=self.UntakenSylsVar)
         self.ListTypeCombo = ttk.Combobox(self.OptionsBox, textvariable=self.ListTypeVar, state='readonly')
         self.ListTypeCombo['values'] = ['Unused Syllables', 'Used Syllables', 'Atomic Words']
+        self.RandomUnusedSyl = tk.Button(self.OptionsBox, text='Random Unused Syllable',
+                                         command=self.dict_random_unused_syl)
+        self.RandomNonAffix = tk.Button(self.OptionsBox, text='Random Non Affix Syllable',
+                                        command=self.dict_random_non_affix)
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
@@ -184,6 +188,34 @@ class DictionaryApp:
         self.set_binds()
         self.SylGrid()
         self.DictGrid()
+        return
+
+    def dict_random_non_affix(self, *events):
+        group = [i for i in self.available]
+        non_affixes = []
+        for i in group:
+            not_affix = True
+            for tag in self.get_tags(i):
+                if 'Affix' in tag or 'Flag' in tag:
+                    not_affix = False
+                    break
+            if not_affix:
+                non_affixes.append(i)
+        word = self.TypeBoxVar.get()
+        if word:
+            if word[-1] != '-':
+                word += '-'
+        word += choice(non_affixes)
+        self.TypeBoxVar.set(word)
+        return
+
+    def dict_random_unused_syl(self, *events):
+        word = self.TypeBoxVar.get()
+        if word:
+            if word[-1] != '-':
+                word += '-'
+        word += choice([i for i in self.available])
+        self.TypeBoxVar.set(word)
         return
 
     def change_list_var(self, *events):
@@ -201,6 +233,8 @@ class DictionaryApp:
         self.OptionsList.grid(row=0, column=0)
         self.OptionsSearch.grid(row=1, column=0)
         self.ListTypeCombo.grid(row=0, column=3)
+        self.RandomUnusedSyl.grid(row=0, column=4)
+        self.RandomNonAffix.grid(row=1, column=4)
         return
 
     def search_options_list(self, *events):
