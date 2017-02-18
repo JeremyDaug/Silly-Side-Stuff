@@ -157,7 +157,11 @@ class DictionaryApp:
         self.ErrorVar = tk.StringVar()
         self.TypeBoxVar.trace_variable('w', self.type_box_checker)
         self.UntakenSylsVar = tk.StringVar()
-        self.UntakenSylsVar.trace_variable('w', self.search_untaken_syls)
+        self.UntakenSylsVar.trace_variable('w', self.search_options_list)
+        self.ListLabelVar = tk.StringVar()
+        self.ListTypeVar = tk.StringVar()
+        self.ListTypeVar.set('Unused Syllables')
+        self.ListTypeVar.trace_variable('w', self.change_list_var)
         self.WordCraftBox = tk.Frame(self.DictTab)
         self.TypeBoxLbl = tk.Label(self.WordCraftBox, text='New Word Box')
         self.TypeBox = tk.Entry(self.WordCraftBox,
@@ -165,9 +169,12 @@ class DictionaryApp:
         self.ErrorLbl = tk.Label(self.WordCraftBox, textvariable=self.ErrorVar)
         self.AddWordButton = tk.Button(self.WordCraftBox, text='View Word',
                                        command=self.dict_add_word)
-        self.UntakenSylsBox = tk.Frame(self.WordCraftBox)
-        self.UntakenSylsList = ScrollList(self.UntakenSylsBox, self.get_available_syls())
-        self.UntakenSylsSearch = tk.Entry(self.UntakenSylsBox, textvariable=self.UntakenSylsVar)
+        self.OptionsBox = tk.Frame(self.WordCraftBox)
+        self.OptionsLbl = tk.Label(self.OptionsBox, textvariable=self.ListLabelVar)
+        self.OptionsList = ScrollList(self.OptionsBox, self.get_requested_syls())
+        self.OptionsSearch = tk.Entry(self.OptionsBox, textvariable=self.UntakenSylsVar)
+        self.ListTypeCombo = ttk.Combobox(self.OptionsBox, textvariable=self.ListTypeVar, state='readonly')
+        self.ListTypeCombo['values'] = ['Unused Syllables', 'Used Syllables', 'Atomic Words']
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
@@ -179,30 +186,60 @@ class DictionaryApp:
         self.DictGrid()
         return
 
+    def change_list_var(self, *events):
+        ver = self.ListTypeVar.get()
+        # self.OptionsList
+        return
+
     def WordCraftBoxGrid(self):
-        self.WordCraftBox.grid(row=0, column=1)
+        self.WordCraftBox.grid(row=0, column=1, rowspan=4)
         self.TypeBoxLbl.grid(row=0, column=0)
         self.TypeBox.grid(row=1, column=0)
         self.ErrorLbl.grid(row=3, column=0)
         self.AddWordButton.grid(row=2, column=0)
-        self.UntakenSylsBox.grid(row=1, column=2, rowspan=4)
-        self.UntakenSylsList.grid(row=0, column=0)
-        self.UntakenSylsSearch.grid(row=1, column=0)
+        self.OptionsBox.grid(row=1, column=2, rowspan=4)
+        self.OptionsList.grid(row=0, column=0)
+        self.OptionsSearch.grid(row=1, column=0)
+        self.ListTypeCombo.grid(row=0, column=3)
         return
 
-    def search_untaken_syls(self, *events):
+    def search_options_list(self, *events):
         word = self.UntakenSylsVar.get()
-        self.UntakenSylsList.delete(0, tk.END)
-        for i in self.get_available_syls():
+        self.OptionsList.delete(0, tk.END)
+        for i in self.get_requested_syls():
             if word in i:
-                self.UntakenSylsList.insert(tk.END, i)
+                self.OptionsList.insert(tk.END, i)
         return
 
-    def get_available_syls(self):
-        return ['/%s/' % syl for syl in self.syllables if syl not in self.dictionary.keys()]
+    def change_list_type(self, *events):
+        self.TypeBoxVar.set('')
+        self.OptionsList.delete(0, tk.END)
+        for i in self.get_requested_syls():
+            self.OptionsList.insert(tk.END, i)
+        return
+
+    def get_requested_syls(self):
+        type = self.ListTypeVar.get()
+        if type == 'Unused Syllables':
+            return ['/%s/' % syl for syl in self.syllables if syl not in self.dictionary.keys()]
+        elif type == 'Used Syllables':
+            return ['/%s/' % syl for syl in self.syllables if syl in self.dictionary.keys()]
+        elif type == 'Atomic Words':
+            temp = [i for i in self.dictionary.keys() if '-' not in i]
+            ret = []
+            for i in temp:
+                affix = False
+                for tag in self.get_tags(i):
+                    if 'Affix' in tag or 'Flag' in tag:
+                        affix = True
+                        break
+                if not affix:
+                    ret.append('/%s/' % i)
+            return ret
 
     def dict_add_word(self, *events):
         word = self.TypeBoxVar.get().strip('/')
+        print(word)
         res, root = self.word_variant(word)
         if word in self.dictionary.keys():
             print('in dictionary')
@@ -221,10 +258,19 @@ class DictionaryApp:
                 print('word in dict')
                 self.ChosenWordDef.insert(tk.END, 'Word Variant') # TODO LATER create a function to explain a variant.
             self.ChosenWordTags.delete(0, tk.END)
-        retur
+        else:
+            print('new word')
+            self.DictChosenVar.set(self.out(word))
+            self.ChosenWordDef.delete('0.0', tk.END)
+            self.ChosenWordTags.delete(0, tk.END)
+        return
 
     def type_box_checker(self, *events):
         word = self.TypeBoxVar.get().replace('/', '')
+        if not word:
+            self.TypeBox.config(bg='white')
+            self.ErrorVar.set('')
+            return
         syls = word.split('-')
         for i in syls:
             if i not in self.syllables:
@@ -260,7 +306,8 @@ class DictionaryApp:
         self.TakenList.bind_listbox('<<ListboxSelect>>', self.taken_selected)
         self.AvailableList.bind_listbox('<<ListboxSelect>>', self.available_selected)
         self.DictList.bind_listbox('<<ListboxSelect>>', self.word_selected)
-        self.UntakenSylsList.bind_listbox('<<ListboxSelect>>', self.add_to_craft)
+        self.OptionsList.bind_listbox('<<ListboxSelect>>', self.add_to_craft)
+        self.ListTypeCombo.bind('<<ComboboxSelected>>', self.change_list_type)
         return
 
     def add_to_craft(self, *events):
@@ -268,7 +315,7 @@ class DictionaryApp:
         if word:
             if word[-1] != '-':
                 word += '-'
-        word += self.UntakenSylsList.curitem().replace('/', '')
+        word += self.OptionsList.curitem().replace('/', '')
         self.TypeBoxVar.set(word)
         return
 
