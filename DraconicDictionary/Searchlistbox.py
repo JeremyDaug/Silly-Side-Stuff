@@ -3,7 +3,7 @@ A helper to get a scrolllist, label, and search functionality nice and quickly.
 """
 
 import tkinter as tk
-from Scrollbox import Scrollbox
+from DraconicDictionary.Scrollbox import Scrollbox
 
 
 class SearchListBox:
@@ -12,9 +12,11 @@ class SearchListBox:
         Init function
         :param tk.Frame parent: The parent frame.
         :param str label: The name of the sreachbox
-        :param list(str) parent_list: A link to a list of things we'll be searching consistently,
+        :param list(str) parent_list: A link to a list of
+            things we'll be searching consistently,
             being callable would be smart.
-        :param func search_func: A function call that will be searched by, if none given, then name is assumed.
+        :param func search_func: A function call that will
+            be searched by, if none given, then name is assumed.
         """
         if not parent:
             raise RuntimeError('SearchListBox must have a parent.')
@@ -34,7 +36,7 @@ class SearchListBox:
 
     def set_grid(self):
         self.mylabel.grid(row=0, column=0)
-        self.mylist.grid(row=1, column=0)
+        self.mylist.grid(row=1, column=0, sticky=tk.N+tk.S)
         self.mysearch.grid(row=2, column=0)
         return
 
@@ -49,7 +51,7 @@ class SearchListBox:
         return self.mylist.curitem()
 
     def bind_scrollbar(self, conf={}, **kwargs):
-        self.mylist.bind_scroolbar(conf, **kwargs)
+        self.mylist.bind_scrollbar(conf, **kwargs)
         return
 
     def list_size(self):
@@ -60,7 +62,8 @@ class SearchListBox:
         return
 
     def grid(self, row=0, column=0, sticky='', rowspan=1, columnspan=1):
-        self.myframe.grid(row=row, column=column, sticky=sticky, rowspan=1, columnspan=1)
+        self.myframe.grid(row=row, column=column, sticky=sticky,
+                          rowspan=rowspan, columnspan=columnspan)
         return
 
     def defaultsearch(self, *events):
@@ -78,3 +81,11 @@ class SearchListBox:
     def update_list(self, new_list):
         self.list_store = new_list
         self.mysearchvar.set('')
+        self.refreshlist()
+        return
+
+    def refreshlist(self):
+        self.mylist.delete(0, tk.END)
+        for i in self.list_store:
+            self.mylist.insert(tk.END, i)
+        return

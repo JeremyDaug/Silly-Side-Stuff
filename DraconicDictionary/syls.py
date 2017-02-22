@@ -44,32 +44,22 @@ class DictionaryApp:
         # SylTab Section
         self.SylTab = tk.Frame(self.Tabs)
         # setup variables
-        self.SylSearchVar = tk.StringVar()
-        self.SylSearchVar.trace_variable('w', self.search_syl)
         self.ChosenSylVar = tk.StringVar()
         self.CreateTagVar = tk.StringVar()
         self.CreateTagVar.trace_variable('w', self.search_tags)
-        self.DictSearchVar = tk.StringVar()
-        self.DictSearchVar.trace_variable('w', self.search_dictionary)
 
         #### what's in the window.
         #### All syllables
         self.SylSearchListBox = SearchListBox(self.SylTab, label='Syllable Search Box',
                                               parent_list=[self.out(x) for x in self.syllables])
-        # self.SylSearchLbl = tk.Label(self.SylTab, text='Syllable Search Box')
-        # self.SylSearchBox = tk.Entry(self.SylTab,
-        #                              textvariable=self.SylSearchVar)
-        # self.SylLbl = tk.Label(self.SylTab, text='Syllable List')
-        # self.SylScrollbox = Scrollbox(self.SylTab,
-        #                                 contains=['/%s/' % x for x in self.syllables])
         # Taken syllables
         self.TakenLbl = tk.Label(self.SylTab, text='Taken Syllables')
         self.TakenList = Scrollbox(self.SylTab,
-                                    contains=['/%s/' % x for x in self.taken])
+                                   contains=['/%s/' % x for x in self.taken])
         # Available Syllables
         self.AvailableLbl = tk.Label(self.SylTab, text='Available Syllables')
         self.AvailableList = Scrollbox(self.SylTab,
-                                        contains=['/%s/' % x for x in self.available])
+                                       contains=['/%s/' % x for x in self.available])
         # Random buttons
         self.RandomButtons = tk.Frame(self.SylTab)
         self.RandomSylButton = tk.Button(self.RandomButtons, text='Random Syllable',
@@ -106,7 +96,7 @@ class DictionaryApp:
         # All Tag List
         self.AllTagsLbl = tk.Label(self.ChosenFrame, text='Available Tags')
         self.AllTagsList = Scrollbox(self.ChosenFrame,
-                                      contains=self.tags.keys())
+                                     contains=self.tags.keys())
         # Create Tag Box
         self.CreateTagBox = tk.Entry(self.ChosenFrame,
                                      textvariable=self.CreateTagVar)
@@ -120,15 +110,10 @@ class DictionaryApp:
 
         #### Dictionary Tab
         self.DictChosenVar = tk.StringVar()
-        self.DictTagSearchVar = tk.StringVar()
-        self.DictTagSearchVar.trace_variable('w', self.search_tags_dict)
         self.DictTab = tk.Frame(self.Tabs)
         # Current Words
-        self.DictLbl = tk.Label(self.DictTab, text='Current Words')
-        self.DictList = Scrollbox(self.DictTab,
-                                   ['/%s/' % x for x in self.dictionary.keys()])
-        self.DictSearchLbl = tk.Label(self.DictTab, text='Search Box')
-        self.DictSearchBox = tk.Entry(self.DictTab, textvariable=self.DictSearchVar)
+        self.ExistingWordSearchBox = SearchListBox(self.DictTab, label='Current Words',
+                                                   parent_list=['/%s/' % x for x in self.dictionary.keys()])
         # Chosen Words
         self.ChosenWordLbl = tk.Label(self.DictTab, text='Current Word')
         self.ChosenWordBox = tk.Entry(self.DictTab, textvariable=self.DictChosenVar, state='readonly',
@@ -142,13 +127,8 @@ class DictionaryApp:
         self.WordAddTagButton = tk.Button(self.DictTagButtonBox, text='<<', command=self.add_word_tag)
         self.WordDeleteTagButton = tk.Button(self.DictTagButtonBox, text='>>', command=self.delete_word_tag)
         # All tags
-        self.DictTagsList = Scrollbox(self.DictTab, self.tags.keys())
-        # Tag Search box
-        self.DictTagSearch = tk.Entry(self.DictTab, textvariable=self.DictTagSearchVar)
-        # Add Delete Tags
-        self.DictAddDelTagBox = tk.Frame(self.DictTab)
-        self.DictAddTagButton = tk.Button(self.DictAddDelTagBox, text='Add Tag', command=self.dict_add_tag)
-        self.DictDeleteTagButton = tk.Button(self.DictAddDelTagBox, text='Delete Tag', command=self.dict_delete_tag)
+        self.DictAllTagsSearch = SearchListBox(self.DictTab, label='All tags',
+                                               parent_list=self.tags.keys())
         # Save Clear Word Data
         self.SaveClearBox = tk.Frame(self.DictTab)
         self.SaveWordButton = tk.Button(self.SaveClearBox, text='Save Definition', command=self.save_word_def)
@@ -158,8 +138,6 @@ class DictionaryApp:
         self.TypeBoxVar = tk.StringVar()
         self.ErrorVar = tk.StringVar()
         self.TypeBoxVar.trace_variable('w', self.type_box_checker)
-        self.UntakenSylsVar = tk.StringVar()
-        self.UntakenSylsVar.trace_variable('w', self.search_options_list)
         self.ListLabelVar = tk.StringVar()
         self.ListTypeVar = tk.StringVar()
         self.ListTypeVar.set('Unused Syllables')
@@ -172,9 +150,8 @@ class DictionaryApp:
         self.AddWordButton = tk.Button(self.WordCraftBox, text='View Word',
                                        command=self.dict_add_word)
         self.OptionsBox = tk.Frame(self.WordCraftBox)
-        self.OptionsLbl = tk.Label(self.OptionsBox, textvariable=self.ListLabelVar)
-        self.OptionsList = Scrollbox(self.OptionsBox, self.get_requested_syls())
-        self.OptionsSearch = tk.Entry(self.OptionsBox, textvariable=self.UntakenSylsVar)
+        self.OptionsSearchBox = SearchListBox(self.OptionsBox, label='Syllables to add.',
+                                              parent_list=self.get_requested_syls())
         self.ListTypeCombo = ttk.Combobox(self.OptionsBox, textvariable=self.ListTypeVar, state='readonly')
         self.ListTypeCombo['values'] = ['Unused Syllables', 'Used Syllables', 'Atomic Words']
         self.RandomUnusedSyl = tk.Button(self.OptionsBox, text='Random Unused Syllable',
@@ -270,7 +247,6 @@ class DictionaryApp:
 
     def change_list_var(self, *events):
         ver = self.ListTypeVar.get()
-        # self.OptionsList
         return
 
     def WordCraftBoxGrid(self):
@@ -280,34 +256,23 @@ class DictionaryApp:
         self.ErrorLbl.grid(row=3, column=0)
         self.AddWordButton.grid(row=2, column=0)
         self.OptionsBox.grid(row=1, column=2, rowspan=4)
-        self.OptionsList.grid(row=0, column=0)
-        self.OptionsSearch.grid(row=1, column=0)
+        self.OptionsSearchBox.grid(row=0, column=0, rowspan=1)
         self.ListTypeCombo.grid(row=0, column=3)
         self.RandomUnusedSyl.grid(row=0, column=4)
         self.RandomNonAffix.grid(row=1, column=4)
         return
 
-    def search_options_list(self, *events):
-        word = self.UntakenSylsVar.get()
-        self.OptionsList.delete(0, tk.END)
-        for i in self.get_requested_syls():
-            if word in i:
-                self.OptionsList.insert(tk.END, i)
-        return
-
     def change_list_type(self, *events):
         self.TypeBoxVar.set('')
-        self.OptionsList.delete(0, tk.END)
-        for i in self.get_requested_syls():
-            self.OptionsList.insert(tk.END, i)
+        self.OptionsSearchBox.update_list(self.get_requested_syls())
         return
 
     def get_requested_syls(self):
         type = self.ListTypeVar.get()
         if type == 'Unused Syllables':
-            return ['/%s/' % syl for syl in self.syllables if syl not in self.dictionary.keys()]
+            return [self.out(syl) for syl in self.syllables if syl not in self.dictionary.keys()]
         elif type == 'Used Syllables':
-            return ['/%s/' % syl for syl in self.syllables if syl in self.dictionary.keys()]
+            return [self.out(syl) for syl in self.syllables if syl in self.dictionary.keys()]
         elif type == 'Atomic Words':
             temp = [i for i in self.dictionary.keys() if '-' not in i]
             ret = []
@@ -318,15 +283,13 @@ class DictionaryApp:
                         affix = True
                         break
                 if not affix:
-                    ret.append('/%s/' % i)
+                    ret.append(self.out(i))
             return ret
 
     def dict_add_word(self, *events):
         word = self.TypeBoxVar.get().strip('/')
-        print(word)
         res, root = self.word_variant(word)
         if word in self.dictionary.keys():
-            print('in dictionary')
             self.DictChosenVar.set(self.out(word))
             self.ChosenWordDef.delete('0.0', tk.END)
             if word in self.dictionary.keys():
@@ -335,15 +298,12 @@ class DictionaryApp:
             for i in self.get_tags(word):
                 self.ChosenWordTags.insert(tk.END, i)
         elif res == 'Variant':
-            print('word variant')
             self.DictChosenVar.set(self.out(word))
             self.ChosenWordDef.delete('0.0', tk.END)
             if root in self.dictionary.keys():
-                print('word in dict')
-                self.ChosenWordDef.insert(tk.END, 'Word Variant') # TODO LATER create a function to explain a variant.
+                self.ChosenWordDef.insert(tk.END, 'Word Variant')  # TODO LATER create a function to explain a variant.
             self.ChosenWordTags.delete(0, tk.END)
         else:
-            print('new word')
             self.DictChosenVar.set(self.out(word))
             self.ChosenWordDef.delete('0.0', tk.END)
             self.ChosenWordTags.delete(0, tk.END)
@@ -387,11 +347,10 @@ class DictionaryApp:
 
     def set_binds(self):
         self.SylSearchListBox.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
-        # self.SylScrollbox.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
         self.TakenList.bind_listbox('<<ListboxSelect>>', self.taken_selected)
         self.AvailableList.bind_listbox('<<ListboxSelect>>', self.available_selected)
-        self.DictList.bind_listbox('<<ListboxSelect>>', self.word_selected)
-        self.OptionsList.bind_listbox('<<ListboxSelect>>', self.add_to_craft)
+        self.ExistingWordSearchBox.bind_listbox('<<ListboxSelect>>', self.word_selected)
+        self.OptionsSearchBox.bind_listbox('<<ListboxSelect>>', self.add_to_craft)
         self.ListTypeCombo.bind('<<ComboboxSelected>>', self.change_list_type)
         self.DefSearchResults.bind_listbox('<<ListboxSelect>>', self.show_word)
         return
@@ -401,7 +360,7 @@ class DictionaryApp:
         if word:
             if word[-1] != '-':
                 word += '-'
-        word += self.OptionsList.curitem().replace('/', '')
+        word += self.OptionsSearchBox.get_curitem().replace('/', '')
         self.TypeBoxVar.set(word)
         return
 
@@ -409,10 +368,7 @@ class DictionaryApp:
         return 'To delete a flag you must type it\'s full name and hit delete.'
 
     def DictGrid(self):
-        self.DictLbl.grid(row=0, column=0)
-        self.DictList.grid(row=1, column=0)
-        self.DictSearchLbl.grid(row=2, column=0)
-        self.DictSearchBox.grid(row=3, column=0)
+        self.ExistingWordSearchBox.grid(row=0, column=0, rowspan=4)
         self.ChosenWordLbl.grid(row=4, column=0)
         self.ChosenWordBox.grid(row=5, column=0, sticky=tk.N)
         self.ChosenWordDef.grid(row=5, column=1)
@@ -420,8 +376,7 @@ class DictionaryApp:
         self.DictTagButtonBox.grid(row=5, column=3)
         self.WordAddTagButton.grid(row=0, column=0)
         self.WordDeleteTagButton.grid(row=1, column=0)
-        self.DictTagsList.grid(row=5, column=4, sticky=tk.N+tk.S)
-        self.DictTagSearch.grid(row=6, column=4)
+        self.DictAllTagsSearch.grid(row=5, column=4, sticky=tk.N+tk.S, rowspan=4)
         self.SaveClearBox.grid(row=6, column=1)
         self.SaveWordButton.grid(row=0, column=0)
         self.ClearWordButton.grid(row=0, column=1)
@@ -431,12 +386,7 @@ class DictionaryApp:
 
     def SylGrid(self):
         # Syl Search List Box
-        self.SylSearchListBox.grid(row=0, column=0)
-        # self.SylSearchLbl.grid(row=0, column=0, sticky=tk.W)
-        # self.SylSearchBox.grid(row=1, column=0)
-        # self.SylLbl.grid(row=2, column=0, sticky=tk.W)
-        # self.SylScrollbox.grid(row=3, column=0, sticky=tk.N,
-        #                         rowspan=5, columnspan=1)
+        self.SylSearchListBox.grid(row=0, column=0, rowspan=4)
         # Taken Syllables
         self.TakenLbl.grid(row=0, column=1)
         self.TakenList.grid(row=1, column=1, rowspan=7)
@@ -502,34 +452,8 @@ class DictionaryApp:
                 self.tags[i].remove(word)
         return
 
-    def dict_add_tag(self, *events):
-        tag = self.DictTagSearchVar.get()
-        if tag not in self.tags.keys() and tag != '':
-            self.tags[tag] = []
-        self.DictTagsList.delete(0, tk.END)
-        for i in self.tags.keys():
-            self.DictTagsList.insert(tk.END, i)
-        return
-
-    def dict_delete_tag(self, *events):
-        tag = self.DictTagsList.curitem()
-        if tag in self.tags.keys():
-            self.tags.pop(tag)
-        self.DictTagsList.delete(0, tk.END)
-        for i in self.tags.keys():
-            self.DictTagsList.insert(tk.END, i)
-        return
-
-    def search_tags_dict(self, *events):
-        search = self.DictTagSearchVar.get()
-        self.DictTagsList.delete(0, tk.END)
-        for i in self.tags.keys():
-            if search in i:
-                self.DictTagsList.insert(tk.END, i)
-        return
-
     def word_selected(self, *events):
-        word = self.DictList.curitem().replace('/', '')
+        word = self.ExistingWordSearchBox.get_curitem().replace('/', '')
         self.DictChosenVar.set(self.out(word))
         self.ChosenWordDef.delete('0.0', tk.END)
         if word in self.dictionary.keys():
@@ -540,7 +464,7 @@ class DictionaryApp:
         return
 
     def add_word_tag(self, *events):
-        tag = self.DictTagsList.curitem()
+        tag = self.DictAllTagsSearch.get_curitem()
         word = self.DictChosenVar.get().replace('/', '')
         if word not in self.tags[tag]:
             self.tags[tag].append(word)
@@ -559,14 +483,6 @@ class DictionaryApp:
         if word in self.tags[tag]:
             self.tags[tag].remove(word)
         self.update_word_tags(word)
-        return
-
-    def search_dictionary(self, *events):
-        val = self.DictSearchVar.get().replace('/', '')
-        self.DictList.delete(0, tk.END)
-        for i in self.dictionary.keys():
-            if val in i:
-                self.DictList.insert(tk.END, self.out(i))
         return
 
     def random_syl(self, *events):
@@ -643,18 +559,6 @@ class DictionaryApp:
         self.update_chosen_syl(val, syl)
         return
 
-    def search_syl(self, *events):
-        self.SylScrollbox.delete(0, tk.END)
-        text = self.SylSearchVar.get()
-        if text == '':
-            for i in self.syllables:
-                self.SylScrollbox.insert(tk.END, self.out(i))
-        else:
-            shortList = [x for x in self.syllables if text in x]
-            for i in shortList:
-                self.SylScrollbox.insert(tk.END, self.out(i))
-        return
-
     def SaveSyl(self, *events):
         syl = self.ChosenSylVar.get().replace('/', '')
         if syl not in self.taken:
@@ -670,9 +574,7 @@ class DictionaryApp:
         return
 
     def update_dictionary_list(self):
-        self.DictList.delete(0, tk.END)
-        for i in self.dictionary.keys():
-            self.DictList.insert(tk.END, self.out(i))
+        self.ExistingWordSearchBox.update_list([self.out(i) for i in self.dictionary.keys()])
         return
 
     def DeleteSyl(self, *events):
