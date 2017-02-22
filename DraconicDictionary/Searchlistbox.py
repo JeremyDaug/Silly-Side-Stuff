@@ -29,6 +29,39 @@ class SearchListBox:
         else:
             self.mysearchvar.trace_variable('w', self.defaultsearch)
         self.mysearch = tk.Entry(self.myframe, textvariable=self.mysearchvar)
+        self.set_grid()
+        return
+
+    def set_grid(self):
+        self.mylabel.grid(row=0, column=0)
+        self.mylist.grid(row=1, column=0)
+        self.mysearch.grid(row=2, column=0)
+        return
+
+    def bind_listbox(self, flag, func):
+        self.mylist.bind_listbox(flag, func)
+        return
+
+    def get_search_var(self):
+        return self.mysearchvar.get()
+
+    def get_curitem(self):
+        return self.mylist.curitem()
+
+    def bind_scrollbar(self, conf={}, **kwargs):
+        self.mylist.bind_scroolbar(conf, **kwargs)
+        return
+
+    def list_size(self):
+        return self.mylist.size()
+
+    def pack(self, conf={}, **kwargs):
+        self.myframe.pack(conf, **kwargs)
+        return
+
+    def grid(self, row=0, column=0, sticky='', rowspan=1, columnspan=1):
+        self.myframe.grid(row=row, column=column, sticky=sticky, rowspan=1, columnspan=1)
+        return
 
     def defaultsearch(self, *events):
         search = self.mysearchvar.get()
@@ -41,3 +74,7 @@ class SearchListBox:
                 if search in i:
                     self.mylist.insert(tk.END, i)
         return
+
+    def update_list(self, new_list):
+        self.list_store = new_list
+        self.mysearchvar.set('')

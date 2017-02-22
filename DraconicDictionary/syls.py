@@ -3,9 +3,9 @@ import tkinter as tk
 from random import choice
 from tkinter import ttk
 import tkinter.messagebox
+from DraconicDictionary.Searchlistbox import SearchListBox
 
-
-from Scrollbox import Scrollbox
+from DraconicDictionary.Scrollbox import Scrollbox
 
 consonants = ['th', 's', 'z', 't', 'd', 'R', 'r', 'l', 'sh', 'hl', 'rr', 'c',
               'j', 'k', 'g', 't\'', 'k\'', 's\'', 'h\'', 'h', 'ts', 'ch', 'ks',
@@ -54,12 +54,14 @@ class DictionaryApp:
 
         #### what's in the window.
         #### All syllables
-        self.SylSearchLbl = tk.Label(self.SylTab, text='Syllable Search Box')
-        self.SylSearchBox = tk.Entry(self.SylTab,
-                                     textvariable=self.SylSearchVar)
-        self.SylLbl = tk.Label(self.SylTab, text='Syllable List')
-        self.SylScrollbox = Scrollbox(self.SylTab,
-                                        contains=['/%s/' % x for x in self.syllables])
+        self.SylSearchListBox = SearchListBox(self.SylTab, label='Syllable Search Box',
+                                              parent_list=[self.out(x) for x in self.syllables])
+        # self.SylSearchLbl = tk.Label(self.SylTab, text='Syllable Search Box')
+        # self.SylSearchBox = tk.Entry(self.SylTab,
+        #                              textvariable=self.SylSearchVar)
+        # self.SylLbl = tk.Label(self.SylTab, text='Syllable List')
+        # self.SylScrollbox = Scrollbox(self.SylTab,
+        #                                 contains=['/%s/' % x for x in self.syllables])
         # Taken syllables
         self.TakenLbl = tk.Label(self.SylTab, text='Taken Syllables')
         self.TakenList = Scrollbox(self.SylTab,
@@ -384,7 +386,8 @@ class DictionaryApp:
         return
 
     def set_binds(self):
-        self.SylScrollbox.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
+        self.SylSearchListBox.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
+        # self.SylScrollbox.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
         self.TakenList.bind_listbox('<<ListboxSelect>>', self.taken_selected)
         self.AvailableList.bind_listbox('<<ListboxSelect>>', self.available_selected)
         self.DictList.bind_listbox('<<ListboxSelect>>', self.word_selected)
@@ -427,11 +430,13 @@ class DictionaryApp:
         return
 
     def SylGrid(self):
-        self.SylSearchLbl.grid(row=0, column=0, sticky=tk.W)
-        self.SylSearchBox.grid(row=1, column=0)
-        self.SylLbl.grid(row=2, column=0, sticky=tk.W)
-        self.SylScrollbox.grid(row=3, column=0, sticky=tk.N,
-                                rowspan=5, columnspan=1)
+        # Syl Search List Box
+        self.SylSearchListBox.grid(row=0, column=0)
+        # self.SylSearchLbl.grid(row=0, column=0, sticky=tk.W)
+        # self.SylSearchBox.grid(row=1, column=0)
+        # self.SylLbl.grid(row=2, column=0, sticky=tk.W)
+        # self.SylScrollbox.grid(row=3, column=0, sticky=tk.N,
+        #                         rowspan=5, columnspan=1)
         # Taken Syllables
         self.TakenLbl.grid(row=0, column=1)
         self.TakenList.grid(row=1, column=1, rowspan=7)
@@ -621,7 +626,7 @@ class DictionaryApp:
         return
 
     def syllable_selected(self, *events):
-        val = self.SylScrollbox.curitem()
+        val = self.SylSearchListBox.get_curitem()
         syl = val.replace('/', '')
         self.update_chosen_syl(val, syl)
         return
