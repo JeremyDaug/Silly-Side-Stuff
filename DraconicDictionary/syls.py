@@ -5,7 +5,7 @@ from tkinter import ttk
 import tkinter.messagebox
 
 
-from Scrollbox import ScrollList
+from Scrollbox import Scrollbox
 
 consonants = ['th', 's', 'z', 't', 'd', 'R', 'r', 'l', 'sh', 'hl', 'rr', 'c',
               'j', 'k', 'g', 't\'', 'k\'', 's\'', 'h\'', 'h', 'ts', 'ch', 'ks',
@@ -58,15 +58,15 @@ class DictionaryApp:
         self.SylSearchBox = tk.Entry(self.SylTab,
                                      textvariable=self.SylSearchVar)
         self.SylLbl = tk.Label(self.SylTab, text='Syllable List')
-        self.SylScrollList = ScrollList(self.SylTab,
+        self.SylScrollbox = Scrollbox(self.SylTab,
                                         contains=['/%s/' % x for x in self.syllables])
         # Taken syllables
         self.TakenLbl = tk.Label(self.SylTab, text='Taken Syllables')
-        self.TakenList = ScrollList(self.SylTab,
+        self.TakenList = Scrollbox(self.SylTab,
                                     contains=['/%s/' % x for x in self.taken])
         # Available Syllables
         self.AvailableLbl = tk.Label(self.SylTab, text='Available Syllables')
-        self.AvailableList = ScrollList(self.SylTab,
+        self.AvailableList = Scrollbox(self.SylTab,
                                         contains=['/%s/' % x for x in self.available])
         # Random buttons
         self.RandomButtons = tk.Frame(self.SylTab)
@@ -94,7 +94,7 @@ class DictionaryApp:
         ## Tag editor
         # Chosen List
         self.ChosenSylTagsLbl = tk.Label(self.ChosenFrame, text='Tags')
-        self.ChosenSylTags = ScrollList(self.ChosenFrame)
+        self.ChosenSylTags = Scrollbox(self.ChosenFrame)
         # Add remove Tag Buttons
         self.TagAddRemoveBox = tk.Frame(self.ChosenFrame)
         self.AddTagButton = tk.Button(self.TagAddRemoveBox, text='<<',
@@ -103,7 +103,7 @@ class DictionaryApp:
                                          command=self.remove_tag)
         # All Tag List
         self.AllTagsLbl = tk.Label(self.ChosenFrame, text='Available Tags')
-        self.AllTagsList = ScrollList(self.ChosenFrame,
+        self.AllTagsList = Scrollbox(self.ChosenFrame,
                                       contains=self.tags.keys())
         # Create Tag Box
         self.CreateTagBox = tk.Entry(self.ChosenFrame,
@@ -123,7 +123,7 @@ class DictionaryApp:
         self.DictTab = tk.Frame(self.Tabs)
         # Current Words
         self.DictLbl = tk.Label(self.DictTab, text='Current Words')
-        self.DictList = ScrollList(self.DictTab,
+        self.DictList = Scrollbox(self.DictTab,
                                    ['/%s/' % x for x in self.dictionary.keys()])
         self.DictSearchLbl = tk.Label(self.DictTab, text='Search Box')
         self.DictSearchBox = tk.Entry(self.DictTab, textvariable=self.DictSearchVar)
@@ -134,13 +134,13 @@ class DictionaryApp:
         # Definition
         self.ChosenWordDef = tk.Text(self.DictTab)
         # Tags
-        self.ChosenWordTags = ScrollList(self.DictTab)
+        self.ChosenWordTags = Scrollbox(self.DictTab)
         # Add remove Tags
         self.DictTagButtonBox = tk.Frame(self.DictTab)
         self.WordAddTagButton = tk.Button(self.DictTagButtonBox, text='<<', command=self.add_word_tag)
         self.WordDeleteTagButton = tk.Button(self.DictTagButtonBox, text='>>', command=self.delete_word_tag)
         # All tags
-        self.DictTagsList = ScrollList(self.DictTab, self.tags.keys())
+        self.DictTagsList = Scrollbox(self.DictTab, self.tags.keys())
         # Tag Search box
         self.DictTagSearch = tk.Entry(self.DictTab, textvariable=self.DictTagSearchVar)
         # Add Delete Tags
@@ -171,7 +171,7 @@ class DictionaryApp:
                                        command=self.dict_add_word)
         self.OptionsBox = tk.Frame(self.WordCraftBox)
         self.OptionsLbl = tk.Label(self.OptionsBox, textvariable=self.ListLabelVar)
-        self.OptionsList = ScrollList(self.OptionsBox, self.get_requested_syls())
+        self.OptionsList = Scrollbox(self.OptionsBox, self.get_requested_syls())
         self.OptionsSearch = tk.Entry(self.OptionsBox, textvariable=self.UntakenSylsVar)
         self.ListTypeCombo = ttk.Combobox(self.OptionsBox, textvariable=self.ListTypeVar, state='readonly')
         self.ListTypeCombo['values'] = ['Unused Syllables', 'Used Syllables', 'Atomic Words']
@@ -186,16 +186,29 @@ class DictionaryApp:
         self.DefSearchBox = tk.Frame(self.DictTab)
         self.DefSearchLbl = tk.Label(self.DefSearchBox, text='Definition search box')
         self.DefSearch = tk.Entry(self.DefSearchBox, textvariable=self.DefSearchVar)
-        self.DefSearchResults = ScrollList(self.DefSearchBox)
+        self.DefSearchResults = Scrollbox(self.DefSearchBox)
+
+        # Word Exploration Tab
+        self.ExplorationTab = tk.Frame(self.Tabs)
+        # word selection box
+        self.WordSelectVar = tk.StringVar()
+        self.WordSelectVar.trace_variable('w', self.exp_word_selected)
+        self.WordSelectedLbl = tk.Label(self.ExplorationTab, text='Word Selection')
+        self.WordSelectionList = Scrollbox(self.ExplorationTab, self.dictionary.keys())
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
         self.Tabs.add(self.DictTab, text='Dictionary Tab')
+        self.Tabs.add(self.ExplorationTab, text='Exploration Tab')
         self.Tabs.grid(row=0, column=0)
 
         self.set_binds()
         self.SylGrid()
         self.DictGrid()
+        return
+
+    def exp_word_selected(self, *events):
+        # todo complete this after word selection is complete.
         return
 
     def search_defs(self, *events):
@@ -371,7 +384,7 @@ class DictionaryApp:
         return
 
     def set_binds(self):
-        self.SylScrollList.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
+        self.SylScrollbox.bind_listbox('<<ListboxSelect>>', self.syllable_selected)
         self.TakenList.bind_listbox('<<ListboxSelect>>', self.taken_selected)
         self.AvailableList.bind_listbox('<<ListboxSelect>>', self.available_selected)
         self.DictList.bind_listbox('<<ListboxSelect>>', self.word_selected)
@@ -417,7 +430,7 @@ class DictionaryApp:
         self.SylSearchLbl.grid(row=0, column=0, sticky=tk.W)
         self.SylSearchBox.grid(row=1, column=0)
         self.SylLbl.grid(row=2, column=0, sticky=tk.W)
-        self.SylScrollList.grid(row=3, column=0, sticky=tk.N,
+        self.SylScrollbox.grid(row=3, column=0, sticky=tk.N,
                                 rowspan=5, columnspan=1)
         # Taken Syllables
         self.TakenLbl.grid(row=0, column=1)
@@ -608,7 +621,7 @@ class DictionaryApp:
         return
 
     def syllable_selected(self, *events):
-        val = self.SylScrollList.curitem()
+        val = self.SylScrollbox.curitem()
         syl = val.replace('/', '')
         self.update_chosen_syl(val, syl)
         return
@@ -626,15 +639,15 @@ class DictionaryApp:
         return
 
     def search_syl(self, *events):
-        self.SylScrollList.delete(0, tk.END)
+        self.SylScrollbox.delete(0, tk.END)
         text = self.SylSearchVar.get()
         if text == '':
             for i in self.syllables:
-                self.SylScrollList.insert(tk.END, self.out(i))
+                self.SylScrollbox.insert(tk.END, self.out(i))
         else:
             shortList = [x for x in self.syllables if text in x]
             for i in shortList:
-                self.SylScrollList.insert(tk.END, self.out(i))
+                self.SylScrollbox.insert(tk.END, self.out(i))
         return
 
     def SaveSyl(self, *events):

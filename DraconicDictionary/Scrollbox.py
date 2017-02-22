@@ -4,7 +4,7 @@ A side class for holding a listbox with scrollbar (currently only vertical)
 import tkinter as tk
 
 
-class ScrollList:
+class Scrollbox:
     def __init__(self, parent=None, contains=[]):
         if parent is None:  # If no parent crash.
             raise RuntimeError('ScrollList must have a parent.')
