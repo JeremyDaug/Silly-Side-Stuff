@@ -180,6 +180,14 @@ class DictionaryApp:
         self.RandomNonAffix = tk.Button(self.OptionsBox, text='Random Non Affix Syllable',
                                         command=self.dict_random_non_affix)
 
+        # Definition search box
+        self.DefSearchVar = tk.StringVar()
+        self.DefSearchVar.trace_variable('w', self.search_defs)
+        self.DefSearchBox = tk.Frame(self.DictTab)
+        self.DefSearchLbl = tk.Label(self.DefSearchBox, text='Definition search box')
+        self.DefSearch = tk.Entry(self.DefSearchBox, textvariable=self.DefSearchVar)
+        self.DefSearchResults = ScrollList(self.DefSearchBox)
+
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
         self.Tabs.add(self.DictTab, text='Dictionary Tab')
@@ -188,6 +196,33 @@ class DictionaryApp:
         self.set_binds()
         self.SylGrid()
         self.DictGrid()
+        return
+
+    def search_defs(self, *events):
+        search = self.DefSearchVar.get()
+        self.DefSearchResults.delete(0, tk.END)
+        if not search:
+            return
+        for i in self.dictionary.keys():
+            if search.lower() in self.dictionary[i].lower():
+                self.DefSearchResults.insert(tk.END, i)
+        return
+
+    def show_word(self, *events):
+        selected = self.DefSearchResults.curitem()
+        self.DictChosenVar.set(selected)
+        self.ChosenWordDef.delete('0.0', tk.END)
+        self.ChosenWordDef.insert(tk.END, self.dictionary[selected])
+        self.ChosenWordTags.delete(0, tk.END)
+        for i in self.get_tags(selected):
+            self.ChosenWordTags.insert(tk.END, i)
+        return
+
+    def DefSearchBoxGrid(self):
+        self.DefSearchBox.grid(row=0, column=2, rowspan=4)
+        self.DefSearchLbl.grid(row=0, column=0)
+        self.DefSearch.grid(row=3, column=0)
+        self.DefSearchResults.grid(row=2, column=0)
         return
 
     def dict_random_non_affix(self, *events):
@@ -342,6 +377,7 @@ class DictionaryApp:
         self.DictList.bind_listbox('<<ListboxSelect>>', self.word_selected)
         self.OptionsList.bind_listbox('<<ListboxSelect>>', self.add_to_craft)
         self.ListTypeCombo.bind('<<ComboboxSelected>>', self.change_list_type)
+        self.DefSearchResults.bind_listbox('<<ListboxSelect>>', self.show_word)
         return
 
     def add_to_craft(self, *events):
@@ -374,6 +410,7 @@ class DictionaryApp:
         self.SaveWordButton.grid(row=0, column=0)
         self.ClearWordButton.grid(row=0, column=1)
         self.WordCraftBoxGrid()
+        self.DefSearchBoxGrid()
         return
 
     def SylGrid(self):
