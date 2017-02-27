@@ -161,7 +161,7 @@ class DictionaryApp:
         # Definition search box
         self.DefSearchListBox = SearchListBox(self.DictTab, label='Definition Search Box',
                                               parent_list=[self.out(x) for x in self.dictionary.keys()],
-                                              search_func=self.search_defs)
+                                              search_func=self.def_search_defs)
 
         # Word Exploration Tab
         self.ExplorationTab = tk.Frame(self.Tabs)
@@ -169,6 +169,20 @@ class DictionaryApp:
         self.ExplorationSearchBox = SearchListBox(self.ExplorationTab,
                                                   label='Current Words',
                                                   parent_list=[self.out(x) for x in self.dictionary.keys()])
+        # Current Explore Word List
+        self.CurrentWordVar = tk.StringVar()
+        self.CurrentWordLbl = tk.Label(self.ExplorationTab, text='Current Word')
+        self.CurrentWordBox = tk.Entry(self.ExplorationTab, textvariable=self.CurrentWordVar,
+                                       state='readonly', readonlybackground='white')
+        # Exploration Search by Def
+        self.ExpSearchByDef = SearchListBox(self.ExplorationTab,
+                                            label='Search By Definition',
+                                            parent_list=[self.out(x) for x in self.dictionary.keys()],
+                                            search_func=self.exp_search_defs)
+        # Exploration Box
+        self.ExplorationBox = tk.Text(self.ExplorationTab)
+        # Tags
+        self.ExplorationTags = Scrollbox(self.ExplorationTab)
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
@@ -182,19 +196,50 @@ class DictionaryApp:
         self.ExploreGrid()
         return
 
-    def ExploreGrid(self):
-        self.ExplorationSearchBox.grid(row=0, column=0)
+    def explore_word(self, *events):
+        word = self.ExplorationSearchBox.get_curitem().replace('/', '')
+        return self.update_explore_info(word)
+
+    def exp_select_word(self, *events):
+        word = self.DefSearchListBox.get_curitem().replace('/', '')
+        return self.update_explore_info(word)
+
+    def update_explore_info(self, word):
+        self.CurrentWordVar.set(self.out(word))
+        self.ExplorationBox.delete('0.0', tk.END)
+        if word in self.dictionary.keys():
+            self.ExplorationBox.insert(tk.END, self.dictionary[word])
+        self.ExplorationTags.delete(0, tk.END)
+        for i in self.get_tags(word):
+            self.ExplorationTags.insert(tk.END, i)
         return
 
-    def search_defs(self, *events):
-        search = self.DefSearchListBox.mysearchvar.get()
-        self.DefSearchListBox.mylist.delete(0, tk.END)
+    def ExploreGrid(self):
+        self.ExplorationSearchBox.grid(row=0, column=0)
+        self.CurrentWordLbl.grid(row=1, column=0)
+        self.CurrentWordBox.grid(row=2, column=0, sticky=tk.N)
+        self.ExplorationBox.grid(row=2, column=1)
+        self.ExplorationTags.grid(row=2, column=2, sticky=tk.N+tk.S)
+        self.ExpSearchByDef.grid(row=0, column=1, rowspan=2)
+        return
+
+    def search_defs(self, var=None):
+        if not isinstance(var, SearchListBox):
+            raise TypeError('Var must be of type SearchListBox')
+        search = var.mysearchvar.get()
+        var.mylist.delete(0, tk.END)
         if not search:
             return
         for i in self.dictionary.keys():
             if search.lower() in self.dictionary[i].lower():
-                self.DefSearchListBox.mylist.insert(tk.END, i)
+                var.mylist.insert(tk.END, self.out(i))
         return
+
+    def exp_search_defs(self, *events):
+        return self.search_defs(self.ExpSearchByDef)
+
+    def def_search_defs(self, *events):
+        return self.search_defs(self.DefSearchListBox)
 
     def show_word(self, *events):
         selected = self.DefSearchListBox.get_curitem().replace('/', '')
@@ -338,6 +383,8 @@ class DictionaryApp:
         self.OptionsSearchBox.bind_listbox('<<ListboxSelect>>', self.add_to_craft)
         self.ListTypeCombo.bind('<<ComboboxSelected>>', self.change_list_type)
         self.DefSearchListBox.bind_listbox('<<ListboxSelect>>', self.show_word)
+        self.ExplorationSearchBox.bind_listbox('<<ListboxSelect>>', self.explore_word)
+        self.ExpSearchByDef.bind_listbox('<<ListboxSelect>>', self.exp_select_word)
         return
 
     def add_to_craft(self, *events):
