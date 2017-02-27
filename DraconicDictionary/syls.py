@@ -197,12 +197,10 @@ class DictionaryApp:
         return
 
     def explore_word(self, *events):
-        word = self.ExplorationSearchBox.get_curitem().replace('/', '')
-        return self.update_explore_info(word)
+        return self.update_explore_info(self.ExplorationSearchBox.get_curitem().replace('/', ''))
 
     def exp_select_word(self, *events):
-        word = self.DefSearchListBox.get_curitem().replace('/', '')
-        return self.update_explore_info(word)
+        return self.update_explore_info(self.DefSearchListBox.get_curitem().replace('/', ''))
 
     def update_explore_info(self, word):
         self.CurrentWordVar.set(self.out(word))
@@ -396,9 +394,6 @@ class DictionaryApp:
         self.TypeBoxVar.set(word)
         return
 
-    def help(self):
-        return 'To delete a flag you must type it\'s full name and hit delete.'
-
     def DictGrid(self):
         self.ExistingWordSearchBox.grid(row=0, column=0, rowspan=4)
         self.ChosenWordLbl.grid(row=4, column=0)
@@ -478,12 +473,6 @@ class DictionaryApp:
         self.update_dictionary_list()
         return
 
-    def delete_word_from_tags(self, word):
-        for i in self.tags.keys():
-            if word in self.tags[i]:
-                self.tags[i].remove(word)
-        return
-
     def word_selected(self, *events):
         word = self.ExistingWordSearchBox.get_curitem().replace('/', '')
         self.DictChosenVar.set(self.out(word))
@@ -493,28 +482,6 @@ class DictionaryApp:
         self.ChosenWordTags.delete(0, tk.END)
         for i in self.get_tags(word):
             self.ChosenWordTags.insert(tk.END, i)
-        return
-
-    def add_word_tag(self, *events):
-        tag = self.DictAllTagsSearch.get_curitem()
-        word = self.DictChosenVar.get().replace('/', '')
-        if word not in self.tags[tag]:
-            self.tags[tag].append(word)
-        self.update_word_tags(word)
-        return
-
-    def update_word_tags(self, word):
-        self.ChosenWordTags.delete(0, tk.END)
-        for i in self.get_tags(word):
-            self.ChosenWordTags.insert(tk.END, i)
-        return
-
-    def delete_word_tag(self, *events):
-        tag = self.ChosenWordTags.curitem()
-        word = self.DictChosenVar.get().replace('/', '')
-        if word in self.tags[tag]:
-            self.tags[tag].remove(word)
-        self.update_word_tags(word)
         return
 
     def random_syl(self, *events):
@@ -542,25 +509,6 @@ class DictionaryApp:
             self.TakenList.insert(tk.END, self.out(i))
         for i in self.available:
             self.AvailableList.insert(tk.END, self.out(i))
-        return
-
-    def search_tags(self, *event):
-        self.AllTagsList.delete(0, tk.END)
-        text = self.CreateTagVar.get()
-        if text == '':
-            for i in self.tags.keys():
-                self.AllTagsList.insert(tk.END, i)
-        else:
-            shortList = [x for x in self.tags.keys() if text in x]
-            for i in shortList:
-                self.AllTagsList.insert(tk.END, i)
-        return
-
-    def delete_tag(self, *event):
-        tag = self.CreateTagVar.get()
-        if tag in self.tags.keys():
-            self.tags.pop(tag)
-            self.AllTagsList.delete(0, 0)
         return
 
     def update_chosen_syl(self, val, syl):
@@ -627,61 +575,88 @@ class DictionaryApp:
         self.update_dictionary_list()
         return
 
-    def load(self):
-        temp = pickle.load(open('data.p', 'rb'))
-        self.reset_syllables()
-        self.taken = temp['taken']
-        self.available = temp['available']
-        self.dictionary = temp['dictionary']
-        self.tags = temp['tags']
-        # TODO ensure all the important tags are there.
+    # Tag Functions
+    def delete_word_from_tags(self, word):
+        for i in self.tags.keys():
+            if word in self.tags[i]:
+                self.tags[i].remove(word)
         return
 
-    def quit(self):
-        temp = dict()
-        temp['dictionary'] = self.dictionary
-        temp['syllables'] = self.syllables
-        temp['taken'] = self.taken
-        temp['available'] = self.available
-        temp['tags'] = self.tags
-        pickle.dump(temp, open('data.p', 'wb'))
-
-    @staticmethod
-    def out(ret):
-        return '/'+ret+'/'
-
-    def mainloop(self):
-        self.load()
-        self.root.mainloop()
-        self.quit()
+    def add_word_tag(self, *events):
+        tag = self.DictAllTagsSearch.get_curitem()
+        word = self.DictChosenVar.get().replace('/', '')
+        if word not in self.tags[tag]:
+            self.tags[tag].append(word)
+        self.update_word_tags(word)
         return
 
-    def reset_syllables(self):
-        self.syllables = [x + y for x in consonants for y in vowels]
-        self.syllables.extend([y + x for x in consonants for y in vowels])
-        self.syllables.extend(vowels)
+    def update_word_tags(self, word):
+        self.ChosenWordTags.delete(0, tk.END)
+        for i in self.get_tags(word):
+            self.ChosenWordTags.insert(tk.END, i)
         return
 
-    def reset(self):
-        self.reset_syllables()
-        self.available = self.syllables
-        self.taken = []
-        self.dictionary = dict()
-        self.tags = dict()
+    def delete_word_tag(self, *events):
+        tag = self.ChosenWordTags.curitem()
+        word = self.DictChosenVar.get().replace('/', '')
+        if word in self.tags[tag]:
+            self.tags[tag].remove(word)
+        self.update_word_tags(word)
+        return
 
-    def lookup_def(self, txt):
-        return self.dictionary[txt]
+    def search_tags(self, *event):
+        self.AllTagsList.delete(0, tk.END)
+        text = self.CreateTagVar.get()
+        if text == '':
+            for i in self.tags.keys():
+                self.AllTagsList.insert(tk.END, i)
+        else:
+            shortList = [x for x in self.tags.keys() if text in x]
+            for i in shortList:
+                self.AllTagsList.insert(tk.END, i)
+        return
+
+    def delete_tag(self, *event):
+        tag = self.CreateTagVar.get()
+        if self.delete_from_tags(tag):
+            self.AllTagsList.delete(0, 0)
+        return
+
+    def delete_from_tags(self, tag):
+        """
+        Universal Tag deleter. Deletes tags from our global list.
+        :param str tag: The tag to remove.
+        :return boolean: True if successful, False otherwise.
+        """
+        if tag in self.tags.keys():
+            self.tags.pop(tag)
+            return True
+        return False
 
     def get_tags(self, word):
-        tags = [x for x in self.tags.keys() if word in self.tags[x]]
-        return tags
+        """
+        Global Tag Getter for our words. Gets all tags attached to the given word.
+        :param str word: The word we are looking for
+        :return list(str): The list of all tags that have the word.
+        """
+        return [x for x in self.tags.keys() if word in self.tags[x]]
 
     def create_tag(self, *events):
         tag = self.CreateTagVar.get()
-        if tag not in self.tags.keys() and tag != '':
-            self.tags[tag] = []
+        if self.add_to_tags(tag):
             self.AllTagsList.insert(tk.END, tag)
         return
+
+    def add_to_tags(self, tag):
+        """
+        Universal tag adder. Adds to our global tag list.
+        :param tag: The tag we are adding
+        :return: True if added, False otherwise.
+        """
+        if tag not in self.tags.keys() and tag != '':
+            self.tags[tag] = []
+            return True
+        return False
 
     def add_tag(self, *events):
         tag = self.AllTagsList.curitem()
@@ -705,12 +680,66 @@ class DictionaryApp:
         self.update_chosen_tags(word)
         return
 
+    # Untouchable functions, Should not need to chnage
+    def help(self):
+        return 'To delete a flag you must type it\'s full name and hit delete.'
+
+    def lookup_def(self, txt):
+        return self.dictionary[txt]
+
+    def load(self):
+        temp = pickle.load(open('data.p', 'rb'))
+        self.reset_syllables()
+        self.taken = temp['taken']
+        self.available = temp['available']
+        self.dictionary = temp['dictionary']
+        self.tags = temp['tags']
+        # TODO ensure all the important tags are there.
+        return
+
+    def quit(self):
+        temp = dict()
+        temp['dictionary'] = self.dictionary
+        temp['syllables'] = self.syllables
+        temp['taken'] = self.taken
+        temp['available'] = self.available
+        temp['tags'] = self.tags
+        pickle.dump(temp, open('data.p', 'wb'))
+
+    @staticmethod
+    def out(ret):
+        return '/' + ret + '/'
+
+    def mainloop(self):
+        self.load()
+        self.root.mainloop()
+        self.quit()
+        return
+
+    def reset_syllables(self):
+        self.syllables = [x + y for x in consonants for y in vowels]
+        self.syllables.extend([y + x for x in consonants for y in vowels])
+        self.syllables.extend(vowels)
+        return
+
+    def reset(self):
+        self.reset_syllables()
+        self.available = self.syllables
+        self.taken = []
+        self.dictionary = dict()
+        self.tags = dict()
+
     def word_collision(self, word):
         if word in self.dictionary.keys():
             return 'Collision', ''
         return self.word_variant(word)
 
     def word_variant(self, word='ik-u-ri-ci-i'):
+        """
+        Word variant finder, finds if a word is a variant or not.
+        :param word: The word we are dissecting.
+        :return: The info of the word in String form.
+        """
         # For each syllable, check if it's an affix then check if they are
         # arranged such that they would be another word's variant.
         syls = word.split('-')
