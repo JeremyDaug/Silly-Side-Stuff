@@ -119,7 +119,7 @@ class DictionaryApp:
         self.ChosenWordBox = tk.Entry(self.DictTab, textvariable=self.DictChosenVar, state='readonly',
                                       readonlybackground='white')
         # Definition
-        self.ChosenWordDef = tk.Text(self.DictTab)
+        self.ChosenWordDef = tk.Text(self.DictTab, wrap=tk.WORD)
         # Tags
         self.ChosenWordTags = Scrollbox(self.DictTab)
         # Add remove Tags
@@ -180,7 +180,7 @@ class DictionaryApp:
                                             parent_list=[self.out(x) for x in self.dictionary.keys()],
                                             search_func=self.exp_search_defs)
         # Exploration Box
-        self.ExplorationBox = tk.Text(self.ExplorationTab)
+        self.ExplorationBox = tk.Text(self.ExplorationTab, wrap=tk.WORD)
         # Tags
         self.ExplorationTags = Scrollbox(self.ExplorationTab)
 
