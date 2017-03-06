@@ -17,6 +17,8 @@ WordAffixOrder = ['Grammar Affix', 'Prepositional Flag', 'Prepositional/Clause A
                   'Recurrence Affix', 'Temporal Affix', 'Numeric Affix',
                   'Gender Affix']
 
+DEFAULT_DEFN = 'Short Definition : \n\nDefinition : \n\nAffix : \n\nShort Grammar : '
+
 
 class DictionaryApp:
     def __init__(self, from_load):
@@ -52,14 +54,14 @@ class DictionaryApp:
         #### All syllables
         self.SylSearchListBox = SearchListBox(self.SylTab, label='Syllable Search Box',
                                               parent_list=[self.out(x) for x in self.syllables])
-        # Taken syllables
-        self.TakenLbl = tk.Label(self.SylTab, text='Taken Syllables')
+        # Taken syllables ## TODO CHange this back to taken, rather than incomplete.
+        self.TakenLbl = tk.Label(self.SylTab, text='Incomplete Defs Syllables')
         self.TakenList = Scrollbox(self.SylTab,
-                                   contains=['/%s/' % x for x in self.taken])
+                                   contains=['/%s/' % x for x in self.dictionary.keys() if 'Short Definition' not in self.dictionary[x]])
         # Available Syllables
         self.AvailableLbl = tk.Label(self.SylTab, text='Available Syllables')
         self.AvailableList = Scrollbox(self.SylTab,
-                                       contains=['/%s/' % x for x in self.available])
+                                       contains=['/%s/' % x for x in self.available_syls()])
         # Random buttons
         self.RandomButtons = tk.Frame(self.SylTab)
         self.RandomSylButton = tk.Button(self.RandomButtons, text='Random Syllable',
@@ -195,6 +197,12 @@ class DictionaryApp:
         self.DictGrid()
         self.ExploreGrid()
         return
+
+    def taken_syls(self):
+        return [x for x in self.dictionary.keys() if '-' not in x]
+
+    def available_syls(self):
+        return [x for x in self.syllables if x not in self.dictionary.keys()]
 
     def explore_word(self, *events):
         return self.update_explore_info(self.ExplorationSearchBox.get_curitem().replace('/', ''))
@@ -514,11 +522,17 @@ class DictionaryApp:
     def update_chosen_syl(self, val, syl):
         self.ChosenSylVar.set(val)
         self.ChosenSylDef.delete('0.0', tk.END)
-        if syl in self.taken:
+        if syl in self.taken_syls():
             self.ChosenSylDef.insert(tk.END, self.lookup_def(syl))
+        else:
+            self.ChosenSylDef.insert(tk.END, DEFAULT_DEFN)
         self.ChosenSylTags.delete(0, tk.END)
         for i in self.get_tags(syl):
             self.ChosenSylTags.insert(tk.END, i)
+        print('Short:', self.short_def(syl))
+        print('Long:', self.long_def(syl))
+        print('Grammar:', self.grammar_expansion(syl))
+        print('Short Grammar:', self.short_grammar(syl))
         return
 
     def syllable_selected(self, *events):
@@ -526,6 +540,62 @@ class DictionaryApp:
         syl = val.replace('/', '')
         self.update_chosen_syl(val, syl)
         return
+
+    def short_def(self, word):
+        defn = self.dictionary.get(word, '')
+        if 'Short Definition' not in defn:
+            return ''
+        not_found = True
+        while not_found:
+            try:
+                defn = defn.split(' : ', 1)[1]
+            except IndexError:
+                return ''
+            if 'Short Definition' not in defn:
+                not_found = False
+        return defn.split('\n', 1)[0]
+
+    def long_def(self, word):
+        defn = self.dictionary.get(word, '')
+        if 'Definition : ' not in defn:
+            return ''
+        not_found = True
+        while not_found:
+            try:
+                defn = defn.split(' : ', 1)[1]
+            except IndexError:
+                return ''
+            if 'Definition' not in defn:
+                not_found = False
+        return defn.split('\n', 1)[0]
+
+    def grammar_expansion(self, word):
+        defn = self.dictionary.get(word, '')
+        if 'Grammar' not in defn:
+            return ''
+        not_found = True
+        while not_found:
+            try:
+                defn = defn.split(' : ', 1)[1]
+            except IndexError:
+                return ''
+            if 'Affix : ' not in defn:
+                not_found = False
+        return defn.split('\n', 1)[0]
+
+    def short_grammar(self, word):
+        defn = self.dictionary.get(word, '')
+        if 'Short Grammar' not in defn:
+            return ''
+        not_found = True
+        while not_found:
+            try:
+                defn = defn.split(' : ', 1)[1]
+            except IndexError:
+                return ''
+            if 'Short Grammar' not in defn:
+                not_found = False
+        return defn.split('\n', 1)[0]
 
     def taken_selected(self, *events):
         val = self.TakenList.curitem()
