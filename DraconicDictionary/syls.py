@@ -54,10 +54,10 @@ class DictionaryApp:
         #### All syllables
         self.SylSearchListBox = SearchListBox(self.SylTab, label='Syllable Search Box',
                                               parent_list=[self.out(x) for x in self.syllables])
-        # Taken syllables ## TODO CHange this back to taken, rather than incomplete.
+        # Taken syllables
         self.TakenLbl = tk.Label(self.SylTab, text='Incomplete Defs Syllables')
         self.TakenList = Scrollbox(self.SylTab,
-                                   contains=['/%s/' % x for x in self.dictionary.keys() if 'Short Definition' not in self.dictionary[x]])
+                                   contains=['/%s/' % x for x in self.taken])
         # Available Syllables
         self.AvailableLbl = tk.Label(self.SylTab, text='Available Syllables')
         self.AvailableList = Scrollbox(self.SylTab,
@@ -199,7 +199,7 @@ class DictionaryApp:
         return
 
     def taken_syls(self):
-        return [x for x in self.dictionary.keys() if '-' not in x]
+        return [x for x in self.dictionary.keys() if 'Affix : ' not in self.dictionary[x]]
 
     def available_syls(self):
         return [x for x in self.syllables if x not in self.dictionary.keys()]
@@ -522,17 +522,13 @@ class DictionaryApp:
     def update_chosen_syl(self, val, syl):
         self.ChosenSylVar.set(val)
         self.ChosenSylDef.delete('0.0', tk.END)
-        if syl in self.taken_syls():
+        if syl in self.taken:
             self.ChosenSylDef.insert(tk.END, self.lookup_def(syl))
         else:
             self.ChosenSylDef.insert(tk.END, DEFAULT_DEFN)
         self.ChosenSylTags.delete(0, tk.END)
         for i in self.get_tags(syl):
             self.ChosenSylTags.insert(tk.END, i)
-        print('Short:', self.short_def(syl))
-        print('Long:', self.long_def(syl))
-        print('Grammar:', self.grammar_expansion(syl))
-        print('Short Grammar:', self.short_grammar(syl))
         return
 
     def syllable_selected(self, *events):
@@ -593,7 +589,7 @@ class DictionaryApp:
                 defn = defn.split(' : ', 1)[1]
             except IndexError:
                 return ''
-            if 'Short Grammar' not in defn:
+            if 'Short Grammar :' not in defn:
                 not_found = False
         return defn.split('\n', 1)[0]
 
@@ -611,6 +607,7 @@ class DictionaryApp:
 
     def SaveSyl(self, *events):
         syl = self.ChosenSylVar.get().replace('/', '')
+        print(syl)
         if syl not in self.taken:
             self.taken.append(syl)
         if syl in self.available:
