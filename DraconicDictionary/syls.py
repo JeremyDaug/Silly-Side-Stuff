@@ -173,14 +173,22 @@ class DictionaryApp:
                                                   parent_list=[self.out(x) for x in self.dictionary.keys()])
         # Current Explore Word List
         self.CurrentWordVar = tk.StringVar()
+        self.ExpWordVar = tk.StringVar()
+        self.ExpWordVar.trace_variable('w', self.expanded_explore)
         self.CurrentWordLbl = tk.Label(self.ExplorationTab, text='Current Word')
         self.CurrentWordBox = tk.Entry(self.ExplorationTab, textvariable=self.CurrentWordVar,
                                        state='readonly', readonlybackground='white')
         # Exploration Search by Def
-        self.ExpSearchByDef = SearchListBox(self.ExplorationTab,
+        self.ExploreWordBox = tk.Frame(self.ExplorationTab)
+        self.ExpSearchByDef = SearchListBox(self.ExploreWordBox,
                                             label='Search By Definition',
                                             parent_list=[self.out(x) for x in self.dictionary.keys()],
                                             search_func=self.exp_search_defs)
+        # Word Construction
+        self.ExplorationWordCon = tk.Entry(self.ExploreWordBox,
+                                           textvariable=self.ExpWordVar,
+                                           width=50)
+
         # Exploration Box
         self.ExplorationBox = tk.Text(self.ExplorationTab, wrap=tk.WORD)
         # Tags
@@ -208,17 +216,49 @@ class DictionaryApp:
         return self.update_explore_info(self.ExplorationSearchBox.get_curitem().replace('/', ''))
 
     def exp_select_word(self, *events):
-        return self.update_explore_info(self.DefSearchListBox.get_curitem().replace('/', ''))
+        return self.update_explore_info(self.ExpSearchByDef.get_curitem().replace('/', ''))
+
+    def expanded_explore(self, *events):
+        return self.update_explore_info(self.ExpWordVar.get().replace('/', ''))
 
     def update_explore_info(self, word):
         self.CurrentWordVar.set(self.out(word))
         self.ExplorationBox.delete('0.0', tk.END)
         if word in self.dictionary.keys():
             self.ExplorationBox.insert(tk.END, self.dictionary[word])
+        else:
+            self.ExplorationBox.insert(tk.END, self.full_dive_explore(word))
         self.ExplorationTags.delete(0, tk.END)
         for i in self.get_tags(word):
             self.ExplorationTags.insert(tk.END, i)
+        if self.ExpWordVar.get().replace('/', '') == word:
+            return  # To escape a potential loop by setting ExpWordVar
+        self.ExpWordVar.set(self.out(word))
         return
+
+    def full_dive_explore(self, word):
+        base_info, root = self.word_variant(word)
+        print(base_info, root)
+        roots = self.get_root_bounds(self.tag_order(word))
+        # work with roots
+        print(roots)
+        # Understand Affixes
+        shorts = []
+        for i in word.split('-'):
+            if i in self.dictionary.keys():
+                shorts.append(self.dictionary[i])
+            else:
+                shorts.append('No Definition')
+        for i in range(len(shorts)):
+            if 'Short Grammar : ' in shorts[i]:
+                shorts[i] = shorts[i].split('Short Grammar : ', 1)[1].split('\n')[0]
+            elif 'Short Definition : ' in shorts[i]:
+                shorts[i] = shorts[i].split('Short Definition : ', 1)[1].split('\n')[0]
+        print(shorts)
+        ret = ''
+        for i in shorts:
+            ret += '%s-' % i
+        return ret[:-1]
 
     def ExploreGrid(self):
         self.ExplorationSearchBox.grid(row=0, column=0)
@@ -226,7 +266,10 @@ class DictionaryApp:
         self.CurrentWordBox.grid(row=2, column=0, sticky=tk.N)
         self.ExplorationBox.grid(row=2, column=1)
         self.ExplorationTags.grid(row=2, column=2, sticky=tk.N+tk.S)
-        self.ExpSearchByDef.grid(row=0, column=1, rowspan=2)
+
+        self.ExploreWordBox.grid(row=0, column=1, rowspan=2)
+        self.ExpSearchByDef.grid(row=0, column=0, rowspan=2)
+        self.ExplorationWordCon.grid(row=0, column=1, sticky=tk.W+tk.E)
         return
 
     def search_defs(self, var=None):
@@ -235,6 +278,8 @@ class DictionaryApp:
         search = var.mysearchvar.get()
         var.mylist.delete(0, tk.END)
         if not search:
+            for i in self.dictionary.keys():
+                var.mylist.insert(tk.END, self.out(i))
             return
         for i in self.dictionary.keys():
             if search.lower() in self.dictionary[i].lower():
@@ -337,7 +382,7 @@ class DictionaryApp:
             self.DictChosenVar.set(self.out(word))
             self.ChosenWordDef.delete('0.0', tk.END)
             if root in self.dictionary.keys():
-                self.ChosenWordDef.insert(tk.END, 'Word Variant')  # TODO LATER create a function to explain a variant.
+                self.ChosenWordDef.insert(tk.END, self.full_dive_explore(word))
             self.ChosenWordTags.delete(0, tk.END)
         else:
             self.DictChosenVar.set(self.out(word))
@@ -607,12 +652,11 @@ class DictionaryApp:
 
     def SaveSyl(self, *events):
         syl = self.ChosenSylVar.get().replace('/', '')
-        print(syl)
         if syl not in self.taken:
             self.taken.append(syl)
         if syl in self.available:
             self.available.remove(syl)
-        self.dictionary[syl] = self.ChosenSylDef.get('0.0', tk.END)
+        self.dictionary[syl] = self.ChosenSylDef.get('0.0', tk.END).strip()
         for i in self.ChosenSylTags.get(0, tk.END):
             if syl not in self.tags[i]:
                 self.tags[i].append(syl)
@@ -801,18 +845,10 @@ class DictionaryApp:
             return 'Collision', ''
         return self.word_variant(word)
 
-    def word_variant(self, word='ik-u-ri-ci-i'):
-        """
-        Word variant finder, finds if a word is a variant or not.
-        :param word: The word we are dissecting.
-        :return: The info of the word in String form.
-        """
-        # For each syllable, check if it's an affix then check if they are
-        # arranged such that they would be another word's variant.
+    def tag_order(self, word):
         syls = word.split('-')
         sylType = []
         tagOrder = []
-        word_root = [-1, 100000]  # holds the indices of the root words.
         for syl in syls:
             sylTags = self.get_tags(syl)
             root = True
@@ -826,6 +862,19 @@ class DictionaryApp:
                 sylType.append('Root')
             # Get the position in affix order
             tagOrder.append(WordAffixOrder.index(sylType[-1]))
+        return tagOrder
+
+    def word_variant(self, word='ik-u-ri-ci-i'):
+        """
+        Word variant finder, finds if a word is a variant or not.
+        :param word: The word we are dissecting.
+        :return: The info of the word in String form.
+        """
+        # For each syllable, check if it's an affix then check if they are
+        # arranged such that they would be another word's variant.
+        syls = word.split('-')
+        tagOrder = self.tag_order(word)
+        word_root = [-1, 1000000]
         # get the root syllables (cut away until it is found.
         word_root[0], word_root[1], lone_flag = self.get_root_bounds(tagOrder)
         # do checks for the end
@@ -846,9 +895,6 @@ class DictionaryApp:
         for i in root_word:
             ret_word += i + '-'
         ret_word = ret_word[0:-1]
-        # print(word)
-        # print(tagOrder)
-        # print(ret, word_root, root_word, ret_word)
         return ret, ret_word
 
     def get_root_bounds(self, tagOrder):
