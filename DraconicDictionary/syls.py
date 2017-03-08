@@ -264,13 +264,16 @@ class DictionaryApp:
 
     def full_dive_explore(self, word):
         base_info, root = self.word_variant(word)
+        print('root', root)
+        root = root.strip('-')
         word_split = word.split('-')
-        print(base_info, root, word, word_split)
+        print('word root', word_split)
         roots = self.get_root_bounds(self.tag_order(word))
         # split it into prefix, root, and suffix lists.
         prefixes = word_split[:roots[0]]
+        rootsyls = word_split[roots[0]: roots[1]+1]
         suffixes = word_split[roots[1]+1:]
-        print(prefixes, suffixes)
+        print('sections', prefixes, rootsyls, suffixes)
         # work with roots
         ret = ''
         # get prefix and suffix translations.
@@ -279,10 +282,33 @@ class DictionaryApp:
             preshort.append('[%s]' % self.short_grammar(i))
         for i in suffixes:
             sufshort.append('[%s]' % self.short_grammar(i))
-        print(preshort, sufshort)
         # get all possible root meanings.
         # if a syllable has no meaning don't try to ascribe meaning to it unless it appears. in another word.
         rootshort = []
+        for i in rootsyls:
+            # if the syllable is completely unused, skip it.
+            tempposs = [key for key in self.dictionary.keys() if i in key]
+            print(tempposs)
+            # thin out poss to remove overlapping parts.
+            poss = [x for x in tempposs if i in root]
+            poss.extend([x for x in tempposs if '-%s-' % i in x])
+            poss.extend([x for x in tempposs if x.startswith('%s-' % i)])
+            poss.extend([x for x in tempposs if x.endswith('-%s' % i)])
+            print('poss', poss)
+            poss = [self.short_def(x) for x in poss]
+            if not poss:
+                poss = ['Undefined']
+            if not rootshort:
+                rootshort.append(poss)
+                continue
+            else:
+                temp = []
+                for j in rootshort:  # list of lists of strings
+                    for k in poss:  # list of strings
+                        jtemp = j[:]
+                        jtemp.append(k)
+                        temp.append(jtemp)
+                rootshort = temp[:]
         return ret
 
     def ExploreGrid(self):
@@ -413,6 +439,7 @@ class DictionaryApp:
         else:
             self.DictChosenVar.set(self.out(word))
             self.ChosenWordDef.delete('0.0', tk.END)
+            self.ChosenWordDef.insert(tk.END, DEFAULT_DEFN)
             self.ChosenWordTags.delete(0, tk.END)
         return
 
