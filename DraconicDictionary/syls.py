@@ -188,6 +188,8 @@ class DictionaryApp:
         self.ExplorationWordCon = tk.Entry(self.ExploreWordBox,
                                            textvariable=self.ExpWordVar,
                                            width=50)
+        self.ExplorationNotification = tk.StringVar()
+        self.ExplorationNotLbl = tk.Label(self.ExploreWordBox, textvariable=self.ExplorationNotification)
 
         # Exploration Box
         self.ExplorationBox = tk.Text(self.ExplorationTab, wrap=tk.WORD)
@@ -219,7 +221,31 @@ class DictionaryApp:
         return self.update_explore_info(self.ExpSearchByDef.get_curitem().replace('/', ''))
 
     def expanded_explore(self, *events):
-        return self.update_explore_info(self.ExpWordVar.get().replace('/', ''))
+        word = self.ExpWordVar.get().strip('/')
+        self.update_explore_info(word)
+        collision, root = self.word_collision(word)
+        if collision == 'Collision':
+            self.ExplorationWordCon.config(bg='red')
+            self.ExplorationNotification.set('Word already taken')
+        elif collision == 'Variant' and root in self.dictionary.keys():
+            self.ExplorationWordCon.config(bg='yellow')
+            self.ExplorationNotification.set('Word is variant of another word.')
+        elif collision == 'Variant' and root not in self.dictionary.keys():
+            self.ExplorationWordCon.config(bg='yellow')
+            self.ExplorationNotification.set('Word is variant, but %s is available.' % root)
+        elif collision == 'Improper Affix Order':
+            self.ExplorationWordCon.config(bg='yellow')
+            self.ExplorationNotification.set('Word uses improper affixes, open but be warned.')
+        elif collision == 'Duplicate Affixes':
+            self.ExplorationWordCon.config(bg='yellow')
+            self.ExplorationNotification.set('Duplicate Affixes, viable, but questionable.')
+        elif collision == 'Lone Flag':
+            self.ExplorationWordCon.config(bg='yellow')
+            self.ExplorationNotification.set('Lone prepositional flag, can be valid.')
+        else:
+            self.ExplorationWordCon.config(bg='white')
+            self.ExplorationNotification.set('')
+        return
 
     def update_explore_info(self, word):
         self.CurrentWordVar.set(self.out(word))
@@ -238,27 +264,26 @@ class DictionaryApp:
 
     def full_dive_explore(self, word):
         base_info, root = self.word_variant(word)
-        print(base_info, root)
+        word_split = word.split('-')
+        print(base_info, root, word, word_split)
         roots = self.get_root_bounds(self.tag_order(word))
+        # split it into prefix, root, and suffix lists.
+        prefixes = word_split[:roots[0]]
+        suffixes = word_split[roots[1]+1:]
+        print(prefixes, suffixes)
         # work with roots
-        print(roots)
-        # Understand Affixes
-        shorts = []
-        for i in word.split('-'):
-            if i in self.dictionary.keys():
-                shorts.append(self.dictionary[i])
-            else:
-                shorts.append('No Definition')
-        for i in range(len(shorts)):
-            if 'Short Grammar : ' in shorts[i]:
-                shorts[i] = shorts[i].split('Short Grammar : ', 1)[1].split('\n')[0]
-            elif 'Short Definition : ' in shorts[i]:
-                shorts[i] = shorts[i].split('Short Definition : ', 1)[1].split('\n')[0]
-        print(shorts)
         ret = ''
-        for i in shorts:
-            ret += '%s-' % i
-        return ret[:-1]
+        # get prefix and suffix translations.
+        preshort, sufshort = [], []
+        for i in prefixes:
+            preshort.append('[%s]' % self.short_grammar(i))
+        for i in suffixes:
+            sufshort.append('[%s]' % self.short_grammar(i))
+        print(preshort, sufshort)
+        # get all possible root meanings.
+        # if a syllable has no meaning don't try to ascribe meaning to it unless it appears. in another word.
+        rootshort = []
+        return ret
 
     def ExploreGrid(self):
         self.ExplorationSearchBox.grid(row=0, column=0)
@@ -270,6 +295,7 @@ class DictionaryApp:
         self.ExploreWordBox.grid(row=0, column=1, rowspan=2)
         self.ExpSearchByDef.grid(row=0, column=0, rowspan=2)
         self.ExplorationWordCon.grid(row=0, column=1, sticky=tk.W+tk.E)
+        self.ExplorationNotLbl.grid(row=1, column=1)
         return
 
     def search_defs(self, var=None):
