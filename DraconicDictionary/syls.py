@@ -222,7 +222,14 @@ class DictionaryApp:
 
     def expanded_explore(self, *events):
         word = self.ExpWordVar.get().strip('/')
+        print(word)
         self.update_explore_info(word)
+        for i in word.split('-'):
+            print(i)
+            if i not in self.syllables:
+                self.ExplorationWordCon.config(bg='red')
+                self.ExplorationNotification.set('Invalid Syllable %s' % i)
+                return
         collision, root = self.word_collision(word)
         if collision == 'Collision':
             self.ExplorationWordCon.config(bg='red')
@@ -281,9 +288,7 @@ class DictionaryApp:
             sufshort.append('[%s]' % self.short_grammar(i))
         # get all possible root meanings.
         # if a syllable has no meaning don't try to ascribe meaning to it unless it appears. in another word.
-        print('NEW CALL')
         rootshort = self.word_splosion(root)
-        print('rootshort', rootshort, '\n')
         for i in rootshort:
             for pre in preshort:
                 ret += pre + '-'
