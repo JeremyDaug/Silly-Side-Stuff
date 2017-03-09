@@ -264,16 +264,13 @@ class DictionaryApp:
 
     def full_dive_explore(self, word):
         base_info, root = self.word_variant(word)
-        print('root', root)
         root = root.strip('-')
         word_split = word.split('-')
-        print('word root', word_split)
         roots = self.get_root_bounds(self.tag_order(word))
         # split it into prefix, root, and suffix lists.
         prefixes = word_split[:roots[0]]
         rootsyls = word_split[roots[0]: roots[1]+1]
         suffixes = word_split[roots[1]+1:]
-        print('sections', prefixes, rootsyls, suffixes)
         # work with roots
         ret = ''
         # get prefix and suffix translations.
@@ -284,31 +281,39 @@ class DictionaryApp:
             sufshort.append('[%s]' % self.short_grammar(i))
         # get all possible root meanings.
         # if a syllable has no meaning don't try to ascribe meaning to it unless it appears. in another word.
-        rootshort = []
-        for i in rootsyls:
-            # if the syllable is completely unused, skip it.
-            tempposs = [key for key in self.dictionary.keys() if i in key]
-            print(tempposs)
-            # thin out poss to remove overlapping parts.
-            poss = [x for x in tempposs if i in root]
-            poss.extend([x for x in tempposs if '-%s-' % i in x])
-            poss.extend([x for x in tempposs if x.startswith('%s-' % i)])
-            poss.extend([x for x in tempposs if x.endswith('-%s' % i)])
-            print('poss', poss)
-            poss = [self.short_def(x) for x in poss]
-            if not poss:
-                poss = ['Undefined']
-            if not rootshort:
-                rootshort.append(poss)
+        print('NEW CALL')
+        rootshort = self.word_splosion(root)
+        print('rootshort', rootshort, '\n')
+        for i in rootshort:
+            for pre in preshort:
+                ret += pre + '-'
+            for j in i:
+                ret += self.short_def(j, '"undefined"') + '-'
+            for suf in sufshort:
+                ret += suf + '-'
+            ret = ret[:-1]
+            ret += '\n\n'
+        ret.strip()
+        return ret
+
+    def word_splosion(self, word):
+        ret = []
+        rootsyl = word.split('-', 1)[0]
+        poss = [key for key in self.dictionary.keys() if key.startswith(rootsyl)]
+        # if the whole word isn't in our current word, drop it.
+        poss = [x for x in poss if word.startswith(x)]
+        # if nothing was found simply choose undefined.
+        # Get all possible followups.
+        if not poss:
+            poss = [rootsyl]
+        for val in poss:
+            succ = word[len(val)+1:]
+            if not succ:
+                ret.append([val])
                 continue
-            else:
-                temp = []
-                for j in rootshort:  # list of lists of strings
-                    for k in poss:  # list of strings
-                        jtemp = j[:]
-                        jtemp.append(k)
-                        temp.append(jtemp)
-                rootshort = temp[:]
+            follow = self.word_splosion(succ)
+            for op in follow:
+                ret.append([val]+op)
         return ret
 
     def ExploreGrid(self):
@@ -635,10 +640,10 @@ class DictionaryApp:
         self.update_chosen_syl(val, syl)
         return
 
-    def short_def(self, word):
+    def short_def(self, word, default=''):
         defn = self.dictionary.get(word, '')
         if 'Short Definition' not in defn:
-            return ''
+            return default
         not_found = True
         while not_found:
             try:
