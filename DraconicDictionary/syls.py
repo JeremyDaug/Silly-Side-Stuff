@@ -249,7 +249,6 @@ class DictionaryApp:
         for i in word_sep:
             new_word += i + '-'
         new_word = new_word[:-1]
-        print(tag_order)
         self.ExpWordVar.set(new_word)
         return
 
@@ -276,7 +275,6 @@ class DictionaryApp:
         return self.update_explore_info(self.ExpSearchByDef.get_curitem().replace('/', ''))
 
     def expanded_explore(self, *events):
-        print('expanded Explore')
         word = self.ExpWordVar.get().strip('/')
         self.update_explore_info(word)
         for i in word.split('-'):
@@ -332,7 +330,6 @@ class DictionaryApp:
         # work with roots
         root = '-'.join([syl for syl, i in zip(word_split, tag_order) if i == 7])
         root_explosion = self.word_splosion(root)
-        print('root_splosion', root_explosion)
         ret = ''
         # suff and prefixes
         prefix = ''
