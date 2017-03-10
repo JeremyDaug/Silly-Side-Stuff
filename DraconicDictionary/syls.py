@@ -12,10 +12,9 @@ consonants = ['th', 's', 'z', 't', 'd', 'R', 'r', 'l', 'sh', 'hl', 'rr', 'c',
               'dg']
 vowels = ['a', 'i', 'u', 'w', 'ai', 'ia', 'uw', 'wu']
 WordAffixOrder = ['Grammar Affix', 'Prepositional Flag', 'Prepositional/Clause Affix',
-                  'Factuality Affix', 'Negative Affix',
-                  'Intensity Affix', 'Progressive Affix', 'Root',
-                  'Recurrence Affix', 'Temporal Affix', 'Numeric Affix',
-                  'Gender Affix']
+                  'Factuality Affix', 'Intensity Affix', 'Progressive Affix',
+                  'Negative Affix', 'Root', 'Recurrence Affix', 'Temporal Affix',
+                  'Numeric Affix', 'Gender Affix']
 
 DEFAULT_DEFN = 'Short Definition : \n\nDefinition : \n\nAffix : \n\nShort Grammar : '
 
