@@ -220,14 +220,16 @@ class DictionaryApp:
 
     def apply_affix(self, *events):
         word = self.ExpWordVar.get().strip('/')
-        print(word)
         if not word:
             self.ExpWordVar.set(self.ExpAffixList.get_curitem().split(' --', 1)[0].strip('/'))
             return
         word_sep = word.split('-')
         affix = self.ExpAffixList.get_curitem().split(' --', 1)[0].strip('/')
-        print(affix)
         tag_order = self.tag_order(word)
+        # ensure it is in proper order, don't treat out of order affixes as affixes
+        for i in range(len(tag_order)-1):
+            if not tag_order[i] < tag_order[i+1]:
+                tag_order[i+1] = 7
         tag_pos = self.tag_order(affix)
         if tag_pos[0] not in tag_order:
             if all([x < tag_pos[0] for x in tag_order]):
@@ -237,17 +239,17 @@ class DictionaryApp:
             else:
                 for i in range(len(tag_order)-1):
                     if tag_order[i] < tag_pos[0] < tag_order[i+1]:
-                        word_sep.insert(i, affix)
+                        word_sep.insert(i+1, affix)
                         break
         else:
             for i in range(len(tag_order)):
                 if tag_order[i] == tag_pos[0]:
-                    print(word_sep)
                     word_sep[i] = affix
         new_word = ''
         for i in word_sep:
             new_word += i + '-'
         new_word = new_word[:-1]
+        print(tag_order)
         self.ExpWordVar.set(new_word)
         return
 
@@ -274,6 +276,7 @@ class DictionaryApp:
         return self.update_explore_info(self.ExpSearchByDef.get_curitem().replace('/', ''))
 
     def expanded_explore(self, *events):
+        print('expanded Explore')
         word = self.ExpWordVar.get().strip('/')
         self.update_explore_info(word)
         for i in word.split('-'):
@@ -321,34 +324,34 @@ class DictionaryApp:
         return
 
     def full_dive_explore(self, word):
-        base_info, root = self.word_variant(word)
-        root = root.strip('-')
         word_split = word.split('-')
-        roots = self.get_root_bounds(self.tag_order(word))
-        # split it into prefix, root, and suffix lists.
-        prefixes = word_split[:roots[0]]
-        rootsyls = word_split[roots[0]: roots[1]+1]
-        suffixes = word_split[roots[1]+1:]
+        tag_order = self.tag_order(word)
+        for i in range(len(tag_order)-1):
+            if not tag_order[i] < tag_order[i+1]:
+                tag_order[i+1] = 7
         # work with roots
+        root = '-'.join([syl for syl, i in zip(word_split, tag_order) if i == 7])
+        root_explosion = self.word_splosion(root)
+        print('root_splosion', root_explosion)
         ret = ''
-        # get prefix and suffix translations.
-        preshort, sufshort = [], []
-        for i in prefixes:
-            preshort.append('[%s]' % self.short_grammar(i))
-        for i in suffixes:
-            sufshort.append('[%s]' % self.short_grammar(i))
-        # get all possible root meanings.
-        # if a syllable has no meaning don't try to ascribe meaning to it unless it appears. in another word.
-        rootshort = self.word_splosion(root)
-        for i in rootshort:
-            for pre in preshort:
-                ret += pre + '-'
-            for j in i:
-                ret += self.short_def(j, '"undefined"') + '-'
-            for suf in sufshort:
-                ret += suf + '-'
-            ret = ret[:-1]
-            ret += '\n\n'
+        # suff and prefixes
+        prefix = ''
+        suffix = ''
+        for syl, i in zip(word_split, tag_order):
+            if i < 7:
+                prefix += '[%s}-' % self.short_grammar(syl)
+            elif i > 7:
+                suffix += '[%s}-' % self.short_grammar(syl)
+        suffix = suffix[:-1]
+        for options in root_explosion:
+            ret += prefix
+            for i in options:
+                ret += self.short_def(i) + '-'
+            if not suffix:
+                ret = ret[:-1]
+            else:
+                ret += suffix
+            ret += '\n'
         ret.strip()
         return ret
 
