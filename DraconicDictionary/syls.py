@@ -55,7 +55,7 @@ class DictionaryApp:
         self.SylSearchListBox = SearchListBox(self.SylTab, label='Syllable Search Box',
                                               parent_list=[self.out(x) for x in self.syllables])
         # Taken syllables
-        self.TakenLbl = tk.Label(self.SylTab, text='Incomplete Defs Syllables')
+        self.TakenLbl = tk.Label(self.SylTab, text='Taken Syllables')
         self.TakenList = Scrollbox(self.SylTab,
                                    contains=['/%s/' % x for x in self.taken])
         # Available Syllables
@@ -195,6 +195,17 @@ class DictionaryApp:
         self.ExplorationBox = tk.Text(self.ExplorationTab, wrap=tk.WORD)
         # Tags
         self.ExplorationTags = Scrollbox(self.ExplorationTab)
+        # Affix Application/Replacement list
+        self.ExpAffixLbl = tk.Label(self.ExplorationTab, text='Affixes')
+        self.ExpAffixList = SearchListBox(self.ExplorationTab, 'Affixes',
+                                          parent_list=self.affix_list('Grammar Affix'))
+        # Options box
+        self.ExpAffixSwapVar = tk.StringVar()
+        self.ExpAffixSwapVar.set('Grammar Affix')
+        self.ExpAffixSwap = ttk.Combobox(self.ExplorationTab,
+                                         textvariable=self.ExpAffixSwapVar,
+                                         state='readonly')
+        self.ExpAffixSwap['values'] = [x for x in WordAffixOrder if x != 'Root']
 
         #### Tab Setups
         self.Tabs.add(self.SylTab, text='Syllable Tab')
@@ -207,6 +218,49 @@ class DictionaryApp:
         self.DictGrid()
         self.ExploreGrid()
         return
+
+    def apply_affix(self, *events):
+        word = self.ExpWordVar.get().strip('/')
+        print(word)
+        if not word:
+            self.ExpWordVar.set(self.ExpAffixList.get_curitem().split(' --', 1)[0].strip('/'))
+            return
+        word_sep = word.split('-')
+        affix = self.ExpAffixList.get_curitem().split(' --', 1)[0].strip('/')
+        print(affix)
+        tag_order = self.tag_order(word)
+        tag_pos = self.tag_order(affix)
+        if tag_pos[0] not in tag_order:
+            if all([x < tag_pos[0] for x in tag_order]):
+                word_sep.append(affix)
+            elif tag_order[0] > tag_pos[0]:
+                word_sep.insert(0, affix)
+            else:
+                for i in range(len(tag_order)-1):
+                    if tag_order[i] < tag_pos[0] < tag_order[i+1]:
+                        word_sep.insert(i, affix)
+                        break
+        else:
+            for i in range(len(tag_order)):
+                if tag_order[i] == tag_pos[0]:
+                    print(word_sep)
+                    word_sep[i] = affix
+        new_word = ''
+        for i in word_sep:
+            new_word += i + '-'
+        new_word = new_word[:-1]
+        self.ExpWordVar.set(new_word)
+        return
+
+    def swap_affixes(self, *events):
+        self.ExpAffixList.mylist.delete(0, tk.END)
+        self.ExpAffixList.update_list(self.affix_list(self.ExpAffixSwapVar.get()))
+        return
+
+    def affix_list(self, affix):
+        ret = [key for key in self.dictionary.keys() if affix in self.get_tags(key)]
+        ret = [self.out(x)+' -- '+self.short_grammar(x) for x in ret]
+        return ret
 
     def taken_syls(self):
         return [x for x in self.dictionary.keys() if 'Affix : ' not in self.dictionary[x]]
@@ -222,10 +276,8 @@ class DictionaryApp:
 
     def expanded_explore(self, *events):
         word = self.ExpWordVar.get().strip('/')
-        print(word)
         self.update_explore_info(word)
         for i in word.split('-'):
-            print(i)
             if i not in self.syllables:
                 self.ExplorationWordCon.config(bg='red')
                 self.ExplorationNotification.set('Invalid Syllable %s' % i)
@@ -332,6 +384,8 @@ class DictionaryApp:
         self.ExpSearchByDef.grid(row=0, column=0, rowspan=2)
         self.ExplorationWordCon.grid(row=0, column=1, sticky=tk.W+tk.E)
         self.ExplorationNotLbl.grid(row=1, column=1)
+        self.ExpAffixList.grid(row=0, column=2, rowspan=2)
+        self.ExpAffixSwap.grid(row=0, column=3)
         return
 
     def search_defs(self, var=None):
@@ -499,6 +553,8 @@ class DictionaryApp:
         self.DefSearchListBox.bind_listbox('<<ListboxSelect>>', self.show_word)
         self.ExplorationSearchBox.bind_listbox('<<ListboxSelect>>', self.explore_word)
         self.ExpSearchByDef.bind_listbox('<<ListboxSelect>>', self.exp_select_word)
+        self.ExpAffixList.bind_listbox('<<ListboxSelect>>', self.apply_affix)
+        self.ExpAffixSwap.bind('<<ComboboxSelected>>', self.swap_affixes)
         return
 
     def add_to_craft(self, *events):
