@@ -307,7 +307,7 @@ class DictionaryApp:
         return
 
     def update_explore_info(self, word):
-        self.CurrentWordVar.set(self.out(word))
+        self.CurrentWordVar.set(word)
         self.ExplorationBox.delete('0.0', tk.END)
         if word in self.dictionary.keys():
             self.ExplorationBox.insert(tk.END, self.dictionary[word])
@@ -318,15 +318,17 @@ class DictionaryApp:
             self.ExplorationTags.insert(tk.END, i)
         if self.ExpWordVar.get().replace('/', '') == word:
             return  # To escape a potential loop by setting ExpWordVar
-        self.ExpWordVar.set(self.out(word))
+        self.ExpWordVar.set(word)
         return
 
     def full_dive_explore(self, word):
         word_split = word.split('-')
+        print(word_split)
         tag_order = self.tag_order(word)
         for i in range(len(tag_order)-1):
             if not tag_order[i] < tag_order[i+1]:
-                tag_order[i+1] = 7
+                tag_order[i] = 7
+        print(tag_order)
         # work with roots
         root = '-'.join([syl for syl, i in zip(word_split, tag_order) if i == 7])
         root_explosion = self.word_splosion(root)
@@ -336,9 +338,9 @@ class DictionaryApp:
         suffix = ''
         for syl, i in zip(word_split, tag_order):
             if i < 7:
-                prefix += '[%s}-' % self.short_grammar(syl)
+                prefix += '[%s]-' % self.short_grammar(syl)
             elif i > 7:
-                suffix += '[%s}-' % self.short_grammar(syl)
+                suffix += '[%s]-' % self.short_grammar(syl)
         suffix = suffix[:-1]
         for options in root_explosion:
             ret += prefix
