@@ -328,6 +328,7 @@ class DictionaryApp:
         for i in range(len(tag_order)-1):
             if not tag_order[i] < tag_order[i+1]:
                 tag_order[i] = 7
+                tag_order[i+1] = 7
         print(tag_order)
         # work with roots
         root = '-'.join([syl for syl, i in zip(word_split, tag_order) if i == 7])
