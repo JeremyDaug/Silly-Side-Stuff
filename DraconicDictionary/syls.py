@@ -310,7 +310,8 @@ class DictionaryApp:
         self.CurrentWordVar.set(word)
         self.ExplorationBox.delete('0.0', tk.END)
         if word in self.dictionary.keys():
-            self.ExplorationBox.insert(tk.END, self.dictionary[word])
+            self.ExplorationBox.insert(tk.END, self.dictionary[word]+'\n%s\n' % ('-'*10))
+            self.ExplorationBox.insert(tk.END, self.full_dive_explore(word))
         else:
             self.ExplorationBox.insert(tk.END, self.full_dive_explore(word))
         self.ExplorationTags.delete(0, tk.END)
@@ -414,7 +415,8 @@ class DictionaryApp:
         selected = self.DefSearchListBox.get_curitem().replace('/', '')
         self.DictChosenVar.set(selected)
         self.ChosenWordDef.delete('0.0', tk.END)
-        self.ChosenWordDef.insert(tk.END, self.dictionary[selected])
+        self.ChosenWordDef.insert(tk.END, self.dictionary[selected]+'\n%s\n' % ('-'*10))
+        self.ChosenWordDef.insert(tk.END, self.full_dive_explore(selected))
         self.ChosenWordTags.delete(0, tk.END)
         for i in self.get_tags(selected):
             self.ChosenWordTags.insert(tk.END, i)
@@ -491,8 +493,8 @@ class DictionaryApp:
         if word in self.dictionary.keys():
             self.DictChosenVar.set(self.out(word))
             self.ChosenWordDef.delete('0.0', tk.END)
-            if word in self.dictionary.keys():
-                self.ChosenWordDef.insert(tk.END, self.lookup_def(word))
+            self.ChosenWordDef.insert(tk.END, self.lookup_def(word)+'\n%s\n' % ('-'*10))
+            self.ChosenWordDef.insert(tk.END, self.full_dive_explore(word))
             self.ChosenWordTags.delete(0, tk.END)
             for i in self.get_tags(word):
                 self.ChosenWordTags.insert(tk.END, i)
@@ -631,7 +633,7 @@ class DictionaryApp:
         word = self.DictChosenVar.get().replace('/', '')
         is_variant = self.word_variant(word)
         if is_variant != 'Variant':
-            self.dictionary[word] = self.ChosenWordDef.get('0.0', tk.END)
+            self.dictionary[word] = self.ChosenWordDef.get('0.0', tk.END).split('\n'+'-'*10)[0]
         else:
             tk.messagebox.showinfo('Info', 'Word is a variant, cannot add to dictionary.')
         self.update_dictionary_list()
@@ -652,7 +654,8 @@ class DictionaryApp:
         self.DictChosenVar.set(self.out(word))
         self.ChosenWordDef.delete('0.0', tk.END)
         if word in self.dictionary.keys():
-            self.ChosenWordDef.insert(tk.END, self.lookup_def(word))
+            self.ChosenWordDef.insert(tk.END, self.lookup_def(word)+'\n%s\n'%('-'*10))
+            self.ChosenWordDef.insert(tk.END, self.full_dive_explore(word))
         self.ChosenWordTags.delete(0, tk.END)
         for i in self.get_tags(word):
             self.ChosenWordTags.insert(tk.END, i)
@@ -1066,3 +1069,7 @@ if __name__ == '__main__':
     # load from pickle
     curr = DictionaryApp(True)
     curr.mainloop()
+    with open("Dict Collection.txt", 'w') as f:
+        for i in curr.dictionary:
+            f.write('/%s/ \n' % i)
+            f.write(curr.dictionary[i]+'\n%s\n' % ('-'*10))
