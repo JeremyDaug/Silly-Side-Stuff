@@ -1,3 +1,31 @@
+/uw/ 
+Short Definition : Sentient Entity
+
+Definition : A generic animate, intelligent, sentient entity. Intelligence in this case is specified as being able to communicate via language. Any valid language counts, but it must be able to discuss complex and abstract ideas, including, but not limited to mathematics, logic, physics, and magic. (may be Expanded, If you cannot have a decent discussion on topics that move beyond your basic needs you are an animal)
+----------
+/wr/ 
+Short Definition : Maximal
+
+Definition : Maximal, very Significant intensity.
+
+Intensity Affix : Denotes the root as very significant, often to the point of being nearly complete or overwhelming.
+
+Short Grammar : Int-5
+----------
+/chw/ 
+Short Definition : Continuous
+
+Definition : Continuous, a constant state or action being achieved or done.
+
+Recurrence Affix : Denotes the root as happening continuously. Whether this is a single long term incident, or a case of starting as soon as it ends, it gets to the same meaning.
+
+Short Grammar : R-Continuous
+----------
+/ish/ 
+Short Definition : Creation
+
+Definition : The act of creation, without qualifier attached it means from nothing.
+----------
 /ai/ 
 Short Definition : Male
 
@@ -8,118 +36,23 @@ Gender Affix : Denotes the root as biologically male, whatever that means for th
 Short Grammar : Gen-Male
 
 ----------
-/rra-s'a-sha/ 
-Short Definition : Self-evident / I did
+/du/ 
+Short Definition : Mediocre
 
-Definition : What is going to be said is directly from me.
+Definition : Middling, standard.
 
+Intensity Affix : Denotes the root as not small, but having an impact or intensity, but not being particularly large either.
+
+Short Grammar : Int-3
 ----------
-/ca/ 
-Short Definition : Irregularity
+/iaks/ 
+Short Definition : Outside
 
-Definition : Irregular recurrence.
+Definition : Outside
 
-Recurrence Affix : Denotes the root as recurring irregularly. It's predictable in that it will happen again, but not consistent enough to say when.
+Prepositional Marker Affix : Marks the word as part of a prepositional phrase saying that the attached word is outside another word.
 
-Short Grammar : R-Irregular
-----------
-/tsi/ 
-Short Definition : We exclusive
-
-Definition : We, collectively, excluding the listener. Plurality is not needed, but it may be specified, using singular implies bad things (hiveminded fools).
-----------
-/ic/ 
-Short Definition : They/Other Non-Dragon
-
-Definition : They, another person who is not being directly addressed who is not a dragon.
-----------
-/is/ 
-Short Definition : Movement
-
-Definition : Movement, generic undefined movement. Any form of movement through space counts of this.
-----------
-/wts/ 
-Short Definition : Periodic
-
-Definition : Habitual or Periodic.
-
-Recurrence Affix : Denotes the root as being habitual. It is completed multiple times and happens on a regular basis. But it is not happening so often as to be considered continuous.
-
-Short Grammar : R-Periodic
-----------
-/hli/ 
-Short Definition : Spark of Life
-
-Definition : The biological sign of life. This is slightly flexible, but is generally used for biological things. See /ush/ for more detail.
-
-----------
-/ra/ 
-Short Definition : Past
-
-Definition : The Past.
-
-Temporal Affix :  Denotes the attached word as in the past. Similar to the suffix 'ed' in english.
-
-Short Grammar : T-Past
-----------
-/h'u/ 
-Short Definition : Start
-
-Definition : Starting, or beginning.
-
-Progressive Affix : Marks the root as starting or beginning.
-
-Short Grammar : Prog-Start
-----------
-/h'w/ 
-Short Definition : Intermediate
-
-Definition : Intermediate, in the middle of.
-
-Progressive Affix : The Root is in the middle of it's existance, not just starting nor soon to end.
-
-Short Grammar : Prog-Intermediate
-----------
-/ud/ 
-Short Definition : Possessor
-
-Definition : Someone or something that possesses another thing.
-
-Possessive Grammar Affix : This affix denotes the attached word as the owner of the preceding word. This can be applied to any word by technicality, but is only logically 
-
-Short Grammar : G-Poss
-----------
-/ki/ 
-Short Definition : 1728<
-
-Definition : More then 1728.
-
-Numeric Affix : Denotes the root as having a countable number more then 1728.
-
-Short Grammar : #1728<
-----------
-/Ru/ 
-Short Definition : Lesser
-
-Definition : Small, or lesser intensity.
-
-Intensity Affix : Denotes the root as having a small impact or intensity, but not insignificant.
-
-Short Grammar : Int-2
-----------
-/uwg/ 
-Short Definition : Water
-
-Definition : Water, specifically the liquid kind, though it can be used generically.
-----------
-/adg/ 
-Short Definition : Modifier
-
-Definition : A modifier of some kind, usually applying to another object.
-
-Modifier Affix : Attached to a word it denotes a word as a modifier to the preceeding word. If the preceeding word is also a modifier word (marked with /adg/) then it applies to the same word as that word.
-
-Short Grammar : G-Mod
+Short Grammar : P-Outside
 ----------
 /ait/ 
 Short Definition : Negative
@@ -131,21 +64,10 @@ Negative Affix : Denotes the attached word as the opposite or negative of what i
 Short Grammar : Neg
 
 ----------
-/ir/ 
-Short Definition : Or
+/dw/ 
+Short Definition : 0
 
-Definition : Or operator, used as you would expect, when after 2 words that have the same affix it denotes them as being or'd.
-
-
-----------
-/t'a/ 
-Short Definition : Complete
-
-Definition : Completion.
-
-Progressive Affix : Denotes the root as being complete.
-
-Short Grammar : Prog-Complete
+Definition : 0, The number.
 ----------
 /az/ 
 Short Definition : Fire
@@ -153,232 +75,37 @@ Short Definition : Fire
 Definition : Fire, or more generally any combustion event. Dragonfire is not on this list mind you.
 
 ----------
-/iaks/ 
-Short Definition : Outside
+/Ru/ 
+Short Definition : Lesser
 
-Definition : Outside
+Definition : Small, or lesser intensity.
 
-Prepositional Marker Affix : Marks the word as part of a prepositional phrase saying that the attached word is outside another word.
+Intensity Affix : Denotes the root as having a small impact or intensity, but not insignificant.
 
-Short Grammar : P-Outside
+Short Grammar : Int-2
 ----------
-/uR/ 
-Short Definition : Greater
+/sw/ 
+Short Definition : Hypothetical
 
-Definition : Large, significant intensity.
+Definition : Hypothetical
 
-Intensity Affix : Denotes the root as having a significant impact or effect.
+Factuality Affix : Denotes the root as purely hypothetical, a possibility, but not real or likely. This is most used in future cases, though it can be used in any temporal case.
 
-Short Grammar : Int-4
+Short Grammar : F-Hypothetical
 ----------
-/chu/ 
-Short Definition : Fiction
+/ha/ 
+Short Definition : Dragon Breath
 
-Definition : Fictional
-
-Factuality Affix : Denotes the root as being fictional. It could be compared to sarcasm, but it's main use in draconic is to say that the root is either not real, or not happening. Often including it in a sentence effectively says the sentence is false, but it can be used to clarify a statement.
-
-Short Grammar : F-Fictional
+Definition : The breath of the dragon, specifically the magical breath only they can make.
 ----------
-/cw/ 
-Short Definition : Query
+/ra/ 
+Short Definition : Past
 
-Definition : Question or Questioned.
+Definition : The Past.
 
-Factuality Affix : Denotes the root as questioned, and that you seek an answer. When used on a single word it denotes the attached root as the point of the question. If attached to all the words, then the entire statement is being questioned.
+Temporal Affix :  Denotes the attached word as in the past. Similar to the suffix 'ed' in english.
 
-Short Grammar : F-Questioned
-----------
-/uw/ 
-Short Definition : Sentient Entity
-
-Definition : A generic animate, intelligent, sentient entity. Intelligence in this case is specified as being able to communicate via language. Any valid language counts, but it must be able to discuss complex and abstract ideas, including, but not limited to mathematics, logic, physics, and magic. (may be Expanded, If you cannot have a decent discussion on topics that move beyond your basic needs you are an animal)
-----------
-/ja/ 
-Short Definition : Opinion
-
-Definition : Opinion
-
-Factuality Affix : Denotes the root as an opinion in the statement. Often used as a softer form of /lu/ the belief affix, it instead denotes that you will discuss the topic, but that you may change your mind about it at some point.
-
-Short Grammar : F-Opinion
-----------
-/hi/ 
-Short Definition : Health
-
-Definition : Good health, or positive status, generally stated to be a good state. This applies to anything that could be stated to have a 'healthy' state. 
-
-----------
-/rra/ 
-Short Definition : Evidentiality
-
-Definition : Evidence, or a point of reference to influence or convince.
-
-Evidentiality Grammar Affix : This marks the word as a type of evidence and there is usually only one per sentence. Usually the attached word is a where the information is coming from roughly. It is not required if the evidence is obvious from the sentence, or it is based on the previous sentence.
-
-Short Grammar : G-Evid
-----------
-/rw/ 
-Short Definition : Minimal
-
-Definition : Minimal, insignificant.
-
-Intensity Affix : Denotes the root as having a very small, but percievable strength.
-
-Short Grammar : Int-1
-----------
-/jw/ 
-Short Definition : Xor
-
-Definition : Exclusive Or. Most often used in logical conversations, but it is often used as the equivalent to 'either/or' Applies to the previous 2 words which must have the same grammar affix.
-
-----------
-/gu/ 
-Short Definition : Mind
-
-Definition : The interface between the physical flesh and immaterial soul. It is the overall processes of the physical mind, but not the brain itself.
-
-----------
-/as/ 
-Short Definition : Soul
-
-Definition : The purely metaphysical entity that is a soul. It is the seat of consciousness, a source of magic, and what remains when one dies.
-
-----------
-/tw/ 
-Short Definition : And
-
-Definition : And Logical Operator. By default chaining words is a soft 'and'. Using this is a hard 'and'. If you don't have both then the statement is false. This is prefered in logical conversational contexts.
-
-
-
-----------
-/ush/ 
-Short Definition : Animate entity
-
-Definition : A unspecified entity that is animate, but not intelligent. As such a creature that either lacks speech, or cannot speak in any meaningful way, would count. Also it must be able to direct itself in at least a basic direction. As such a self-maintaining robot would count, but an automaton that cannot act without orders would not.
-
-----------
-/s'i/ 
-Short Definition : You (Dragon Listener)
-
-Definition : You, a listener who is being directly addressed, and is a dragon.
-----------
-/gai/ 
-Short Definition : Uncountable
-
-Definition : A large, uncountable number, usually a form of infinite.
-
-Numeric Affix : Denotes the word as uncountably large, presumably infinite.
-
-Short Grammar : #INF
-----------
-/wl/ 
-Short Definition : Total Intensity
-
-Definition : Absolute, Maximum Intensity.
-
-Intensity Affix : Denotes the root as having maximum intensity or strength.
-
-Short Grammar : Int-6
-----------
-/lw/ 
-Short Definition : No Intensity
-
-Definition : None, or Non-existent.
-
-Intensity Affix : Denotes the root as lacking any meaningful intensity.
-
-Short Grammar : Int-0
-----------
-/tsa/ 
-Short Definition : We inclusive
-
-Definition : We, collectively, including the listener, does not need numeric affix unless to specify, and using singular implies bad things.
-
-----------
-/sha/ 
-Short Definition : Action
-
-Definition : Something that is being done, or a state that is being approached.
-
-Action Grammar Affix : When attached to a word as an affix it marks the word as an action being done by an actor to an object.
-
-Short Grammar : G-Act
-----------
-/sa/ 
-Short Definition : Flesh
-
-Definition : Physical organic material. Often equated to Body.
-
-----------
-/ach/ 
-Short Definition : Earth
-
-Definition : Earth, rock, or other natural solid material of no specific type.
-----------
-/ish/ 
-Short Definition : to create
-
-Definition : Create or creation.
-
-----------
-/aih'/ 
-Short Definition : Destruction
-
-Definition : Destruction, or to destroy. While this is the technically the opposite of creation, dragons do not see destruction as the opposition, but the completion. To create you must destroy, and to destroy there must be creation. 
-
-----------
-/ik/ 
-Short Definition : Actor
-
-Definition : A generic something that is acting.
-
-Actor Grammar Affix : This denotes the attached word as the subject of the sentence.
-
-Short Grammar : G-Actor
-----------
-/uwts/ 
-Short Definition : Inverse
-
-Definition : Logical Inversion, takes the previous logical statement and inverts it. (if p, then q) Inverse == if not p, then not q
-----------
-/uh'/ 
-Short Definition : End
-
-Definition : Ending.
-
-Progressive Affix : Denotes the root as ending currently. It is not yet done, or if it is it just finished.
-
-Short Grammar : Prog-Finishing
-----------
-/wr/ 
-Short Definition : Maximal
-
-Definition : Maximal, very Significant intensity.
-
-Intensity Affix : Denotes the root as very significant, often to the point of being nearly complete or overwhelming.
-
-Short Grammar : Int-5
-----------
-/shu/ 
-Short Definition : Space
-
-Definition : Space, measurement and distance in 3 dimensions, as a concept.
-----------
-/ksai/ 
-Short Definition : Inside
-
-Definition : Inside
-
-Prepositional Affix : Used when you wish to prepositionally apply a word, it marks the word as inside of the object of the sentence.
-
-Short Grammar : P-Inside
-----------
-/is'/ 
-Short Definition : They/Other Dragon
-
-Definition : They, another person who is not being directly addressed who is a dragon.
+Short Grammar : T-Past
 ----------
 /si/ 
 Short Definition : Water
@@ -386,17 +113,6 @@ Short Definition : Water
 Definition : Water, of some generic make, safe and relatively clean.
 
 
-
-----------
-/ci/ 
-Short Definition : You (Non-Dragon Listener)
-
-Definition : You, a listener being directly addressed who is not a dragon.
-----------
-/ha/ 
-Short Definition : Dragon Breath
-
-Definition : This is specifically focused at dragon's breath, not regular breathing.
 
 ----------
 /lu/ 
@@ -408,86 +124,10 @@ Factuality Affix : Denotes the Root as a belief. Usually for more philosophical 
 
 Short Grammar : F-Believed
 ----------
-/ar/ 
-Short Definition : Future
+/hi/ 
+Short Definition : Health
 
-Definition : The Future.
-
-Temporal Affix : Denotes the root as happinging in the future primarily.
-
-Short Grammar : T-Future
-----------
-/chi/ 
-Short Definition : 145->1728
-
-Definition : A large number of things. Up to 1728.
-
-Numeric Affix : Denotes the root as being of a large collection up to about 1728.
-
-Short Grammar : #145-1728
-----------
-/il-la-iks-ail/ 
-Short Definition : GOD
-
-Definition : Big G God, the master of the angels, creator of the universe, etc.
-
-----------
-/a/ 
-Short Definition : Air
-
-Definition : Air, or gas that is not harmful to life, and thick enough to fly in unaided by magic.
-
-
-----------
-/il/ 
-Short Definition : Absolute
-
-Definition : Absolute (Temporally)
-
-Recurrence Affix : An even more extreme form of the /la/ infinite. It denotes not only that the root is not only always going to happen, but always has happened, and always will happen, and is probably happening right now. The most appropriate use for this is when defining physical laws of the world, though dramatic misuses often occur.
-
-Short Grammar : R-Absolute
-----------
-/du/ 
-Short Definition : Mediocre
-
-Definition : Middling, standard.
-
-Intensity Affix : Denotes the root as not small, but having an impact or intensity, but not being particularly large either.
-
-Short Grammar : Int-3
-----------
-/la/ 
-Short Definition : Endless
-
-Definition : Infinite (Temporally)
-
-Recurrence Affix : Denotes the root as being infinite in it's action. A special case of continuous. It implies an inevitibility to it, similar to 'it will always happen'. 
-
-Short Grammar : R-Endless
-----------
-/s'a/ 
-Short Definition : I / Me
-
-Definition : I or Me, the one who is currently speaking.
-----------
-/ti/ 
-Short Definition : 2->12
-
-Definition : A small amount, more then 1 and up to 12.
-
-Numeric Affix : Denotes the root as having more then 1 and up to 12 instances.
-
-Short Grammar : #2-12
-----------
-/chw/ 
-Short Definition : Continuous
-
-Definition : Continuous, a constant state or action being achieved or done.
-
-Recurrence Affix : Denotes the root as happening continuously. Whether this is a single long term incident, or a case of starting as soon as it ends, it gets to the same meaning.
-
-Short Grammar : R-Continuous
+Definition : Good health, or positive status, generally stated to be a good state. This applies to anything that could be stated to have a 'healthy' state.
 ----------
 /ia/ 
 Short Definition : Female
@@ -498,14 +138,55 @@ Gender Affix : Denotes the root as being Biologically Female.
 
 Short Grammar : Gen-Female
 ----------
-/di/ 
-Short Definition : 13->144
+/gai/ 
+Short Definition : Uncountable
 
-Definition : A fair amount. More then 12 and up to  144.
+Definition : A large, uncountable number, usually a form of infinite.
 
-Numeric Affix : Denotes the root as having between 12 and 144 count of them.
+Numeric Affix : Denotes the word as uncountably large, presumably infinite.
 
-Short Grammar : #13-144
+Short Grammar : #INF
+----------
+/ud/ 
+Short Definition : Possessor
+
+Definition : Someone or something that possesses another thing.
+
+Possessive Grammar Affix : This affix denotes the attached word as the owner of the preceding word. This can be applied to any word by technicality, but is only logically 
+
+Short Grammar : G-Poss
+----------
+/tsi/ 
+Short Definition : We exclusive
+
+Definition : We, collectively, excluding the listener. Plurality is not needed, but it may be specified, using singular implies bad things (hiveminded fools).
+----------
+/wts/ 
+Short Definition : Periodic
+
+Definition : Habitual or Periodic.
+
+Recurrence Affix : Denotes the root as being habitual. It is completed multiple times and happens on a regular basis. But it is not happening so often as to be considered continuous.
+
+Short Grammar : R-Periodic
+----------
+/ki/ 
+Short Definition : 1728<
+
+Definition : More then 1728.
+
+Numeric Affix : Denotes the root as having a countable number more then 1728.
+
+Short Grammar : #1728<
+----------
+/chu/ 
+Short Definition : Fiction
+
+Definition : Fictional
+
+Factuality Affix : Denotes the root as being fictional. It could be compared to sarcasm, but it's main use in draconic is to say that the root is either not real, or not happening. Often including it in a sentence effectively says the sentence is false, but it can be used to clarify a statement.
+
+Short Grammar : F-Fictional
 ----------
 /kw/ 
 Short Definition : Present
@@ -516,24 +197,29 @@ Temporal Affix : It denotes the attached word as happening or existing right now
 
 Short Grammar : T-Present
 ----------
-/da/ 
-Short Definition : Time
+/sha/ 
+Short Definition : Action
 
-Definition : Time as an abstract concept, the idea of change and movement.
+Definition : Something that is being done, or a state that is being approached.
+
+Action Grammar Affix : When attached to a word as an affix it marks the word as an action being done by an actor to an object.
+
+Short Grammar : G-Act
 ----------
-/t'w/ 
-Short Definition : Objective
+/jw/ 
+Short Definition : Xor
 
-Definition : From an absolute point of view, if not obvious from context it must be stated.
+Definition : Exclusive Or. Most often used in logical conversations, but it is often used as the equivalent to 'either/or' Applies to the previous 2 words which must have the same grammar affix.
 
-Absolute-Relative Prepositional Affix : Denotes the Preposition or Clause is from an absolute point of view. The reference frame should be obvious from context, but if it isn't it should be noted beforehand.
-
-Short Grammar : PF-Objective
 ----------
-/uk/ 
-Short Definition : Inanimate-Thing
+/wl/ 
+Short Definition : Total Intensity
 
-Definition : A undetermined, generic inanimate object. Inanimate as in it cannot move under it's own will, period. An automaton that cannot act without orders would count, but a robot working under a self-sustaining program would be considered animate.
+Definition : Absolute, Maximum Intensity.
+
+Intensity Affix : Denotes the root as having maximum intensity or strength.
+
+Short Grammar : Int-6
 ----------
 /i/ 
 Short Definition : Singular
@@ -544,14 +230,297 @@ Numeric Affix : Denotes the root as singular or specific.
 
 Short Grammar : #1
 ----------
-/sw/ 
-Short Definition : Hypothetical
+/ush/ 
+Short Definition : Animate entity
 
-Definition : Hypothetical
+Definition : A unspecified entity that is animate, but not intelligent. As such a creature that either lacks speech, or cannot speak in any meaningful way, would count. Also it must be able to direct itself in at least a basic direction. As such a self-maintaining robot would count, but an automaton that cannot act without orders would not.
 
-Factuality Affix : Denotes the root as purely hypothetical, a possibility, but not real or likely. This is most used in future cases, though it can be used in any temporal case.
+----------
+/uk/ 
+Short Definition : Inanimate-Thing
 
-Short Grammar : F-Hypothetical
+Definition : A undetermined, generic inanimate object. Inanimate as in it cannot move under it's own will, period. An automaton that cannot act without orders would count, but a robot working under a self-sustaining program would be considered animate.
+----------
+/la/ 
+Short Definition : Endless
+
+Definition : Infinite (Temporally)
+
+Recurrence Affix : Denotes the root as being infinite in it's action. A special case of continuous. It implies an inevitibility to it, similar to 'it will always happen'. 
+
+Short Grammar : R-Endless
+----------
+/is'/ 
+Short Definition : They/Other Dragon
+
+Definition : They, another person who is not being directly addressed who is a dragon.
+----------
+/uh'/ 
+Short Definition : End
+
+Definition : Ending.
+
+Progressive Affix : Denotes the root as ending currently. It is not yet done, or if it is it just finished.
+
+Short Grammar : Prog-Finishing
+----------
+/h'u/ 
+Short Definition : Start
+
+Definition : Starting, or beginning.
+
+Progressive Affix : Marks the root as starting or beginning.
+
+Short Grammar : Prog-Start
+----------
+/tw/ 
+Short Definition : And
+
+Definition : Logical And operator, and also a clarifier if needed. Normally speech defaults to and, but for clarity it can often be used. Like all operators, and is postfix with 2 arguements.
+----------
+/ja/ 
+Short Definition : Opinion
+
+Definition : Opinion
+
+Factuality Affix : Denotes the root as an opinion in the statement. Often used as a softer form of /lu/ the belief affix, it instead denotes that you will discuss the topic, but that you may change your mind about it at some point.
+
+Short Grammar : F-Opinion
+----------
+/ir/ 
+Short Definition : Or
+
+Definition : Or operator, used as you would expect, when after 2 words that have the same affix it denotes them as being or'd.
+
+
+----------
+/cw/ 
+Short Definition : Query
+
+Definition : Question or Questioned.
+
+Factuality Affix : Denotes the root as questioned, and that you seek an answer. When used on a single word it denotes the attached root as the point of the question. If attached to all the words, then the entire statement is being questioned.
+
+Short Grammar : F-Questioned
+----------
+/hli/ 
+Short Definition : Spark of Life
+
+Definition : The biological sign of life. This is slightly flexible, but is generally used for biological things. See /ush/ for more detail.
+----------
+/il-la-iks-ail/ 
+Short Definition : GOD
+
+Definition : Big G God, the master of the angels, creator of the universe, etc.
+
+----------
+/t'a/ 
+Short Definition : Complete
+
+Definition : Completion.
+
+Progressive Affix : Denotes the root as being complete.
+
+Short Grammar : Prog-Complete
+----------
+/rra/ 
+Short Definition : Evidentiality
+
+Definition : Evidence, or a point of reference to influence or convince.
+
+Evidentiality Grammar Affix : This marks the word as a type of evidence and there is usually only one per sentence. Usually the attached word is a where the information is coming from roughly. It is not required if the evidence is obvious from the sentence, or it is based on the previous sentence.
+
+Short Grammar : G-Evid
+----------
+/shu/ 
+Short Definition : Space
+
+Definition : Space, measurement and distance in 3 dimensions, as a concept.
+----------
+/il/ 
+Short Definition : Absolute
+
+Definition : Absolute (Temporally)
+
+Recurrence Affix : An even more extreme form of the /la/ infinite. It denotes not only that the root is not only always going to happen, but always has happened, and always will happen, and is probably happening right now. The most appropriate use for this is when defining physical laws of the world, though dramatic misuses often occur.
+
+Short Grammar : R-Absolute
+----------
+/di/ 
+Short Definition : 13->144
+
+Definition : A fair amount. More then 12 and up to  144.
+
+Numeric Affix : Denotes the root as having between 12 and 144 count of them.
+
+Short Grammar : #13-144
+----------
+/ach/ 
+Short Definition : Earth
+
+Definition : Earth, rock, or other natural solid material of no specific type.
+----------
+/ci/ 
+Short Definition : You (Non-Dragon Listener)
+
+Definition : You, a listener being directly addressed who is not a dragon.
+----------
+/s'u/ 
+Short Definition : Metal
+
+Definition : A generic metalic substance.
+----------
+/as/ 
+Short Definition : Soul
+
+Definition : The purely metaphysical entity that is a soul. It is the seat of consciousness, a source of magic, and what remains when one dies.
+----------
+/da/ 
+Short Definition : Time
+
+Definition : Time as an abstract concept, the idea of change and movement.
+----------
+/is/ 
+Short Definition : Movement
+
+Definition : Movement, generic undefined movement. Any form of movement through space counts of this.
+----------
+/ka/ 
+Short Definition : Here
+
+Definition : Here
+----------
+/h'w/ 
+Short Definition : Intermediate
+
+Definition : Intermediate, in the middle of.
+
+Progressive Affix : The Root is in the middle of it's existance, not just starting nor soon to end.
+
+Short Grammar : Prog-Intermediate
+----------
+/uR/ 
+Short Definition : Greater
+
+Definition : Large, significant intensity.
+
+Intensity Affix : Denotes the root as having a significant impact or effect.
+
+Short Grammar : Int-4
+----------
+/uwg/ 
+Short Definition : Water
+
+Definition : Water, specifically the liquid kind, though it can be used generically.
+----------
+/iadg/ 
+Short Definition : 2
+
+Definition : 2
+----------
+/ic/ 
+Short Definition : They/Other Non-Dragon
+
+Definition : They, another person who is not being directly addressed who is not a dragon.
+----------
+/shi/ 
+Short Definition : Destruction
+
+Definition : To destroy, often in an absolute manner, such as removing it from creation.
+----------
+/zu/ 
+Short Definition : 3
+
+Definition : 3
+----------
+/chi/ 
+Short Definition : 145->1728
+
+Definition : A large number of things. Up to 1728.
+
+Numeric Affix : Denotes the root as being of a large collection up to about 1728.
+
+Short Grammar : #145-1728
+----------
+/uwts/ 
+Short Definition : Inverse
+
+Definition : Logical Inversion, takes the previous logical statement and inverts it. (if p, then q) Inverse == if not p, then not q
+----------
+/tsa/ 
+Short Definition : We inclusive
+
+Definition : We, collectively, including the listener, does not need numeric affix unless to specify, and using singular implies bad things.
+
+----------
+/ti/ 
+Short Definition : 2->12
+
+Definition : A small amount, more then 1 and up to 12.
+
+Numeric Affix : Denotes the root as having more then 1 and up to 12 instances.
+
+Short Grammar : #2-12
+----------
+/ak/ 
+Short Definition : Yonder
+
+Definition : Yonder
+----------
+/gu/ 
+Short Definition : Mind
+
+Definition : The interface between the physical flesh and immaterial soul. It is the overall processes of the physical mind, but not the brain itself.
+----------
+/t'w/ 
+Short Definition : Objective
+
+Definition : From an absolute point of view, if not obvious from context it must be stated.
+
+Absolute-Relative Prepositional Affix : Denotes the Preposition or Clause is from an absolute point of view. The reference frame should be obvious from context, but if it isn't it should be noted beforehand.
+
+Short Grammar : PF-Objective
+----------
+/lw/ 
+Short Definition : No Intensity
+
+Definition : None, or Non-existent.
+
+Intensity Affix : Denotes the root as lacking any meaningful intensity.
+
+Short Grammar : Int-0
+----------
+/sa/ 
+Short Definition : Flesh
+
+Definition : Physical organic material. Often equated to Body.
+----------
+/rra-s'a-sha/ 
+Short Definition : Self-evident / I did
+
+Definition : What is going to be said is directly from me.
+
+----------
+/ar/ 
+Short Definition : Future
+
+Definition : The Future.
+
+Temporal Affix : Denotes the root as happinging in the future primarily.
+
+Short Grammar : T-Future
+----------
+/a/ 
+Short Definition : Air
+
+Definition : Air, or gas that is not harmful to life, and thick enough to fly in unaided by magic.
+
+
+----------
+/s'i/ 
+Short Definition : You (Dragon Listener)
+
+Definition : You, a listener who is being directly addressed, and is a dragon.
 ----------
 /u/ 
 Short Definition : Other Perspective
@@ -562,8 +531,53 @@ Target-Relative Prepositional Flag Affix : Applied to a Prepositional or Clause 
 
 Short Grammar : PF-Others
 ----------
-/s'u/ 
-Short Definition : Metal
+/ksai/ 
+Short Definition : Inside
 
-Definition : A generic metalic substance.
+Definition : Inside
+
+Prepositional Affix : Used when you wish to prepositionally apply a word, it marks the word as inside of the object of the sentence.
+
+Short Grammar : P-Inside
+----------
+/rw/ 
+Short Definition : Minimal
+
+Definition : Minimal, insignificant.
+
+Intensity Affix : Denotes the root as having a very small, but percievable strength.
+
+Short Grammar : Int-1
+----------
+/adg/ 
+Short Definition : Modifier
+
+Definition : A modifier of some kind, usually applying to another object.
+
+Modifier Affix : Attached to a word it denotes a word as a modifier to the preceeding word. If the preceeding word is also a modifier word (marked with /adg/) then it applies to the same word as that word.
+
+Short Grammar : G-Mod
+----------
+/ca/ 
+Short Definition : Irregularity
+
+Definition : Irregular recurrence.
+
+Recurrence Affix : Denotes the root as recurring irregularly. It's predictable in that it will happen again, but not consistent enough to say when.
+
+Short Grammar : R-Irregular
+----------
+/ik/ 
+Short Definition : Actor
+
+Definition : A generic something that is acting.
+
+Actor Grammar Affix : This denotes the attached word as the subject of the sentence.
+
+Short Grammar : G-Actor
+----------
+/s'a/ 
+Short Definition : I / Me
+
+Definition : I or Me, the one who is currently speaking.
 ----------
