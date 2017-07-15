@@ -3,7 +3,7 @@ A helper to get a scrolllist, label, and search functionality nice and quickly.
 """
 
 import tkinter as tk
-from DraconicDictionary.Scrollbox import Scrollbox
+from Scrollbox import Scrollbox
 
 
 class SearchListBox:

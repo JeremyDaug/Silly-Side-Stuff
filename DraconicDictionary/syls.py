@@ -3,9 +3,9 @@ import tkinter as tk
 from random import choice
 from tkinter import ttk
 import tkinter.messagebox
-from DraconicDictionary.Searchlistbox import SearchListBox
+from Searchlistbox import SearchListBox
 
-from DraconicDictionary.Scrollbox import Scrollbox
+from Scrollbox import Scrollbox
 
 consonants = ['th', 's', 'z', 't', 'd', 'R', 'r', 'l', 'sh', 'hl', 'rr', 'c',
               'j', 'k', 'g', 't\'', 'k\'', 's\'', 'h\'', 'h', 'ts', 'ch', 'ks',
