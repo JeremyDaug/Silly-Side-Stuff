@@ -4,25 +4,25 @@ import numpy as np
 import math as math
 
 
-E_0 = 1000
-radius = 25
+E_0 = 18144
+radius = 50
 D = 0.05
 dx = 1
-dt = 1
+dt = 10
 
 fig, ax = plt.subplots()
+plt.ylim([-10, int(E_0*1.1)])
 
 x = np.arange(-radius, radius)
 E = np.ones((2*radius)) * E_0
 line, = ax.plot(x, E)
 
-spellCost = E
+spellCost = E.copy()
 for i in range(len(E)):
-    if -10 < i < 10:
-        spellCost[i] = -100 * dt
+    if radius-1 < i < radius+1:
+        spellCost[i] = 100 * dt
     else:
-        spellCost = 0
-
+        spellCost[i] = 0
 
 def init():
     line.set_ydata(E)
