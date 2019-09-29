@@ -250,7 +250,7 @@ if __name__ == '__main__':
                 temp = Coll.collatz_list()
                 for i in temp:
                     print('{:7d} : {:>20}'.format(int(i), bin(i)[2:]))
-                    time.sleep(1)
+                    time.sleep(0.5)
             elif str(text).lower() == 'vertical List'.lower():
                 for i in Coll.collatz_list():
                     print(i)
