@@ -1,6 +1,4 @@
-pub mod komponent;
-pub mod orthonormalbases;
-pub mod multivector;
+pub mod blade;
 
 fn main() {
     println!("Hello, world!");
