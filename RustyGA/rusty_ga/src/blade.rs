@@ -1,10 +1,13 @@
+use crate::{basis::Basis, component::Component};
+
 /// # Multivector
 /// 
 /// A Multivector is a collection of k-vectors. 
 /// 
 /// It stores these vectors in the form of their components.
 /// while components are organized from lowest grade to highest, the order
-/// within 
+/// of bases within components are guranteed to be in order from lowest id
+/// to highest id. Any other ordering is not applied.
 #[derive(Debug)]
 pub struct Multivector {
     components: Vec<Component>
@@ -24,30 +27,17 @@ pub struct Multivector {
 ///     2 e_12 + 3 e_34
 #[derive(Debug)]
 pub struct Blade {
-    /// # Component
-    /// 
-    /// The Components of the blade.
-    component: Vec<Component>
+    // # Component
+    // 
+    // The Components of the blade.
+    //component: Vec<Component>
 }
 
-/// # Component
-/// 
-/// A Component is the mathimatical construct which in formed out of
-/// a combination of a magnitude and a basis k-vector.
-/// 
-/// This component is not guaranteed to have it's basis ordered from lowest to
-/// highest.
-/// 
-/// Contains 2 part of data. The magnitude (mag) and the bases.
-/// Magnitude * Bases is the component.
-#[derive(Debug)]
-pub struct Component {
-    /// # Magnitude
-    /// 
-    /// The size of the component.
-    mag: f64,
-    /// # Basis
-    /// 
-    /// The basis of the component. IE the e_{bases} of the component
-    bases: Vec<usize>
+/// Geometry, the context of our 
+pub struct Geometry {
+    /// The Orthonormal Bases of this geometry.
+    onbases: Vec<Basis>,
+    /// Other available spaces/bases in this Geometry. These are not 
+    /// guaranteed to be orthonormal.
+    spaces: Vec<Vec<Basis>>,
 }
