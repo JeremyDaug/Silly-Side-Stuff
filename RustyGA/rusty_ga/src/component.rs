@@ -1,6 +1,6 @@
-use std::ops;
+use std::{ops, collections::HashSet};
 
-use crate::basis::Basis;
+use crate::basis::ONBasis;
 
 /// # Component
 /// 
@@ -21,7 +21,7 @@ pub struct Component {
     /// 
     /// The basis of the component. IE the e_{bases} of the component.
     /// These should always be in id order after being new'd up.
-    bases: Vec<Basis>
+    bases: Vec<ONBasis>
 }
 
 const ZERO: Component = Component { mag: 0.0, bases: vec![] };
@@ -32,7 +32,15 @@ impl Component {
     /// creates a new component based on a magnitude and basis.
     /// 
     /// If basis is not ordered correctly, it reorders the bases appropriately.
-    pub fn new(mag: f64, bases: Vec<Basis>) -> Component {
+    pub fn new(mag: f64, bases: Vec<ONBasis>) -> Component {
+        let mut unique = HashSet::new();
+        for basis in bases.iter() {
+            unique.insert(basis.id);
+        }
+        // if duplicate ids, cleare out duplicate bases.
+        if unique.len() != bases.len() {
+            return Component {mag, bases}.reorder_bases();
+        }
         for idx in 0..(bases.len()-1) {
             // if any disorder, make then reorder bases immediately.
             if bases[idx].id > bases[idx+1].id {
@@ -51,19 +59,29 @@ impl Component {
 
         // loop until no movement.
         loop {
-            break;
-        }
-        for start in 0..(result.bases.len()-2) {
             let mut change = false;
-            for current in (start..(result.bases.len()-1)).rev() {
-                // check if they are the same bases
+            let mut current = 0;
+            while current+1 < result.bases.len() {
+                // if the two match, break then multiply by mag by square
+                if result.bases[current].id == result.bases[current+1].id {
+                    let basis = result.bases.remove(current);
+                    result.bases.remove(current);
+                    result.mag *= basis.sqr;
+                    change = true;
+                    // if after the removal we would step out of the list, get out of the current loop.
+                    if current+1 >= result.bases.len() {
+                        break;
+                    }
+                }
+                // swap them if the two are out of order.
                 if result.bases[current].id > result.bases[current+1].id {
                     result.bases.swap(current, current+1);
                     result.mag *= -1.0;
                     change = true;
                 }
+                current += 1; // end by stepping up.
             }
-            if !change { // if no changes took place, no more swaps needed.
+            if !change {
                 break;
             }
         }
@@ -74,7 +92,7 @@ impl Component {
     /// # Base Add
     /// 
     /// Adds two components if they share the same basis vectors.
-    pub fn base_add(&self, rhs: &Component) -> Component {
+    pub fn comp_add(&self, rhs: &Component) -> Component {
         // if the same length, organize their bases
         if self.bases.len() == rhs.bases.len() {
             // if same length, check that each basis is the same
@@ -90,7 +108,7 @@ impl Component {
         }
     }
 
-    /// # Base Mul
+    /// # geometric Product
     /// 
     /// Multiplies two components together via Geometric Product.
     /// 
@@ -98,18 +116,48 @@ impl Component {
     /// those are applied.
     /// 
     /// If any results in the result being 0, then it shortcuts out.
-    pub fn base_mul(&self, rhs: &Component) -> Component {
+    pub fn geo_product(&self, rhs: &Component) -> Component {
         // combine bases first
         let mut bases = self.bases.clone();
         bases.extend(rhs.bases.clone());
-        // get component without consolidations.
-        let mut result = Component::new(self.mag*rhs.mag, bases);
-        
-
-        ZERO
+        // get component
+        Component::new(self.mag*rhs.mag, bases)
     }
 
-    pub fn bases(&self) -> &[Basis] {
+    /// # Outer Product
+    /// 
+    /// Takes the outer product of two components. Components which share a 
+    /// basis produce a zero
+    /// 
+    pub fn outer_product(&self, rhs: &Component) -> Component {
+        // check for overlapping bases
+        let mut uniques = HashSet::new();
+        for basis in self.bases.iter() {
+            uniques.insert(basis.id);
+        }
+        for basis in rhs.bases.iter() {
+            uniques.insert(basis.id);
+        }
+        // if the number of unique bases is not equal to the sum of the grades
+        // then it must have at least one similar basis, thus the outer product
+        // is zero
+        if uniques.len() != (self.grade() + rhs.grade()) {
+            ZERO
+        } else {
+            let mut bases = self.bases.clone();
+            bases.extend(rhs.bases.clone());
+            Component {mag: self.mag * rhs.mag, bases }
+        }
+    }
+
+    /// # Grade
+    /// 
+    /// Retieves what the grade of the component is, IE how many bases it has.
+    pub fn grade(&self) -> usize {
+        self.bases.len()
+    }
+
+    pub fn bases(&self) -> &[ONBasis] {
         self.bases.as_ref()
     }
 }
@@ -119,7 +167,7 @@ impl ops::Add for Component {
     type Output = Component;
 
     fn add(self, rhs: Self) -> Self::Output {
-        self.base_add(&rhs)
+        self.comp_add(&rhs)
     }
 }
 
@@ -128,7 +176,7 @@ impl ops::Add<&Component> for &Component {
     type Output = Component;
 
     fn add(self, rhs: &Component) -> Self::Output {
-        self.base_add(rhs)
+        self.comp_add(rhs)
     }
 }
 
@@ -137,7 +185,7 @@ impl ops::Add<Component> for &Component {
     type Output = Component;
 
     fn add(self, rhs: Component) -> Self::Output {
-        self.base_add(&rhs)
+        self.comp_add(&rhs)
     }
 }
 
@@ -146,7 +194,7 @@ impl ops::Add<&Component> for Component {
     type Output = Component;
 
     fn add(self, rhs: &Component) -> Self::Output {
-        self.base_add(rhs)
+        self.comp_add(rhs)
     }
 }
 
@@ -157,7 +205,7 @@ impl ops::Sub for Component {
     type Output = Component;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        self.base_add(&-rhs)
+        self.comp_add(&-rhs)
     }
 }
 
@@ -166,7 +214,7 @@ impl ops::Sub<&Component> for &Component {
     type Output = Component;
 
     fn sub(self, rhs: &Component) -> Self::Output {
-        self.base_add(&-rhs)
+        self.comp_add(&-rhs)
     }
 }
 
@@ -175,7 +223,7 @@ impl ops::Sub<Component> for &Component {
     type Output = Component;
 
     fn sub(self, rhs: Component) -> Self::Output {
-        self.base_add(&-rhs)
+        self.comp_add(&-rhs)
     }
 }
 
@@ -184,7 +232,7 @@ impl ops::Sub<&Component> for Component {
     type Output = Component;
 
     fn sub(self, rhs: &Component) -> Self::Output {
-        self.base_add(&-rhs)
+        self.comp_add(&-rhs)
     }
 }
 
@@ -195,7 +243,7 @@ impl ops::Mul for Component {
     type Output = Component;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        self.base_add(&-rhs)
+        self.comp_add(&-rhs)
     }
 }
 
@@ -204,7 +252,7 @@ impl ops::Mul<&Component> for &Component {
     type Output = Component;
 
     fn mul(self, rhs: &Component) -> Self::Output {
-        self.base_add(&-rhs)
+        self.comp_add(&-rhs)
     }
 }
 
@@ -213,7 +261,7 @@ impl ops::Mul<Component> for &Component {
     type Output = Component;
 
     fn mul(self, rhs: Component) -> Self::Output {
-        self.base_add(&-rhs)
+        self.comp_add(&-rhs)
     }
 }
 
@@ -222,7 +270,7 @@ impl ops::Mul<&Component> for Component {
     type Output = Component;
 
     fn mul(self, rhs: &Component) -> Self::Output {
-        self.base_add(&-rhs)
+        self.comp_add(&-rhs)
     }
 }
 
@@ -246,21 +294,81 @@ impl ops::Neg for &Component {
 }
 
 mod reorder_bases_should {
-    use crate::{basis::Basis, component::Component};
+    use crate::basis::ONBasis;
+
+    use super::Component;
 
     #[test]
-    pub fn correctly_reorder_and_flip_sign() {
-        let e1 = Basis {
+    pub fn correctly_square_bases() {
+        let ep = ONBasis {
             id: 1,
             name: String::new(),
             sqr: 1.0,
         };
-        let e2 = Basis {
+        let e0 = ONBasis {
+            id: 2,
+            name: String::new(),
+            sqr: 0.0,
+        };
+        let em = ONBasis {
+            id: 3,
+            name: String::new(),
+            sqr: -1.0,
+        };
+
+        // check positive
+        let c1 = Component::new(2.0, vec![ep.clone(), ep.clone()]);
+        assert_eq!(c1.mag, 2.0);
+        assert_eq!(c1.bases.len(), 0);
+
+        // check negative
+        let c1 = Component::new(2.0, vec![em.clone(), em.clone()]);
+        assert_eq!(c1.mag, -2.0);
+        assert_eq!(c1.bases.len(), 0);
+
+        // check zero
+        let c1 = Component::new(2.0, vec![e0.clone(), e0.clone()]);
+        assert_eq!(c1.mag, 0.0);
+        assert_eq!(c1.bases.len(), 0);
+    }
+
+    #[test]
+    pub fn correctly_reorder_bases() {
+        let e1 = ONBasis {
+            id: 1,
+            name: String::new(),
+            sqr: 1.0,
+        };
+        let e2 = ONBasis {
             id: 2,
             name: String::new(),
             sqr: 1.0,
         };
-        let e3 = Basis {
+        let e3 = ONBasis {
+            id: 3,
+            name: String::new(),
+            sqr: 1.0,
+        };
+
+        // Pseudoscalar * Pseudoscalar
+        let c1 = Component::new(1.0, vec![e1.clone(), e2.clone(), e3.clone(), 
+            e1.clone(), e2.clone(), e3.clone()]);
+        assert_eq!(c1.mag, -1.0);
+    }
+
+    #[test]
+    pub fn correctly_reorder_and_flip_sign() {
+        let e1 = ONBasis {
+            id: 1,
+            name: String::new(),
+            sqr: 1.0,
+        };
+        let e2 = ONBasis {
+            id: 2,
+            name: String::new(),
+            sqr: 1.0,
+        };
+        let e3 = ONBasis {
             id: 3,
             name: String::new(),
             sqr: 1.0,

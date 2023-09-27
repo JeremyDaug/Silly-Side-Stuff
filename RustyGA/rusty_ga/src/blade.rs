@@ -1,4 +1,4 @@
-use crate::{basis::Basis, component::Component};
+use crate::{basis::ONBasis, component::Component};
 
 /// # Multivector
 /// 
@@ -36,8 +36,8 @@ pub struct Blade {
 /// Geometry, the context of our 
 pub struct Geometry {
     /// The Orthonormal Bases of this geometry.
-    onbases: Vec<Basis>,
+    onbases: Vec<ONBasis>,
     /// Other available spaces/bases in this Geometry. These are not 
     /// guaranteed to be orthonormal.
-    spaces: Vec<Vec<Basis>>,
+    spaces: Vec<Vec<ONBasis>>,
 }

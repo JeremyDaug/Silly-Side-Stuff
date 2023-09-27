@@ -7,7 +7,7 @@
 /// 
 /// These basis vectors are considered to be othorgonal and 
 #[derive(Debug, Clone)]
-pub struct Basis {
+pub struct ONBasis {
     pub id: usize,
     pub name: String,
     pub sqr: f64,
