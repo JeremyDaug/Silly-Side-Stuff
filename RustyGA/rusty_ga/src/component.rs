@@ -149,6 +149,27 @@ impl Component {
         }
     }
 
+    /// # Reversion
+    /// 
+    /// Produces the reverse of a blade in the grade ordering of 
+    /// ++--++--...
+    pub fn reversion(&self) -> Component {
+        let grade = self.grade() / 2;
+        if grade % 2 == 0 { // 0, 1, 4, 5
+            Component::new(self.mag, self.bases)
+        } else { // 2, 3, 6, 7
+            Component::new(-self.mag, self.bases)
+        }
+    }
+
+    /// # Involution
+    /// 
+    /// Involutes the the component based on it's grade.
+    /// +-+-+-+-
+    pub fn involution(&self) -> Component {
+        Component::new(self.mag * (-1).pow(self.grade()) , self.bases)
+    }
+
     /// # Grade
     /// 
     /// Retieves what the grade of the component is, IE how many bases it has.
@@ -158,6 +179,44 @@ impl Component {
 
     pub fn bases(&self) -> &[ONBasis] {
         self.bases.as_ref()
+    }
+}
+
+// Left Contraction >>
+
+// real + real
+impl ops::Shl for Component {
+    type Output = Component;
+
+    fn shl(self, rhs: Self) -> Self::Output {
+        self.outer_product(&rhs)
+    }
+}
+
+// ref + ref
+impl ops::BitXor<&Component> for &Component {
+    type Output = Component;
+
+    fn bitxor(self, rhs: &Component) -> Self::Output {
+        self.outer_product(rhs)
+    }
+}
+
+// ref + real
+impl ops::BitXor<Component> for &Component {
+    type Output = Component;
+
+    fn bitxor(self, rhs: Component) -> Self::Output {
+        self.outer_product(&rhs)
+    }
+}
+
+// real + ref
+impl ops::BitXor<&Component> for Component {
+    type Output = Component;
+
+    fn bitxor(self, rhs: &Component) -> Self::Output {
+        self.outer_product(rhs)
     }
 }
 
