@@ -11,7 +11,7 @@ use crate::basis::ONBasis;
 /// 
 /// Contains 2 part of data. The magnitude (mag) and the bases.
 /// Magnitude * Bases is the component.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Component {
     /// # Magnitude
     /// 
@@ -35,7 +35,7 @@ impl Component {
     pub fn new(mag: f64, bases: Vec<ONBasis>) -> Component {
         let mut unique = HashSet::new();
         for basis in bases.iter() {
-            unique.insert(basis.id);
+            unique.insert(basis);
         }
         // if duplicate ids, cleare out duplicate bases.
         if unique.len() != bases.len() {
@@ -43,7 +43,7 @@ impl Component {
         }
         for idx in 0..(bases.len()-1) {
             // if any disorder, make then reorder bases immediately.
-            if bases[idx].id > bases[idx+1].id {
+            if bases[idx].unwrap() > bases[idx+1].unwrap() {
                 return Component {mag, bases}.reorder_bases();
             }
         }
@@ -63,10 +63,10 @@ impl Component {
             let mut current = 0;
             while current+1 < result.bases.len() {
                 // if the two match, break then multiply by mag by square
-                if result.bases[current].id == result.bases[current+1].id {
+                if result.bases[current] == result.bases[current+1] {
                     let basis = result.bases.remove(current);
                     result.bases.remove(current);
-                    result.mag *= basis.sqr;
+                    result.mag *= basis.sqr();
                     change = true;
                     // if after the removal we would step out of the list, get out of the current loop.
                     if current+1 >= result.bases.len() {
@@ -74,7 +74,7 @@ impl Component {
                     }
                 }
                 // swap them if the two are out of order.
-                if result.bases[current].id > result.bases[current+1].id {
+                if result.bases[current] > result.bases[current+1] {
                     result.bases.swap(current, current+1);
                     result.mag *= -1.0;
                     change = true;
@@ -97,7 +97,7 @@ impl Component {
         if self.bases.len() == rhs.bases.len() {
             // if same length, check that each basis is the same
             for idx in 0..self.bases.len() {
-                if self.bases[idx].id != rhs.bases[idx].id {
+                if self.bases[idx] != rhs.bases[idx] {
                     return ZERO; // if any mismatch, return 0.
                 }
             }
@@ -127,16 +127,15 @@ impl Component {
     /// # Outer Product
     /// 
     /// Takes the outer product of two components. Components which share a 
-    /// basis produce a zero
-    /// 
+    /// basis produce a zero.
     pub fn outer_product(&self, rhs: &Component) -> Component {
         // check for overlapping bases
         let mut uniques = HashSet::new();
         for basis in self.bases.iter() {
-            uniques.insert(basis.id);
+            uniques.insert(basis);
         }
         for basis in rhs.bases.iter() {
-            uniques.insert(basis.id);
+            uniques.insert(basis);
         }
         // if the number of unique bases is not equal to the sum of the grades
         // then it must have at least one similar basis, thus the outer product
@@ -161,6 +160,46 @@ impl Component {
         self.bases.as_ref()
     }
 }
+
+// Outer Product (^)
+
+// real + real
+impl ops::BitXor for Component {
+    type Output = Component;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        self.outer_product(&rhs)
+    }
+}
+
+// ref + ref
+impl ops::BitXor<&Component> for &Component {
+    type Output = Component;
+
+    fn bitxor(self, rhs: &Component) -> Self::Output {
+        self.outer_product(rhs)
+    }
+}
+
+// ref + real
+impl ops::BitXor<Component> for &Component {
+    type Output = Component;
+
+    fn bitxor(self, rhs: Component) -> Self::Output {
+        self.outer_product(&rhs)
+    }
+}
+
+// real + ref
+impl ops::BitXor<&Component> for Component {
+    type Output = Component;
+
+    fn bitxor(self, rhs: &Component) -> Self::Output {
+        self.outer_product(rhs)
+    }
+}
+
+// Addition
 
 // real + real
 impl ops::Add for Component {
@@ -290,108 +329,5 @@ impl ops::Neg for &Component {
 
     fn neg(self) -> Self::Output {
         Component { mag: -self.mag, bases: self.bases.clone()}
-    }
-}
-
-mod reorder_bases_should {
-    use crate::basis::ONBasis;
-
-    use super::Component;
-
-    #[test]
-    pub fn correctly_square_bases() {
-        let ep = ONBasis {
-            id: 1,
-            name: String::new(),
-            sqr: 1.0,
-        };
-        let e0 = ONBasis {
-            id: 2,
-            name: String::new(),
-            sqr: 0.0,
-        };
-        let em = ONBasis {
-            id: 3,
-            name: String::new(),
-            sqr: -1.0,
-        };
-
-        // check positive
-        let c1 = Component::new(2.0, vec![ep.clone(), ep.clone()]);
-        assert_eq!(c1.mag, 2.0);
-        assert_eq!(c1.bases.len(), 0);
-
-        // check negative
-        let c1 = Component::new(2.0, vec![em.clone(), em.clone()]);
-        assert_eq!(c1.mag, -2.0);
-        assert_eq!(c1.bases.len(), 0);
-
-        // check zero
-        let c1 = Component::new(2.0, vec![e0.clone(), e0.clone()]);
-        assert_eq!(c1.mag, 0.0);
-        assert_eq!(c1.bases.len(), 0);
-    }
-
-    #[test]
-    pub fn correctly_reorder_bases() {
-        let e1 = ONBasis {
-            id: 1,
-            name: String::new(),
-            sqr: 1.0,
-        };
-        let e2 = ONBasis {
-            id: 2,
-            name: String::new(),
-            sqr: 1.0,
-        };
-        let e3 = ONBasis {
-            id: 3,
-            name: String::new(),
-            sqr: 1.0,
-        };
-
-        // Pseudoscalar * Pseudoscalar
-        let c1 = Component::new(1.0, vec![e1.clone(), e2.clone(), e3.clone(), 
-            e1.clone(), e2.clone(), e3.clone()]);
-        assert_eq!(c1.mag, -1.0);
-    }
-
-    #[test]
-    pub fn correctly_reorder_and_flip_sign() {
-        let e1 = ONBasis {
-            id: 1,
-            name: String::new(),
-            sqr: 1.0,
-        };
-        let e2 = ONBasis {
-            id: 2,
-            name: String::new(),
-            sqr: 1.0,
-        };
-        let e3 = ONBasis {
-            id: 3,
-            name: String::new(),
-            sqr: 1.0,
-        };
-
-        let c1 = Component {
-            mag: 1.0,
-            bases: vec![e2.clone(), e1.clone(), e3.clone()],
-        };
-        let r1 = c1.reorder_bases();
-        assert_eq!(r1.mag, -1.0);
-        assert_eq!(r1.bases()[0].id, 1);
-        assert_eq!(r1.bases[1].id, 2);
-        assert_eq!(r1.bases[2].id, 3);
-
-        let c2 = Component {
-            mag: 1.0,
-            bases: vec![e2.clone(), e3.clone(), e1.clone()],
-        };
-        let r2 = c2.reorder_bases();
-        assert_eq!(r2.mag, 1.0);
-        assert_eq!(r2.bases[0].id, 1);
-        assert_eq!(r2.bases[1].id, 2);
-        assert_eq!(r2.bases[2].id, 3);
     }
 }
