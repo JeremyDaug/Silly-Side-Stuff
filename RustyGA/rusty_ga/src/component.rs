@@ -108,6 +108,13 @@ impl Component {
         }
     }
 
+    /// # Scalar Multiplication
+    /// 
+    /// Multiplies the component by a scalar.
+    pub fn scalar_mult(&self, rhs: f64) -> Component {
+        Component::new(self.mag * rhs, self.bases)
+    }
+
     /// # geometric Product
     /// 
     /// Multiplies two components together via Geometric Product.
@@ -170,6 +177,49 @@ impl Component {
         Component::new(self.mag * (-1).pow(self.grade()) , self.bases)
     }
 
+    /// # Scalar Product
+    /// 
+    /// Scalar Product multiplies blades of like grade. Since all components 
+    /// are blades, they always go. If the blades are of different grades
+    /// it returns 0. If they are of the same it takes the determinant of them
+    /// if they are both scalars, it multiplies them.
+    pub fn scalar_product(&self, rhs: &Component) -> f64 {
+        if self.grade() != rhs.grade() {
+            return 0.0;
+        }
+        // if 1 or zero, multiply the bases and end there.
+        if self.grade() < 2 {
+            return self.mag * rhs.mag;
+        }
+        // if not zero, then do a determinant on it
+
+        return 0.0;
+    }
+
+    /// # Scalar Dot Product
+    /// 
+    /// Performs a dot product, but only returns when the grades are equal.
+    /// 
+    /// Returns 0.0 if there is any mismatched basis.
+    /// 
+    /// Note: This is only meant for blades, all components are blades, 
+    /// but multivectors or other k-vectors may not be blades.
+    pub fn scalar_dot(&self, rhs: &Component) -> f64 {
+        if self.grade() == rhs.grade() {
+            for (b1, b2) in self.bases
+            .iter().zip(rhs.bases.iter()) {
+                if b1 != b2 { // if any basis mismatch, return 0
+                    return 0.0;
+                }
+                // if they match, return the product of the magnitudes
+                 // TODO come back here!
+                return self.mag * rhs.mag;
+            }
+
+        }
+        0.0
+    }
+
     /// # Grade
     /// 
     /// Retieves what the grade of the component is, IE how many bases it has.
@@ -228,33 +278,6 @@ impl ops::BitXor for Component {
 
     fn bitxor(self, rhs: Self) -> Self::Output {
         self.outer_product(&rhs)
-    }
-}
-
-// ref + ref
-impl ops::BitXor<&Component> for &Component {
-    type Output = Component;
-
-    fn bitxor(self, rhs: &Component) -> Self::Output {
-        self.outer_product(rhs)
-    }
-}
-
-// ref + real
-impl ops::BitXor<Component> for &Component {
-    type Output = Component;
-
-    fn bitxor(self, rhs: Component) -> Self::Output {
-        self.outer_product(&rhs)
-    }
-}
-
-// real + ref
-impl ops::BitXor<&Component> for Component {
-    type Output = Component;
-
-    fn bitxor(self, rhs: &Component) -> Self::Output {
-        self.outer_product(rhs)
     }
 }
 
@@ -334,14 +357,14 @@ impl ops::Sub<&Component> for Component {
     }
 }
 
-// Multiplication
+// Geometric Product
 
 // real + real
 impl ops::Mul for Component {
     type Output = Component;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        self.comp_add(&-rhs)
+        self.geo_product(&rhs)
     }
 }
 
@@ -350,7 +373,7 @@ impl ops::Mul<&Component> for &Component {
     type Output = Component;
 
     fn mul(self, rhs: &Component) -> Self::Output {
-        self.comp_add(&-rhs)
+        self.geo_product(&rhs)
     }
 }
 
@@ -359,7 +382,7 @@ impl ops::Mul<Component> for &Component {
     type Output = Component;
 
     fn mul(self, rhs: Component) -> Self::Output {
-        self.comp_add(&-rhs)
+        self.geo_product(&rhs)
     }
 }
 
@@ -368,7 +391,81 @@ impl ops::Mul<&Component> for Component {
     type Output = Component;
 
     fn mul(self, rhs: &Component) -> Self::Output {
-        self.comp_add(&-rhs)
+        self.geo_product(&rhs)
+    }
+}
+
+// Scalar Multiplication
+
+// f64 * component
+impl ops::Mul<f64> for Component {
+    type Output = Component;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        self.scalar_mult(rhs)
+    }
+}
+
+// f64 * &component
+impl ops::Mul<f64> for &Component {
+    type Output = Component;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        self.scalar_mult(rhs)
+    }
+}
+
+// &f64 * component
+impl ops::Mul<&f64> for Component {
+    type Output = Component;
+
+    fn mul(self, rhs: &f64) -> Self::Output {
+        self.scalar_mult(*rhs)
+    }
+}
+
+// &f64 * &component
+impl ops::Mul<&f64> for &Component {
+    type Output = Component;
+
+    fn mul(self, rhs: &f64) -> Self::Output {
+        self.scalar_mult(*rhs)
+    }
+}
+
+// Component * f64
+impl ops::Mul<Component> for f64 {
+    type Output = Component;
+
+    fn mul(self, rhs: Component) -> Self::Output {
+        rhs.scalar_mult(self)
+    }
+}
+
+// &Component * f64
+impl ops::Mul<&Component> for f64 {
+    type Output = Component;
+
+    fn mul(self, rhs: &Component) -> Self::Output {
+        rhs.scalar_mult(self)
+    }
+}
+
+// Component * &f64
+impl ops::Mul<Component> for &f64 {
+    type Output = Component;
+
+    fn mul(self, rhs: Component) -> Self::Output {
+        rhs.scalar_mult(*self)
+    }
+}
+
+// &Component * &f64
+impl ops::Mul<&Component> for &f64 {
+    type Output = Component;
+
+    fn mul(self, rhs: &Component) -> Self::Output {
+        rhs.scalar_mult(*self)
     }
 }
 
