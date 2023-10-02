@@ -218,12 +218,16 @@ impl Component {
         if matrix.iter().any(|x| x.len() != n) {
             panic!("Matrix is not square.");
         }
-        let result = 0.0;
-        for idx in 0..matrix.len() {
+        let mut result = 0.0;
+        for col in 0..matrix.len() {
+            let mut diag = 0.0;
             for offset in 0..matrix.len() {
+                let column = (col + offset) % matrix.len();
+                let row = offset;
                 
             }
         }
+        result
     }
 
     /// # Scalar Product Matrix Form
