@@ -70,6 +70,94 @@ mod tests {
             }
         }
 
+        mod equality_check_should {
+            use crate::{basis::ONBasis, component::Component};
+
+            #[test]
+            pub fn match_with_bases_correctly() {
+                let e_1 = ONBasis::P(1);
+                let e_2 = ONBasis::P(2);
+                let e_3 = ONBasis::P(3);
+
+                let c0 = Component::new(1.0, vec![]);
+                let c1 = Component::new(1.0, vec![e_1]);
+                let c2 = Component::new(1.0, vec![e_2]);
+                let c3 = Component::new(1.0, vec![e_3]);
+
+                assert_eq!(c0, c0);
+                assert_eq!(c1, c1);
+                assert_eq!(c2, c2);
+                assert_eq!(c3, c3);
+
+                let c123 = &c1 ^ &c2 ^ &c3;
+
+                assert_eq!(c123, c123);
+                assert_ne!(c0, c1);
+                assert_ne!(c0, c123);
+                assert_ne!(c1, c123);
+            }
+        }
+
+        mod inner_product_should {
+            use crate::{basis::ONBasis, component::{Component, self}};
+
+            #[test]
+            pub fn check_truth_table_with_all_positive_bases() {
+                // 1    |  e_1  | e_2 | e_3 | e_12 | e_13 | e_23 | e_123
+                // e_1  |   1   |  0  |  0  |  0   |   0  |  0   |   0
+                // e_2  |   0   |  1  |  0  |  0   |   0  |  0   |   0
+                // e_3  |   0   |  0  |  1  |  0   |   0  |  0   |   0
+                // e_12 |   0   |  0  |  0  | -1   |   0  |  0   |   0
+                // e_13 |   0   |  0  |  0  |  0   |  -1  |  0   |   0
+                // e_23 |   0   |  0  |  0  |  0   |   0  | -1   |   0
+                // e_123|   0   |  0  |  0  |  0   |   0  |  0   |  -1
+
+                let e_1 = ONBasis::P(1);
+                let e_2 = ONBasis::P(2);
+                let e_3 = ONBasis::P(3);
+
+                let c0 = Component::new(1.0, vec![]);
+                let c1 = Component::new(1.0, vec![e_1]);
+                let c2 = Component::new(1.0, vec![e_2]);
+                let c3 = Component::new(1.0, vec![e_3]);
+                let mut comps = vec![];
+                let mut i = 0;
+                // use bitmask method to select values.
+                while i < 8 {
+                    let mut res = c0.clone();
+                    if i & 1 > 0 { // if first bit
+                        res = res ^ &c1;
+                    }
+                    if i & 2 > 0 { // if second bit
+                        res = res ^ &c2;
+                    }
+                    if i & 4 > 0 { // if third bit
+                        res = res ^ &c3;
+                    }
+                    comps.push(res);
+                    i += 1;
+                }
+
+                for lhs in comps.iter() {
+                    for rhs in comps.iter() {
+                        let result = lhs.inner_product(rhs);
+                        if lhs == rhs {
+                            // if along the diagonal, it should have a value.
+                            if lhs.grade() / 2 % 2 > 0 { // magnitude flips every 2 grades.
+                                // positive grades
+                                assert_eq!(1.0, result, "Testing inner product on {} and {}", lhs.to_string(), rhs.to_string());
+                            } else {
+                                // negative grades
+                                assert_eq!(-1.0, result, "Testing inner product on {} and {}", lhs.to_string(), rhs.to_string());
+                            }
+                        } else {
+                            assert_eq!(0.0, result);
+                        }
+                    }
+                }
+            }
+        }
+
         mod outer_proudct_should {
             use crate::{component::Component, basis::ONBasis};
 

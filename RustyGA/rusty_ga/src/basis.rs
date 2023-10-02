@@ -1,4 +1,4 @@
-use std::{cmp::Ordering::{self}, hash::Hash};
+use std::{cmp::Ordering::{self}, hash::Hash, fmt::format};
 
 /// # ONBasis (Orthonomal Basis)
 /// 
@@ -68,6 +68,25 @@ impl ONBasis {
             ONBasis::P(_) => false,
             ONBasis::Z(_) => false,
             ONBasis::N(_) => true,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            ONBasis::P(id) => format!("p{}", id),
+            ONBasis::Z(id) => format!("z{}", id),
+            ONBasis::N(id) => format!("n{}", id),
+        }
+    }
+
+    /// # Dot function
+    /// 
+    /// Used to take the inner product between two bases.
+    pub fn dot(&self, ridx: &ONBasis) -> f64 {
+        if self == ridx {
+            self.sqr()
+        } else {
+            0.0
         }
     }
 }
