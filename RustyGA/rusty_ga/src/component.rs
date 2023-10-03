@@ -220,11 +220,18 @@ impl Component {
         }
         let mut result = 0.0;
         for col in 0..matrix.len() {
-            let mut diag = 0.0;
+            let mut diag = 1.0;
             for offset in 0..matrix.len() {
                 let column = (col + offset) % matrix.len();
                 let row = offset;
-                
+                diag *= matrix[row][column];
+            }
+            result += diag;
+            let mut diag = 1.0;
+            for offset in 0..matrix.len() {
+                let column = col.wrapping_sub(offset) % matrix.len();
+                let row = offset;
+                diag *= matrix[row][column];
             }
         }
         result
