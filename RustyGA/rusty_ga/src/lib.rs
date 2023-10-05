@@ -158,6 +158,30 @@ mod tests {
             }
         }
 
+        mod determinant_should {
+            use crate::{component::Component, basis::ONBasis};
+
+            #[test]
+            pub fn correctly_calculate_determinant() {
+                let e1 = ONBasis::P(1);
+                let e2 = ONBasis::P(2);
+                let e3 = ONBasis::P(3);
+                // simple vector components
+                let c1 = Component::new(
+                    1.0,
+                    vec![e1.clone()],
+                );
+                let c2 = Component::new(
+                    1.0,
+                    vec![e2.clone()],
+                );
+                let c3 = Component::new(
+                    1.0,
+                    vec![e3.clone()],
+                );
+            }
+        }
+
         mod outer_proudct_should {
             use crate::{component::Component, basis::ONBasis};
 
