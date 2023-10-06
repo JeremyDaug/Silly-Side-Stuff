@@ -159,10 +159,46 @@ mod tests {
         }
 
         mod determinant_should {
-            use crate::{component::Component, basis::ONBasis};
+            use crate::component::Component;
 
             #[test]
-            pub fn correctly_calculate_determinant() {
+            pub fn correctly_calculate_determinant_3x3() {
+                let matrix = vec![
+                    vec![12.0, 1.0, 11.0, 3.0],
+                    vec![6.0, 14.0, 6.0, 2.0],
+                    vec![8.0, 4.0, 4.0, 5.0],
+                    vec![4.0, 2.0, 1.0, -4.0],
+                ];
+                let result = Component::determinant(matrix);
+
+                assert_eq!(result, 4106.0);
+
+                let matrix = vec![
+                    vec![12.0, 1.0, 11.0, 3.0],
+                    vec![6.0, -3.0, 6.0, 2.0],
+                    vec![8.0, 4.0, 4.0, 5.0],
+                    vec![4.0, 2.0, 1.0, -4.0],
+                ];
+                let result = Component::determinant(matrix);
+
+                assert_eq!(result, -926.0);
+
+                let matrix = vec![
+                    vec![12.0, 1.0, 11.0],
+                    vec![6.0, 14.0, 6.0],
+                    vec![8.0, 4.0, 4.0],
+                ];
+                let result = Component::determinant(matrix);
+
+                assert_eq!(result, -560.0);
+            }
+        }
+
+        mod scalar_product_matrix_form_should {
+            use crate::{basis::ONBasis, component::Component};
+
+            #[test]
+            pub fn produce_correct_matrix() {
                 let e1 = ONBasis::P(1);
                 let e2 = ONBasis::P(2);
                 let e3 = ONBasis::P(3);
@@ -179,6 +215,64 @@ mod tests {
                     1.0,
                     vec![e3.clone()],
                 );
+
+                let a = &c1 ^ &c2 ^ &c3;
+                let b = &c1 ^ &c2 ^ &c3;
+
+                let resulta = a.scalar_product_matrix_form(&b);
+
+                assert_eq!(resulta[0][0], 0.0);
+                assert_eq!(resulta[0][1], 0.0);
+                assert_eq!(resulta[0][2], 1.0);
+
+                assert_eq!(resulta[1][0], 0.0);
+                assert_eq!(resulta[1][1], 1.0);
+                assert_eq!(resulta[1][2], 0.0);
+                
+                assert_eq!(resulta[2][0], 1.0);
+                assert_eq!(resulta[2][1], 0.0);
+                assert_eq!(resulta[2][2], 0.0);
+            }
+
+            #[test]
+            pub fn correctly_include_magnitude() {
+                let e1 = ONBasis::P(1);
+                let e2 = ONBasis::P(2);
+                let e3 = ONBasis::P(3);
+                // simple vector components
+                let a1 = Component::new(
+                    4.0,
+                    vec![e1.clone()],
+                );
+                let b1 = Component::new(
+                    2.0,
+                    vec![e1.clone()],
+                );
+                let c2 = Component::new(
+                    1.0,
+                    vec![e2.clone()],
+                );
+                let c3 = Component::new(
+                    1.0,
+                    vec![e3.clone()],
+                );
+
+                let a = &a1 ^ &c2 ^ &c3;
+                let b = &b1 ^ &c2 ^ &c3;
+
+                let resulta = a.scalar_product_matrix_form(&b);
+
+                assert_eq!(resulta[0][0], 0.0);
+                assert_eq!(resulta[0][1], 0.0);
+                assert_eq!(resulta[0][2], 8.0);
+
+                assert_eq!(resulta[1][0], 0.0);
+                assert_eq!(resulta[1][1], 1.0);
+                assert_eq!(resulta[1][2], 0.0);
+                
+                assert_eq!(resulta[2][0], 1.0);
+                assert_eq!(resulta[2][1], 0.0);
+                assert_eq!(resulta[2][2], 0.0);
             }
         }
 

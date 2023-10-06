@@ -204,35 +204,42 @@ impl Component {
         }
         // if not zero, then do a determinant on it
         let matrix = self.scalar_product_matrix_form(rhs);
+        Component::determinant(matrix)
     }
 
     /// # Determinant function
     /// 
     /// Takes a square matrix and returns the determinant of it.
     /// 
+    /// Uses the Laplace Expansion method to do this, which is
+    /// recursive.
+    /// 
     /// # Panics
     /// 
     /// If matrix isn't square it panics.
-    fn determinant(matrix: Vec<Vec<f64>>) -> f64 {
-        let n = matrix.len();
-        if matrix.iter().any(|x| x.len() != n) {
+    pub fn determinant(m: Vec<Vec<f64>>) -> f64 {
+        let n = m.len();
+        if m.iter().any(|x| x.len() != n) {
             panic!("Matrix is not square.");
         }
+        if m.len() == 2 {
+            return m[0][0] * m[1][1] - m[0][1] * m[1][0];
+        }
+        // if not 2x2 do expansion
         let mut result = 0.0;
-        for col in 0..matrix.len() {
-            let mut diag = 1.0;
-            for offset in 0..matrix.len() {
-                let column = (col + offset) % matrix.len();
-                let row = offset;
-                diag *= matrix[row][column];
+        for idx in 0..m.len() {
+            // get the sub-matrix
+            let mut cm = vec![];
+            for row in 1..m.len() {
+                cm.push(vec![]);
+                for col in 0..m.len() {
+                    if col == idx { continue; }
+                    cm.last_mut().unwrap()
+                    .push(m[row][col]);
+                }
             }
-            result += diag;
-            let mut diag = 1.0;
-            for offset in 0..matrix.len() {
-                let column = col.wrapping_sub(offset) % matrix.len();
-                let row = offset;
-                diag *= matrix[row][column];
-            }
+            // with the next matrix run determinant on that matrix.
+            result += (-1.0_f64).powi(idx as i32) * m[0][idx] * Component::determinant(cm);
         }
         result
     }
@@ -251,13 +258,20 @@ impl Component {
     /// This assumes they are the same grade, and will not work if they are not.
     /// 
     /// This does not include the magnitude, just the basis multiplications.
-    fn scalar_product_matrix_form(&self, rhs: &Component) -> Vec<Vec<f64>> {
+    pub fn scalar_product_matrix_form(&self, rhs: &Component) -> Vec<Vec<f64>> {
         // build out the initial matrix
         let mut result = vec![];
         for lidx in 0..self.grade() {
             result.push(vec![]);
             for ridx in (0..rhs.grade()).rev() {
                 result[lidx].push(self.bases[lidx].dot(&rhs.bases[ridx]));
+                let lhsval = if lidx == 0 {
+                    self.mag
+                } else {1.0};
+                let rhsval = if ridx == 0 {
+                    rhs.mag
+                } else {1.0};
+                result[lidx][rhs.bases.len() - (ridx + 1)] *= lhsval * rhsval;
             }
         }
         result
