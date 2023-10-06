@@ -70,6 +70,10 @@ mod tests {
             }
         }
 
+        mod inverse_should {
+
+        }
+
         mod equality_check_should {
             use crate::{basis::ONBasis, component::Component};
 
@@ -334,6 +338,89 @@ mod tests {
                 let c11 = &c1 ^ &c1;
                 assert_eq!(c11.mag, 0.0);
                 assert_eq!(c11.grade(), 0);
+            }
+        }
+    
+        mod left_cont_should {
+            use crate::{component::Component, basis::ONBasis};
+
+            #[test]
+            pub fn calculate_correctly_for_basics() {
+                let e1 = ONBasis::P(1);
+                let e2 = ONBasis::P(2);
+                let e3 = ONBasis::P(3);
+                // simple vector components
+                let c1 = Component::new(
+                    1.0,
+                    vec![e1.clone()],
+                );
+                let c2 = Component::new(
+                    1.0,
+                    vec![e2.clone()],
+                );
+                let c3 = Component::new(
+                    1.0,
+                    vec![e3.clone()],
+                );
+                
+                //  lhs\rhs | 1 | e1 | e2 | e3 | e12 | e23 | e13 | e123
+                //  1         1   e1   e2   e3   e12   e23   e13   e123
+                //  e1        0   1    0    0    e2     0     e3   e23
+                //  e2        0   0    1    0   -e1    e3     0   -e13
+                //  e3        0   0    0    1     0   -e2   -e1    e12
+                //  e12       0   0    0    0     -1    0     0   -e3
+                //  e23       0   0    0    0     0    -1     0   -e1
+                //  e13       0   0    0    0     0     0     -1   e2
+                //  e123      0   0    0    0     0     0     0    -1
+
+                let comps = vec![c1, c2, c3];
+                let mut vals = vec![];
+                for mask in 0..8 { // make the example components
+                    let mut lhs = Component::new(1.0, vec![]);
+                    if mask & 1 > 0 {
+                        lhs = lhs ^ &comps[0];
+                    }
+                    if mask & 2 > 0 {
+                        lhs = lhs ^ &comps[1];
+                    }
+                    if mask & 4 > 0 {
+                        lhs = lhs ^ &comps[2];
+                    }
+                    vals.push(lhs);
+                }
+
+                // check the truth table
+                for lidx in 0..vals.len() {
+                    for ridx in 0..vals.len() {
+                        let lhs = &vals[lidx];
+                        let rhs = &vals[ridx];
+                        let res = lhs >> rhs;
+                        if lhs.grade() > rhs.grade() {
+                            assert_eq!(res.mag, 0.0);
+                            assert_eq!(res.bases().len(), 0);
+                        } else if lhs.grade() == rhs.grade() {
+                            assert_eq!(res.bases().len(), 0);
+                            if lhs.bases().iter().any(|x| !rhs.bases().contains(x)) {
+                                // if any basis in left is not in the right, should be 0
+                                assert_eq!(res.mag, 0.0);
+                                assert_eq!(res.bases().len(), 0);
+                            } else {
+                                // if lhs in rhs, should have magnitude.
+                                if lhs.grade() > 1 { // for matches d2+ = -1
+                                    assert_eq!(res.mag, -1.0);
+                                } else { // for matches d1- = 1
+                                    assert_eq!(res.mag, 1.0);
+                                }
+                            }
+                        } else { // lhs.grade() < rhs.grade()
+                            if lhs.bases().iter().any(|x| !rhs.bases().contains(x)) {
+                                // if any basis in left is not in the right, should be 0
+                                assert_eq!(res.mag, 0.0);
+                                assert_eq!(res.bases().len(), 0);
+                            }
+                        }
+                    }
+                }
             }
         }
     }

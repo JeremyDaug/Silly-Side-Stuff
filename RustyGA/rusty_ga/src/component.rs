@@ -184,8 +184,39 @@ impl Component {
     /// 
     /// Returns the standardized Inverse of this component
     pub fn inverse(&self) -> Component {
-        // Component::new(self.mag / self.norm())
-        todo!()
+        self.reversion() / self.norm_sqrd()
+    }
+
+    /// # Dualization
+    /// 
+    /// Returns the Dual of this component.
+    /// 
+    /// Must be given the Pseudoscalar of the geometry.
+    /// 
+    /// The Dual of a Dual is not always the same as the original blade, as such
+    /// there is also an Undual function.
+    /// 
+    /// The dual of the Dual results in an alterating pattern dependent on the 
+    /// dimensions of the space. ++--++--
+    /// 0, 1, 4,5 ... A = A.dual().dual()
+    /// 2,3, 6,7 ... -A = A.dual().dual()
+    pub fn dual(&self, i: Component) -> Component {
+        self >> &i.inverse()
+    }
+
+    /// # Undualization
+    /// 
+    /// Depending on the geometry, the Dual of a Dual is not always the same 
+    /// as the original. 
+    /// 
+    /// As such, Undualization guarantees the property that for a blade A, 
+    /// with pseudoscalar i that 
+    /// 
+    /// A = A.dual(i).undual(i)
+    /// 
+    /// in all cases.
+    pub fn undual(&self, i: Component) -> Component {
+        self >> i
     }
 
     /// # Scalar Product
@@ -213,6 +244,8 @@ impl Component {
     /// 
     /// Uses the Laplace Expansion method to do this, which is
     /// recursive.
+    /// 
+    /// TODO this should be moved elsewhere.
     /// 
     /// # Panics
     /// 
@@ -413,13 +446,88 @@ impl PartialEq for Component {
     }
 }
 
+// scalar division 
+
+// &comp / f64 
+impl ops::Div<f64> for &Component {
+    type Output = Component;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        self.scalar_mult(1.0 / rhs)
+    }
+}
+
+// comp / f64
+impl ops::Div<f64> for Component {
+    type Output = Component;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        self.scalar_mult(1.0 / rhs)
+    }
+}
+
 // Left Contraction >>
 
 // real + real
-impl ops::Shl for Component {
+impl ops::Shr for Component {
     type Output = Component;
 
-    fn shl(self, rhs: Self) -> Self::Output {
+    /// # Left Contraction
+    /// 
+    /// Removes the left side bases from the right side.
+    fn shr(self, rhs: Self) -> Self::Output {
+        self.left_cont(&rhs)
+    }
+}
+
+// ref + ref
+impl ops::Shr<&Component> for &Component {
+    type Output = Component;
+
+    /// # Left Contraction
+    /// 
+    /// Removes the left side bases from the right side.
+    fn shr(self, rhs: &Component) -> Self::Output {
+        self.left_cont(rhs)
+    }
+}
+
+// ref + real
+impl ops::Shr<Component> for &Component {
+    type Output = Component;
+
+    /// # Left Contraction
+    /// 
+    /// Removes the left side bases from the right side.
+    fn shr(self, rhs: Component) -> Self::Output {
+        self.left_cont(&rhs)
+    }
+}
+
+// real + ref
+impl ops::Shr<&Component> for Component {
+    type Output = Component;
+
+    /// # Left Contraction
+    /// 
+    /// Removes the left side bases from the right side.
+    /// If lhs.grade() > rhs.grade(), then it returns 0.
+    /// if lhs.grade() <= rhs.grade(), 
+    /// then it returns a component of grade rhs.grade() - rhs.grade()
+    /// 
+    /// Scalar values multiply.
+    fn shr(self, rhs: &Component) -> Self::Output {
+        self.left_cont(rhs)
+    }
+}
+
+// Outer Product (^)
+
+// real + real
+impl ops::BitXor for Component {
+    type Output = Component;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
         self.outer_product(&rhs)
     }
 }
@@ -448,17 +556,6 @@ impl ops::BitXor<&Component> for Component {
 
     fn bitxor(self, rhs: &Component) -> Self::Output {
         self.outer_product(rhs)
-    }
-}
-
-// Outer Product (^)
-
-// real + real
-impl ops::BitXor for Component {
-    type Output = Component;
-
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        self.outer_product(&rhs)
     }
 }
 
