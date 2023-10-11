@@ -70,10 +70,6 @@ mod tests {
             }
         }
 
-        mod inverse_should {
-
-        }
-
         mod equality_check_should {
             use crate::{basis::ONBasis, component::Component};
 
@@ -389,12 +385,35 @@ mod tests {
                     vals.push(lhs);
                 }
 
+                // print the results quickly
+                /*
+                let mut output = String::new();
+                output.push_str("lhs\\rhs | ");
+                for comp in vals.iter() {
+                    output.push_str(&comp.to_string());
+                    output.push_str(" | ");
+                }
+                output.push('\n');
+                for lidx in 0..vals.len() {
+                    output.push_str(&vals[lidx].to_string());
+                    output.push_str(" | ");
+                    for ridx in 0..vals.len() {
+                        let lhs = &vals[lidx];
+                        let rhs = &vals[ridx];
+                        let res = lhs >> rhs;
+                        output.push_str(&res.to_string());
+                        output.push_str(" | ");
+                    }
+                    output.push('\n');
+                }
+                print!("{}", output);
+                */
                 // check the truth table
                 for lidx in 0..vals.len() {
                     for ridx in 0..vals.len() {
                         let lhs = &vals[lidx];
                         let rhs = &vals[ridx];
-                        let res = lhs >> rhs;
+                        let res = lhs << rhs;
                         if lhs.grade() > rhs.grade() {
                             assert_eq!(res.mag, 0.0);
                             assert_eq!(res.bases().len(), 0);
@@ -417,10 +436,511 @@ mod tests {
                                 // if any basis in left is not in the right, should be 0
                                 assert_eq!(res.mag, 0.0);
                                 assert_eq!(res.bases().len(), 0);
+                            } else {
+                                // if all lhs bases in rhs bases, expect those not overlapping.
+                                for basis in rhs.bases().iter() {
+                                    if !lhs.bases().contains(basis) {
+                                        assert!(res.bases().contains(basis));
+                                    }
+                                }
+                                // magnitude should flip based on swaps.
+                                // Just select +/- based on idcs
+                                if (lidx == 2 && ridx == 3) ||
+                                (lidx == 2 && ridx == 7) ||
+                                (lidx == 3 && ridx == 5) ||
+                                (lidx == 3 && ridx == 7) ||
+                                (lidx == 3 && ridx == 6) ||
+                                (lidx == 4 && ridx == 5) ||
+                                (lidx == 6 && ridx == 7) ||
+                                (lidx == 4 && ridx == 6) { // selecting the results which should be negative.
+                                    assert_eq!(res.mag, -1.0, "{}:{} >> {}:{}", lidx, lhs.to_string(), ridx, rhs.to_string());
+                                } else {
+                                    assert_eq!(res.mag, 1.0, "{}:{} >> {}:{}", lidx, lhs.to_string(), ridx, rhs.to_string());
+                                }
                             }
                         }
                     }
                 }
+            }
+
+            #[test]
+            pub fn correctly_multiply_magnitudes() {
+                let e1 = ONBasis::P(1);
+                let e2 = ONBasis::P(2);
+                let e3 = ONBasis::P(3);
+                // simple vector components
+                let c1 = Component::new(
+                    2.0,
+                    vec![e1],
+                );
+                let c2 = Component::new(
+                    3.0,
+                    vec![e2],
+                );
+                let c3 = Component::new(
+                    4.0,
+                    vec![e3],
+                );
+
+                let c123 = Component::new(1.0, 
+                vec![e1, e2, e3]);
+
+                let c12 = &c1 << &c123;
+                assert_eq!(c12.mag, 2.0);
+
+                let c12 = &c2 << &c123;
+                assert_eq!(c12.mag, -3.0);
+
+                let c12 = &c3 << &c123;
+                assert_eq!(c12.mag, 4.0);
+
+                let c12 = &c2 << (&c1 << &c123);
+                assert_eq!(c12.mag, 6.0);
+
+                let c12 = &c3 << (&c1 << &c123);
+                assert_eq!(c12.mag, -8.0);
+
+                let c12 = &c3 << (&c2 << &c123);
+                assert_eq!(c12.mag, 12.0);
+
+                let c12 = &c3 << (&c2 << (&c1 << &c123));
+                assert_eq!(c12.mag, 24.0);
+            }
+        }
+
+        mod right_cont_should {
+            use crate::{component::Component, basis::ONBasis};
+
+            #[test]
+            pub fn calculate_correctly_for_basics() {
+                let e1 = ONBasis::P(1);
+                let e2 = ONBasis::P(2);
+                let e3 = ONBasis::P(3);
+                // simple vector components
+                let c1 = Component::new(
+                    1.0,
+                    vec![e1.clone()],
+                );
+                let c2 = Component::new(
+                    1.0,
+                    vec![e2.clone()],
+                );
+                let c3 = Component::new(
+                    1.0,
+                    vec![e3.clone()],
+                );
+                
+                //  lhs\rhs | 1 | e1 | e2 | e3 | e12 | e23 | e13 | e123
+                //  1         1   e1   e2   e3   e12   e23   e13   e123
+                //  e1        0   1    0    0    e2     0     e3   e23
+                //  e2        0   0    1    0   -e1    e3     0   -e13
+                //  e3        0   0    0    1     0   -e2   -e1    e12
+                //  e12       0   0    0    0     -1    0     0   -e3
+                //  e23       0   0    0    0     0    -1     0   -e1
+                //  e13       0   0    0    0     0     0     -1   e2
+                //  e123      0   0    0    0     0     0     0    -1
+
+                let comps = vec![c1, c2, c3];
+                let mut vals = vec![];
+                for mask in 0..8 { // make the example components
+                    let mut lhs = Component::new(1.0, vec![]);
+                    if mask & 1 > 0 {
+                        lhs = lhs ^ &comps[0];
+                    }
+                    if mask & 2 > 0 {
+                        lhs = lhs ^ &comps[1];
+                    }
+                    if mask & 4 > 0 {
+                        lhs = lhs ^ &comps[2];
+                    }
+                    vals.push(lhs);
+                }
+
+                // print the results quickly
+                let mut output = String::new();
+                output.push_str("lhs\\rhs | ");
+                for comp in vals.iter() {
+                    output.push_str(&comp.to_string());
+                    output.push_str(" | ");
+                }
+                output.push('\n');
+                for lidx in 0..vals.len() {
+                    output.push_str(&vals[lidx].to_string());
+                    output.push_str(" | ");
+                    for ridx in 0..vals.len() {
+                        let lhs = &vals[lidx];
+                        let rhs = &vals[ridx];
+                        let res = lhs >> rhs;
+                        output.push_str(&res.to_string());
+                        output.push_str(" | ");
+                    }
+                    output.push('\n');
+                }
+                print!("{}", output);
+                
+                // check the truth table
+                for lidx in 0..vals.len() {
+                    for ridx in 0..vals.len() {
+                        let lhs = &vals[lidx];
+                        let rhs = &vals[ridx];
+                        let res = lhs >> rhs;
+                        if lhs.grade() < rhs.grade() {
+                            assert_eq!(res.mag, 0.0);
+                            assert_eq!(res.bases().len(), 0);
+                        } else if lhs.grade() == rhs.grade() {
+                            assert_eq!(res.bases().len(), 0);
+                            if lhs.bases().iter().any(|x| !rhs.bases().contains(x)) {
+                                // if any basis in left is not in the right, should be 0
+                                assert_eq!(res.mag, 0.0);
+                                assert_eq!(res.bases().len(), 0);
+                            } else {
+                                // if lhs in rhs, should have magnitude.
+                                if lhs.grade() > 1 { // for matches d2+ = -1
+                                    assert_eq!(res.mag, -1.0);
+                                } else { // for matches d1- = 1
+                                    assert_eq!(res.mag, 1.0);
+                                }
+                            }
+                        } else { // lhs.grade() > rhs.grade()
+                            if rhs.bases().iter().any(|x| !lhs.bases().contains(x)) {
+                                // if any basis in left is not in the right, should be 0
+                                assert_eq!(res.mag, 0.0);
+                                assert_eq!(res.bases().len(), 0);
+                            } else {
+                                // if all lhs bases in rhs bases, expect those not overlapping.
+                                for basis in lhs.bases().iter() {
+                                    if !rhs.bases().contains(basis) {
+                                        assert!(res.bases().contains(basis));
+                                    }
+                                }
+                                // magnitude should flip based on swaps.
+                                // Just select +/- based on idcs
+                                if (lidx == 3 && ridx == 1) ||
+                                   (lidx == 5 && ridx == 1) ||
+                                   (lidx == 6 && ridx == 2) ||
+                                   (lidx == 7 && ridx == 2) ||
+                                   (lidx == 7 && ridx == 3) ||
+                                   (lidx == 7 && ridx == 6){ // selecting the results which should be negative.
+                                    assert_eq!(-1.0, res.mag, "{}:{} >> {}:{}", lidx, lhs.to_string(), ridx, rhs.to_string());
+                                } else {
+                                    assert_eq!(1.0, res.mag, "{}:{} >> {}:{}", lidx, lhs.to_string(), ridx, rhs.to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            #[test]
+            pub fn correctly_multiply_magnitudes() {
+                let e1 = ONBasis::P(1);
+                let e2 = ONBasis::P(2);
+                let e3 = ONBasis::P(3);
+                // simple vector components
+                let c1 = Component::new(
+                    2.0,
+                    vec![e1],
+                );
+                let c2 = Component::new(
+                    3.0,
+                    vec![e2],
+                );
+                let c3 = Component::new(
+                    4.0,
+                    vec![e3],
+                );
+
+                let c123 = Component::new(1.0, 
+                vec![e1, e2, e3]);
+
+                let c12 = &c123 >> &c1;
+                assert_eq!(c12.mag, 2.0);
+
+                let c12 = &c123 >> &c2;
+                assert_eq!(c12.mag, -3.0);
+
+                let c12 = &c123 >> &c3;
+                assert_eq!(c12.mag, 4.0);
+
+                let c12 = (&c123 >> &c1) >> &c2;
+                assert_eq!(c12.mag, 6.0);
+
+                let c12 = (&c123 >> &c1) >> &c3;
+                assert_eq!(c12.mag, -8.0);
+
+                let c12 = (&c123 >> &c2) >> &c3;
+                assert_eq!(c12.mag, 12.0);
+
+                let c12 = (&c123 >> &c1) >> &c2 >> &c3;
+                assert_eq!(c12.mag, 24.0);
+            }
+        }
+
+        mod reversion_should {
+            use crate::{component::Component, basis::ONBasis};
+
+            #[test]
+            pub fn correctly_calculate_value() {
+                let e1 = ONBasis::P(1);
+                let e2 = ONBasis::P(2);
+                let e3 = ONBasis::P(3);
+                let e4 = ONBasis::P(4);
+                // simple vector components
+                let c0 = Component::new(1.0, vec![]);
+                let c1 = Component::new(
+                    1.0,
+                    vec![e1],
+                );
+                let c2 = Component::new(
+                    1.0,
+                    vec![e2],
+                );
+                let c3 = Component::new(
+                    1.0,
+                    vec![e3],
+                );
+                let c4 = Component::new(
+                    1.0,
+                    vec![e4],
+                );
+                let c0r = c0.reversion();
+                assert_eq!(c0r.mag, 1.0);
+                assert_eq!(c0r.bases().len(), 0);
+
+                let c1r = c1.reversion();
+                assert_eq!(c1r.mag, 1.0);
+                assert_eq!(c1r.bases(), c1.bases());
+
+                let c12 = &c1 ^ &c2;
+                let c12r = c12.reversion();
+                assert_eq!(c12r.mag, -1.0);
+                assert_eq!(c12r.bases(), c12.bases());
+
+                let c123 = &c1 ^ &c2 ^ &c3;
+                let c123r = c123.reversion();
+                assert_eq!(c123r.mag, -1.0);
+                assert_eq!(c123r.bases(), c123.bases());
+
+                let c1234 = &c1 ^ &c2 ^ &c3 ^ &c4;
+                let c1234r = c1234.reversion();
+                assert_eq!(c1234r.mag, 1.0);
+                assert_eq!(c1234r.bases(), c1234.bases());
+            }
+        }
+
+        mod inverse_should {
+            use crate::{component::Component, basis::ONBasis};
+
+            #[test]
+            pub fn calculate_correctly() {
+                let e1 = ONBasis::P(1);
+                let e2 = ONBasis::P(2);
+                let e3 = ONBasis::P(3);
+                // simple vector components
+                let c1 = Component::new(
+                    2.0,
+                    vec![e1],
+                );
+                let c2 = Component::new(
+                    3.0,
+                    vec![e2],
+                );
+                let c3 = Component::new(
+                    4.0,
+                    vec![e3],
+                );
+
+                // vector inverse
+                let inv = c1.inverse();
+                assert_eq!(inv.mag, 1.0/2.0);
+                assert_eq!(inv.bases(), c1.bases());
+                let combo = &c1 << &inv;
+                assert_eq!(combo.mag, 1.0);
+                assert_eq!(combo.bases().len(), 0);
+
+                // bivector inverse
+                let c = &c1 ^ &c2;
+                let inv = c.inverse();
+                assert_eq!(inv.mag, -1.0/6.0);
+                assert_eq!(inv.bases(), c.bases());
+                let combo = &c << &inv;
+                assert_eq!(combo.mag, 1.0);
+                assert_eq!(combo.bases().len(), 0);
+
+                // trivector inverse
+                let c = c1 ^ c2 ^ c3;
+                let inv = c.inverse();
+                assert_eq!(inv.mag, -1.0/24.0);
+                assert_eq!(inv.bases(), c.bases());
+                let combo = &c << &inv;
+                assert_eq!(combo.mag, 1.0);
+                assert_eq!(combo.bases().len(), 0);
+            }
+        }
+    
+        mod dual_should {
+            use crate::{basis::ONBasis, component::Component};
+
+            #[test]
+            pub fn function_correctly() {
+                let e1 = ONBasis::P(1);
+                let e2 = ONBasis::P(2);
+                let e3 = ONBasis::P(3);
+                let e4 = ONBasis::P(4);
+                // simple vector components
+                let c1 = Component::new(
+                    1.0,
+                    vec![e1],
+                );
+                let c2 = Component::new(
+                    1.0,
+                    vec![e2],
+                );
+                let c3 = Component::new(
+                    1.0,
+                    vec![e3],
+                );
+                let c4 = Component::new(
+                    1.0,
+                    vec![e4],
+                );
+
+                let i1 = &c1;
+                let i2 = &(&c1 ^ &c2);
+                let i3 = &(&c1 ^ &c2 ^ &c3);
+                let i4 = &(&c1 ^ &c2 ^ &c3 ^ &c4);
+
+                let val = Component::new(2.0, vec![e1.clone()]);
+                let dual1 = val.dual(i1);
+
+                // no change in magnitude
+                assert_eq!(val.mag, dual1.mag);
+                // no overlapping bases
+                assert!(!val.bases().iter().any(|x| dual1.bases().contains(x)));
+                // should combine to the full pseudoscalar
+                assert_eq!((&val ^ &dual1).bases(), i1.bases());
+
+                let dual2 = val.dual(i2);
+
+                // no change in magnitude
+                assert_eq!(-val.mag, dual2.mag);
+                // no overlapping bases
+                assert!(!val.bases().iter().any(|x| dual2.bases().contains(x)));
+                // should combine to the full pseudoscalar
+                assert_eq!((&val ^ &dual2).bases(), i2.bases());
+
+                let dual3 = val.dual(i3);
+
+                // no change in magnitude
+                assert_eq!(-val.mag, dual3.mag);
+                // no overlapping bases
+                assert!(!val.bases().iter().any(|x| dual3.bases().contains(x)));
+                // should combine to the full pseudoscalar
+                assert_eq!((&val ^ &dual3).bases(), i3.bases());
+
+                let dual4 = val.dual(i4);
+
+                // no change in magnitude
+                assert_eq!(val.mag, dual4.mag);
+                // no overlapping bases
+                assert!(!val.bases().iter().any(|x| dual4.bases().contains(x)));
+                // should combine to the full pseudoscalar
+                assert_eq!((&val ^ &dual4).bases(), i4.bases());
+
+                let ddual1 = dual1.dual(i1);
+
+                // no change in magnitude
+                assert_eq!(val.mag, ddual1.mag);
+                // no overlapping bases
+                assert!(val.bases().iter().all(|x| ddual1.bases().contains(x)));
+
+                let ddual2 = dual2.dual(i2);
+
+                // no change in magnitude
+                assert_eq!(-val.mag, ddual2.mag);
+                // no overlapping bases
+                assert!(val.bases().iter().all(|x| ddual2.bases().contains(x)));
+
+                let ddual3 = dual3.dual(i3);
+
+                // no change in magnitude
+                assert_eq!(-val.mag, ddual3.mag);
+                // no overlapping bases
+                assert!(val.bases().iter().all(|x| ddual3.bases().contains(x)));
+
+                let ddual4 = dual4.dual(i4);
+
+                // no change in magnitude
+                assert_eq!(val.mag, ddual4.mag);
+                // no overlapping bases
+                assert!(val.bases().iter().all(|x| ddual4.bases().contains(x)));
+
+                let undual1 = dual1.undual(i1);
+
+                assert_eq!(val, undual1);
+
+                let undual2 = dual2.undual(i2);
+                assert_eq!(val, undual2);
+
+                let undual3 = dual3.undual(i3);
+                assert_eq!(val, undual3);
+
+                let undual4 = dual4.undual(i4);
+                assert_eq!(val, undual4);
+            }
+        }
+
+        mod reciprocal_frame_should {
+            use crate::{basis::ONBasis, component::Component};
+
+            #[test]
+            pub fn be_calculated_correctly() {
+                let e1 = ONBasis::P(1);
+                let e2 = ONBasis::P(2);
+                let e3 = ONBasis::P(3);
+                let e4 = ONBasis::P(4);
+                // simple vector components
+                let c1 = Component::new(
+                    1.0,
+                    vec![e1],
+                );
+                let c2 = Component::new(
+                    1.0,
+                    vec![e2],
+                );
+                let c3 = Component::new(
+                    1.0,
+                    vec![e3],
+                );
+                let c4 = Component::new(
+                    1.0,
+                    vec![e4],
+                );
+
+                let i = &c1 ^ &c2 ^ &c3 ^ &c4;
+                let cs = vec![c1, c2, c3, c4];
+
+                // get reciprocals for each component.
+                let s1 = i.reciprocal_frame(0);
+                let s2 = i.reciprocal_frame(1);
+                let s3 = i.reciprocal_frame(2);
+                let s4 = i.reciprocal_frame(3);
+
+                let rs = vec![s1, s2, s3, s4];
+
+                // dot i with reciprocal of i and ensure c_i . c^i = 1
+                for (cidx, c) in cs.iter().enumerate() {
+                    for (ridx, r) in rs.iter().enumerate() {
+                        let result = c.inner_product(r);
+                        println!("{}", result.to_string());
+                        if cidx == ridx {
+                            assert_eq!(result, 1.0, "{} . {}", c.to_string(), r.to_string());
+                        } else {
+                            assert_eq!(result, 0.0, "{} . {}", c.to_string(), r.to_string());
+                        }
+                    }
+                }
+                // and c_i . c^j = 0 when i != j
             }
         }
     }

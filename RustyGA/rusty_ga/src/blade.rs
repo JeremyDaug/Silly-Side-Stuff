@@ -1,17 +1,4 @@
-use crate::{basis::ONBasis, component::Component};
-
-/// # Multivector
-/// 
-/// A Multivector is a collection of k-vectors. 
-/// 
-/// It stores these vectors in the form of their components.
-/// while components are organized from lowest grade to highest, the order
-/// of bases within components are guranteed to be in order from lowest id
-/// to highest id. Any other ordering is not applied.
-#[derive(Debug)]
-pub struct Multivector {
-    components: Vec<Component>
-}
+use crate::basis::ONBasis;
 
 /// # Blade
 /// 

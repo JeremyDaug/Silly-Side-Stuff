@@ -1,6 +1,6 @@
 use std::{ops, collections::HashSet, fmt::Display};
 
-use crate::basis::ONBasis;
+use crate::{basis::ONBasis, multivector::{Multivector, self}};
 
 /// # Component
 /// 
@@ -24,6 +24,9 @@ pub struct Component {
     bases: Vec<ONBasis>
 }
 
+/// # Zero Component
+/// 
+/// Returns a component with a magnitude of 0.0 and no bases.
 const ZERO: Component = Component { mag: 0.0, bases: vec![] };
 
 impl Component {
@@ -159,6 +162,36 @@ impl Component {
         }
     }
 
+    /// # Project Onto
+    /// 
+    /// Projects the component blade onto another component.
+    /// 
+    /// Currently does not work for degenerate dimensions due to the basis 
+    /// squaring to 0.
+    pub fn project_onto(&self, rhs: &Component) -> Component {
+        self << rhs.inverse() << rhs
+    }
+
+    /// # Reciprocal Frame
+    /// 
+    /// Treats the current component as a pseudoscalar of a subspace
+    /// then returns the given reciprocal bases.
+    /// 
+    /// IE, if the component is B = b1 ^ b2 ^ b3 ^ b4
+    /// then B.reciprocal_frame(2) = - b1 ^ b3 ^ b4 << B.inverse
+    /// 
+    /// Returns zero if the vector selected is beyond our array.
+    pub fn reciprocal_frame(&self, i: usize) -> Component {
+        if i >= self.bases.len() {
+            ZERO
+        } else {
+            let mut rep_bas = self.bases.clone();
+            rep_bas.remove(i);
+            (-1.0_f64).powi(i as i32) * Component::new(self.mag, 
+                rep_bas) << self.inverse()
+        }
+    }
+
     /// # Reversion
     /// 
     /// Produces the reverse of a blade in the grade ordering of 
@@ -182,9 +215,17 @@ impl Component {
 
     /// # Inverse
     /// 
-    /// Returns the standardized Inverse of this component
+    /// Returns the standardized Inverse of this component.
+    /// 
+    /// # Note
+    /// 
+    /// Blades with Degenerate bases (bases^2 = 0) do not have
+    /// an inverse value.
     pub fn inverse(&self) -> Component {
-        self.reversion() / self.norm_sqrd()
+        let rev = self.reversion();
+        let norm = self.norm_sqrd();
+        let result = rev / norm;
+        result
     }
 
     /// # Dualization
@@ -200,8 +241,8 @@ impl Component {
     /// dimensions of the space. ++--++--
     /// 0, 1, 4,5 ... A = A.dual().dual()
     /// 2,3, 6,7 ... -A = A.dual().dual()
-    pub fn dual(&self, i: Component) -> Component {
-        self >> &i.inverse()
+    pub fn dual(&self, i: &Component) -> Component {
+        self << &i.inverse()
     }
 
     /// # Undualization
@@ -215,8 +256,8 @@ impl Component {
     /// A = A.dual(i).undual(i)
     /// 
     /// in all cases.
-    pub fn undual(&self, i: Component) -> Component {
-        self >> i
+    pub fn undual(&self, i: &Component) -> Component {
+        self << i
     }
 
     /// # Scalar Product
@@ -371,7 +412,12 @@ impl Component {
     /// 
     /// Same as left, but reversed.
     pub fn right_cont(&self, rhs: &Component) -> Component {
-        (-1.0_f64).powf((self.grade() * (1 + rhs.grade())) as f64) * rhs.left_cont(self)
+        let result = (-1.0_f64).powi(rhs.grade() as i32 * (1 + self.grade() as i32)) * rhs.left_cont(self);
+        if result.mag.is_sign_negative() && result.mag == 0.0 {
+            Component::new(result.mag.abs(), result.bases)
+        } else {
+            result
+        }
     }
 
     /// # Inner Product
@@ -402,9 +448,16 @@ impl Component {
 
     /// # Norm squared
     /// 
-    /// Norm^2 of a component (a) is equal to a . a
+    /// Norm^2 of a vector (a) is equal to a . a
+    /// 
+    /// We peek ahead a bit and for any blade define 
+    /// the norm^2 as A . A.inverse()
+    /// 
+    /// This may be reworked in the future to be more
+    /// efficient as it creates a new component, and applies
+    /// reversion to it, just so it can drop it.
     pub fn norm_sqrd(&self) -> f64 {
-        self.inner_product(self)
+        self.inner_product(&self.reversion())
     }
 
     /// # Norm
@@ -466,46 +519,10 @@ impl ops::Div<f64> for Component {
     }
 }
 
-// Left Contraction >>
+// Left Contraction <<
 
 // real + real
-impl ops::Shr for Component {
-    type Output = Component;
-
-    /// # Left Contraction
-    /// 
-    /// Removes the left side bases from the right side.
-    fn shr(self, rhs: Self) -> Self::Output {
-        self.left_cont(&rhs)
-    }
-}
-
-// ref + ref
-impl ops::Shr<&Component> for &Component {
-    type Output = Component;
-
-    /// # Left Contraction
-    /// 
-    /// Removes the left side bases from the right side.
-    fn shr(self, rhs: &Component) -> Self::Output {
-        self.left_cont(rhs)
-    }
-}
-
-// ref + real
-impl ops::Shr<Component> for &Component {
-    type Output = Component;
-
-    /// # Left Contraction
-    /// 
-    /// Removes the left side bases from the right side.
-    fn shr(self, rhs: Component) -> Self::Output {
-        self.left_cont(&rhs)
-    }
-}
-
-// real + ref
-impl ops::Shr<&Component> for Component {
+impl ops::Shl for Component {
     type Output = Component;
 
     /// # Left Contraction
@@ -516,8 +533,129 @@ impl ops::Shr<&Component> for Component {
     /// then it returns a component of grade rhs.grade() - rhs.grade()
     /// 
     /// Scalar values multiply.
-    fn shr(self, rhs: &Component) -> Self::Output {
+    fn shl(self, rhs: Self) -> Self::Output {
+        self.left_cont(&rhs)
+    }
+}
+
+// ref + ref
+impl ops::Shl<&Component> for &Component {
+    type Output = Component;
+
+    /// # Left Contraction
+    /// 
+    /// Removes the left side bases from the right side.
+    /// If lhs.grade() > rhs.grade(), then it returns 0.
+    /// if lhs.grade() <= rhs.grade(), 
+    /// then it returns a component of grade rhs.grade() - rhs.grade()
+    /// 
+    /// Scalar values multiply.
+    fn shl(self, rhs: &Component) -> Self::Output {
         self.left_cont(rhs)
+    }
+}
+
+// ref + real
+impl ops::Shl<Component> for &Component {
+    type Output = Component;
+
+    /// # Left Contraction
+    /// 
+    /// Removes the left side bases from the right side.
+    /// If lhs.grade() > rhs.grade(), then it returns 0.
+    /// if lhs.grade() <= rhs.grade(), 
+    /// then it returns a component of grade rhs.grade() - rhs.grade()
+    /// 
+    /// Scalar values multiply.
+    fn shl(self, rhs: Component) -> Self::Output {
+        self.left_cont(&rhs)
+    }
+}
+
+// real + ref
+impl ops::Shl<&Component> for Component {
+    type Output = Component;
+
+    /// # Left Contraction
+    /// 
+    /// Removes the left side bases from the right side.
+    /// If lhs.grade() > rhs.grade(), then it returns 0.
+    /// if lhs.grade() <= rhs.grade(), 
+    /// then it returns a component of grade rhs.grade() - rhs.grade()
+    /// 
+    /// Scalar values multiply.
+    fn shl(self, rhs: &Component) -> Self::Output {
+        self.left_cont(rhs)
+    }
+}
+
+// Right Contraction >>
+
+// real + real
+impl ops::Shr for Component {
+    type Output = Component;
+
+    /// # Right Contraction
+    /// 
+    /// Removes the right side bases from the left side.
+    /// If lhs.grade() < rhs.grade(), then it returns 0.
+    /// if lhs.grade() >= rhs.grade(), 
+    /// then it returns a component of grade lhs.grade() - rhs.grade()
+    /// 
+    /// Scalar values multiply.
+    fn shr(self, rhs: Self) -> Self::Output {
+        self.right_cont(&rhs)
+    }
+}
+
+// ref + ref
+impl ops::Shr<&Component> for &Component {
+    type Output = Component;
+
+    /// # Right Contraction
+    /// 
+    /// Removes the right side bases from the left side.
+    /// If lhs.grade() < rhs.grade(), then it returns 0.
+    /// if lhs.grade() >= rhs.grade(), 
+    /// then it returns a component of grade lhs.grade() - rhs.grade()
+    /// 
+    /// Scalar values multiply.
+    fn shr(self, rhs: &Component) -> Self::Output {
+        self.right_cont(rhs)
+    }
+}
+
+// ref + real
+impl ops::Shr<Component> for &Component {
+    type Output = Component;
+
+    /// # Right Contraction
+    /// 
+    /// Removes the right side bases from the left side.
+    /// If lhs.grade() < rhs.grade(), then it returns 0.
+    /// if lhs.grade() >= rhs.grade(), 
+    /// then it returns a component of grade lhs.grade() - rhs.grade()
+    /// 
+    /// Scalar values multiply.
+    fn shr(self, rhs: Component) -> Self::Output {
+        self.right_cont(&rhs)
+    }
+}
+
+// real + ref
+impl ops::Shr<&Component> for Component {
+    type Output = Component;
+
+    /// # Right Contraction
+    /// 
+    /// Removes the right side bases from the left side.
+    /// If lhs.grade() < rhs.grade(), then it returns 0.
+    /// if lhs.grade() >= rhs.grade(), 
+    /// then it returns a component of grade lhs.grade() - rhs.grade()
+    /// 
+    /// Scalar values multiply.
+    fn shr(self, rhs: &Component) -> Self::Output {
+        self.right_cont(rhs)
     }
 }
 
@@ -594,6 +732,39 @@ impl ops::Add<&Component> for Component {
 
     fn add(self, rhs: &Component) -> Self::Output {
         self.comp_add(rhs)
+    }
+}
+
+// comp + mv
+impl ops::Add<Multivector> for Component {
+    type Output = Multivector;
+
+    fn add(self, rhs: Multivector) -> Self::Output {
+        rhs.add_component(&self)
+    }
+}
+// &comp + mv
+impl ops::Add<Multivector> for &Component {
+    type Output = Multivector;
+
+    fn add(self, rhs: Multivector) -> Self::Output {
+        rhs.add_component(rhs)
+    }
+}
+// comp + &mv
+impl ops::Add<&Multivector> for Component {
+    type Output = Multivector;
+
+    fn add(self, rhs: &Multivector) -> Self::Output {
+        rhs.add(self)
+    }
+}
+// &comp + &mv
+impl ops::Add<&Multivector> for &Component {
+    type Output = Multivector;
+
+    fn add(self, rhs: &Multivector) -> Self::Output {
+        rhs.add_component(self)
     }
 }
 
