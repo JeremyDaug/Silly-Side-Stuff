@@ -18,7 +18,7 @@ pub struct Multivector {
 /// # Zero Multivector
 /// 
 /// Has No components.
-const ZERO: Multivector = Multivector { components: vec![] };
+pub const ZERO: Multivector = Multivector { components: vec![] };
 
 impl Multivector {
     /// # New
@@ -31,7 +31,18 @@ impl Multivector {
         let mut components = components
             .clone();
         components.sort_by(|a, b| a.grade().cmp(&b.grade()));
+        // sanity check if there are components with duplicate bases.
+        for comp in components.iter() {
+            
+        }
         Multivector { components }
+    }
+
+    /// # Length
+    /// 
+    /// How many components the multivector contains.
+    pub fn len(&self) -> usize {
+        self.components.len()
     }
 
     /// # Is Blade
@@ -64,6 +75,7 @@ impl Multivector {
     /// The multivector p1p2 + p3p4 is not a blade because they do not share
     /// a basis.
     pub fn is_blade(&self) -> bool {
+        todo!("Come back here later.");
         let mut grades = HashSet::new();
         for comp in self.components.iter() {
             grades.insert(comp.grade());
@@ -106,25 +118,32 @@ impl Multivector {
     pub fn add_component(&self, rhs: &Component) -> Multivector {
         // get the grade and split off those parts
         let rhsgrade = rhs.grade();
-        let mut lhscomps = self.components.clone();
-        let mut editedidx = usize::MAX;
-        for (idx, comp) in lhscomps.iter_mut()
-        .filter(|x| x.grade() == rhsgrade)
-        .enumerate() {
-            if comp.bases() == rhs.bases() {
-                comp.mag += rhs.mag;
-                editedidx = idx;
-                break;
+        let mut lhsgrades = HashSet::new();
+        for comp in self.components.iter() {
+            lhsgrades.insert(comp.grade());
+        }
+        let mut result = vec![];
+        let mut contracted = false;
+        for comp in self.components.iter() {
+            if contracted { 
+                // if we've already added to a component, just add 
+                // to the result and continue.
+                result.push(comp.clone());
+                continue;
+            }
+            let temp = comp.force_comp_add(rhs);
+            if let Some(val) = temp {
+                // if it added, then we have a contraction
+                result.push(val);
+                contracted = true;
+            } else { // if no value returned, then keep the original.
+                result.push(comp.clone());
             }
         }
-        if editedidx == usize::MAX { // if not added to anything, push to the end.
-            lhscomps.push(rhs.clone());
-        } else { // if added to something, check to see if it went to 0.
-            if lhscomps[editedidx].mag == 0.0 {
-                lhscomps.remove(editedidx);
-            }
+        if !contracted { // if no addition at any time, add to end.
+            result.push(rhs.clone());
         }
-        Multivector { components: lhscomps }
+        Multivector::new(result)
     }
 
     /// # Base Add
@@ -133,12 +152,45 @@ impl Multivector {
     /// 
     /// A simple add method. Any like components are combined, 
     /// if they add to 0, they are removed.
+    /// 
+    /// TODO consider improving to reduce computation cost.
     pub fn base_add(&self, rhs: &Multivector) -> Multivector {
-        let mut result = ZERO;
+        let mut result = self.clone();
         for comp in rhs.components.iter() {
-            result = result + rhs;
+            result = result + comp;
         }
         result
+    }
+
+    /// # Scalar Add
+    /// 
+    /// Multivector Addition between a Multivector and a Scalar value.
+    pub fn scalar_add(&self, rhs: &f64) -> Multivector {
+        self.add_component(&Component::from_float(rhs))
+    }
+
+    /// # Take Grade
+    /// 
+    /// Takes those parts of a multivector of a particular grade.
+    pub fn take_grade(&self, grade: usize) -> Multivector {
+        let mut result = vec![];
+        for comp in self.components.iter()
+        .filter(|x| x.grade() == grade) {
+            result.push(comp.clone());
+        }
+        Multivector::new(result)
+    }
+
+    pub fn norm_sqrd(&self) -> f64 {
+        todo!()
+    }
+
+    pub fn scalar_mult(&self, rhs: f64) -> Multivector {
+        let mut result = vec![];
+        for comp in self.components.iter() {
+            result.push(comp.clone() * rhs);
+        }
+        Multivector::new(result)
     }
 
     /// # Negative 
@@ -234,6 +286,338 @@ impl ops::Add<&Component> for &Multivector {
         self.add_component(rhs)
     }
 }
+
+
+// comp + mv
+impl ops::Add<Multivector> for Component {
+    type Output = Multivector;
+
+    fn add(self, rhs: Multivector) -> Self::Output {
+        rhs.add_component(&self)
+    }
+}
+// &comp + mv
+impl ops::Add<Multivector> for &Component {
+    type Output = Multivector;
+
+    fn add(self, rhs: Multivector) -> Self::Output {
+        rhs.add_component(&self)
+    }
+}
+// comp + &mv
+impl ops::Add<&Multivector> for Component {
+    type Output = Multivector;
+
+    fn add(self, rhs: &Multivector) -> Self::Output {
+        rhs.add_component(&self)
+    }
+}
+// &comp + &mv
+impl ops::Add<&Multivector> for &Component {
+    type Output = Multivector;
+
+    fn add(self, rhs: &Multivector) -> Self::Output {
+        rhs.add_component(&self)
+    }
+}
+
+// mv  + scalar
+impl ops::Add<f64> for Multivector {
+    type Output = Multivector;
+
+    fn add(self, rhs: f64) -> Self::Output {
+        self.scalar_add(&rhs)
+    }
+}
+// &mv + scalar
+impl ops::Add<f64> for &Multivector {
+    type Output = Multivector;
+
+    fn add(self, rhs: f64) -> Self::Output {
+        self.scalar_add(&rhs)
+    }
+}
+// mv  + &scalar
+impl ops::Add<&f64> for Multivector {
+    type Output = Multivector;
+
+    fn add(self, rhs: &f64) -> Self::Output {
+        self.scalar_add(rhs)
+    }
+}
+// &mv + &scalar
+impl ops::Add<&f64> for &Multivector {
+    type Output = Multivector;
+
+    fn add(self, rhs: &f64) -> Self::Output {
+        self.scalar_add(rhs)
+    }
+}
+// scalar  + mv 
+impl ops::Add<Multivector> for f64 {
+    type Output = Multivector;
+
+    fn add(self, rhs: Multivector) -> Self::Output {
+        rhs.scalar_add(&self)
+    }
+}
+// scalar  + &mv
+impl ops::Add<&Multivector> for f64 {
+    type Output = Multivector;
+
+    fn add(self, rhs: &Multivector) -> Self::Output {
+        rhs.scalar_add(&self)
+    }
+}
+// &scalar + mv 
+impl ops::Add<Multivector> for &f64 {
+    type Output = Multivector;
+
+    fn add(self, rhs: Multivector) -> Self::Output {
+        rhs.scalar_add(&self)
+    }
+}
+// &scalar + &mv
+impl ops::Add<&Multivector> for &f64 {
+    type Output = Multivector;
+
+    fn add(self, rhs: &Multivector) -> Self::Output {
+        rhs.scalar_add(&self)
+    }
+}
+
+// subtraction
+// mv - mv
+impl ops::Sub for Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.base_add(&-rhs)
+    }
+}
+// mv - &mv
+impl ops::Sub<&Multivector> for Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: &Multivector) -> Self::Output {
+        self.base_add(&-rhs)
+    }
+}
+// &mv - mv
+impl ops::Sub<Multivector> for &Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: Multivector) -> Self::Output {
+        self.base_add(&-rhs)
+    }
+}
+// &mv - &mv
+impl ops::Sub<&Multivector> for &Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: &Multivector) -> Self::Output {
+        self.base_add(&-rhs)
+    }
+}
+
+// mv - comp
+impl ops::Sub<Component> for Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: Component) -> Self::Output {
+        self.add_component(&-rhs)
+    }
+}
+// &mv - comp
+impl ops::Sub<Component> for &Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: Component) -> Self::Output {
+        self.add_component(&-rhs)
+    }
+}
+// mv - &comp
+impl ops::Sub<&Component> for Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: &Component) -> Self::Output {
+        self.add_component(&-rhs)
+    }
+}
+// &mv - &comp
+impl ops::Sub<&Component> for &Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: &Component) -> Self::Output {
+        self.add_component(&-rhs)
+    }
+}
+
+// comp - mv
+impl ops::Sub<Multivector> for Component {
+    type Output = Multivector;
+
+    fn sub(self, rhs: Multivector) -> Self::Output {
+        -rhs.add_component(&-self)
+    }
+}
+// &comp - mv
+impl ops::Sub<Multivector> for &Component {
+    type Output = Multivector;
+
+    fn sub(self, rhs: Multivector) -> Self::Output {
+        -rhs.add_component(&-self)
+    }
+}
+// comp - &mv
+impl ops::Sub<&Multivector> for Component {
+    type Output = Multivector;
+
+    fn sub(self, rhs: &Multivector) -> Self::Output {
+        -rhs.add_component(&-self)
+    }
+}
+// &comp - &mv
+impl ops::Sub<&Multivector> for &Component {
+    type Output = Multivector;
+
+    fn sub(self, rhs: &Multivector) -> Self::Output {
+        -rhs.add_component(&-self)
+    }
+}
+
+// mv - scalar
+impl ops::Sub<f64> for Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: f64) -> Self::Output {
+        self.scalar_add(&-rhs)
+    }
+}
+// &mv - scalar
+impl ops::Sub<f64> for &Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: f64) -> Self::Output {
+        self.scalar_add(&-rhs)
+    }
+}
+// mv - &scalar
+impl ops::Sub<&f64> for Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: &f64) -> Self::Output {
+        self.scalar_add(&-rhs)
+    }
+}
+// &mv - &scalar
+impl ops::Sub<&f64> for &Multivector {
+    type Output = Multivector;
+
+    fn sub(self, rhs: &f64) -> Self::Output {
+        self.scalar_add(&-rhs)
+    }
+}
+// scalar - mv
+impl ops::Sub<Multivector> for f64 {
+    type Output = Multivector;
+
+    fn sub(self, rhs: Multivector) -> Self::Output {
+        -rhs + self
+    }
+}
+// &scalar - mv
+impl ops::Sub<Multivector> for &f64 {
+    type Output = Multivector;
+
+    fn sub(self, rhs: Multivector) -> Self::Output {
+        -rhs + self
+    }
+}
+// scalar - &mv
+impl ops::Sub<&Multivector> for f64 {
+    type Output = Multivector;
+
+    fn sub(self, rhs: &Multivector) -> Self::Output {
+        -rhs + self
+    }
+}
+// &scalar - &mv
+impl ops::Sub<&Multivector> for &f64 {
+    type Output = Multivector;
+
+    fn sub(self, rhs: &Multivector) -> Self::Output {
+        -rhs + self
+    }
+}
+
+// scalar multiplication
+// f64  * mv
+impl ops::Mul<f64> for Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        self.scalar_mult(rhs)
+    }
+}
+// &f64 * mv
+impl ops::Mul<&f64> for Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: &f64) -> Self::Output {
+        self.scalar_mult(*rhs)
+    }
+}
+// f64  * &mv
+impl ops::Mul<f64> for &Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        self.scalar_mult(rhs)
+    }
+}
+// &f64 * &mv
+impl ops::Mul<&f64> for &Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: &f64) -> Self::Output {
+        self.scalar_mult(*rhs)
+    }
+}
+// mv  * f64 
+impl ops::Mul<Multivector> for f64 {
+    type Output = Multivector;
+
+    fn mul(self, rhs: Multivector) -> Self::Output {
+        rhs.scalar_mult(self)
+    }
+}
+// mv  * &f64
+impl ops::Mul<Multivector> for &f64 {
+    type Output = Multivector;
+
+    fn mul(self, rhs: Multivector) -> Self::Output {
+        rhs.scalar_mult(*self)
+    }
+}
+// &mv * f64 
+impl ops::Mul<&Multivector> for f64 {
+    type Output = Multivector;
+
+    fn mul(self, rhs: &Multivector) -> Self::Output {
+        rhs.scalar_mult(self)
+    }
+}
+// &mv * *f64
+impl ops::Mul<&Multivector> for &f64 {
+    type Output = Multivector;
+
+    fn mul(self, rhs: &Multivector) -> Self::Output {
+        rhs.scalar_mult(*self)
+    }
+}
+
+// Negative
 
 impl ops::Neg for Multivector {
     type Output = Multivector;

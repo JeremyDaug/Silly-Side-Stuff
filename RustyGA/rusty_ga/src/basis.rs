@@ -3,7 +3,7 @@ use std::{cmp::Ordering::{self}, hash::Hash, fmt::format};
 /// # ONBasis (Orthonomal Basis)
 /// 
 /// Basis data storage. Contains the id of the basis and
-/// whether it multiplies to *P*ositive, *N*egative, or *Z*ero.
+/// whether it multiplies to **P**ositive, **N**egative, or **Z**ero.
 /// 
 /// Names of the bases are stored in the Geometry.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

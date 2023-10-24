@@ -1,12 +1,12 @@
 pub mod blade;
 pub mod basis;
 pub mod component;
-
+pub mod multivector;
 
 #[cfg(test)]
 mod tests {
 
-    mod component {
+    mod component_tests {
         mod reorder_bases_should {
             use crate::{basis::ONBasis, component::Component};
         
@@ -941,6 +941,96 @@ mod tests {
                     }
                 }
                 // and c_i . c^j = 0 when i != j
+            }
+        }
+    }
+
+    mod multivector_tests {
+        mod new_should {
+            use crate::{basis::ONBasis, component::Component};
+
+            pub fn sort_list_of_components_buy_grade() {
+                let b1 = ONBasis::P(0);
+                let b2 = ONBasis::P(1);
+
+                let comp1 = Component::new(1.0, vec![b1]);
+                let comp2 = Component::new(1.0, vec![b2]);
+            }
+        }
+
+        mod is_blade_should {
+            use crate::basis::ONBasis;
+            use crate::component::Component;
+            use crate::multivector::Multivector;
+
+            #[test]
+            pub fn correctly_tell_when_it_is_blade_or_not() {
+                let p1 = ONBasis::P(1);
+                let p2 = ONBasis::P(2);
+                let p3 = ONBasis::P(3);
+                let p4 = ONBasis::P(4);
+                let p5 = ONBasis::P(5);
+
+                let vector = Multivector::new(
+                    vec![Component::new(1.0, vec![p1])]);
+                assert!(vector.is_blade(), "Pure Vec Component isn't blade.");
+
+                let n_component = Multivector::new(
+                    vec![Component::new(1.0, vec![p1, p2, p3, p4, p5])]
+                );
+                assert!(n_component.is_blade(), "Higher Dimension Component isn't blade.");
+
+                let complex_blade = Multivector::new(
+                    vec![
+                        Component::new(1.0, vec![p1, p2]),
+                        Component::new(1.0, vec![p2, p3]),
+                        Component::new(1.0, vec![p3, p4]),
+                        Component::new(1.0, vec![p4, p5])
+                    ]
+                );
+                assert!(complex_blade.is_blade(), "Complex BLade is Not valid.");
+
+                let not_blade = Multivector::new(
+                    vec![
+                        Component::new(1.0, vec![p1, p2]),
+                        Component::new(1.0, vec![p3, p4]),
+                        Component::new(1.0, vec![p4, p5])
+                    ]
+                );
+                assert!(!not_blade.is_blade(), "Not Blade is returning as Blade.");
+
+                let multigrade = Multivector::new(
+                    vec![
+                        Component::new(1.0, vec![p1]),
+                        Component::new(1.0, vec![p2, p3]),
+                    ]
+                );
+                assert!(!multigrade.is_blade(), "Multigrade has returned as blade.");
+            }
+        }
+    
+        mod add_component_should {
+            use std::ops::Add;
+
+            use crate::{basis::ONBasis, component::Component, multivector::{Multivector, self}};
+
+            #[test]
+            pub fn correctly_add_component_to_multivector() {
+                let b1 = ONBasis::P(1);
+                let b2 = ONBasis::P(2);
+
+                let comp1 = Component::new(1.0, 
+                    vec![b1]);
+                let comp2 = Component::new(1.0, 
+                    vec![b2]);
+                let comp12 = Component::new(1.0, 
+                    vec![b1, b2]);
+
+                let mv = multivector::ZERO;
+
+                let mv1 = mv.add_component(&comp1);
+                assert_eq!(mv1.len(), 1);
+                assert_eq!(true, true);
             }
         }
     }

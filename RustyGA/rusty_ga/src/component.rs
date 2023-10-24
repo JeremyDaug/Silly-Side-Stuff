@@ -1,6 +1,6 @@
-use std::{ops, collections::HashSet, fmt::Display};
+use std::{ops::{self, Add}, collections::HashSet};
 
-use crate::{basis::ONBasis, multivector::{Multivector, self}};
+use crate::{basis::ONBasis, multivector::Multivector};
 
 /// # Component
 /// 
@@ -27,7 +27,7 @@ pub struct Component {
 /// # Zero Component
 /// 
 /// Returns a component with a magnitude of 0.0 and no bases.
-const ZERO: Component = Component { mag: 0.0, bases: vec![] };
+pub const ZERO: Component = Component { mag: 0.0, bases: vec![] };
 
 impl Component {
     /// # New
@@ -95,23 +95,42 @@ impl Component {
         result
     }
 
-    /// # Base Add
+    /// # Force Component Addition
     /// 
     /// Adds two components if they share the same basis vectors.
-    pub fn comp_add(&self, rhs: &Component) -> Component {
+    /// 
+    /// Useful for adding components but maintaining the component struct.
+    /// 
+    /// If components don't add at all, it returns None. If they do add
+    /// it returns the result.
+    pub fn force_comp_add(&self, rhs: &Component) -> Option<Component> {
         // if the same length, organize their bases
         if self.bases.len() == rhs.bases.len() {
             // if same length, check that each basis is the same
             for idx in 0..self.bases.len() {
                 if self.bases[idx] != rhs.bases[idx] {
-                    return ZERO; // if any mismatch, return 0.
+                    return None; // if any mismatch, return 0.
                 }
             }
             // if bases match, then add magnitudes
-            return Component { mag: self.mag + rhs.mag, bases: self.bases.clone()};
+            let res = Component { mag: self.mag + rhs.mag, 
+                bases: self.bases.clone()};
+            // if magnitude is zero, then return zero component for simplicity reasons.
+            return if res.mag == 0.0 { Some(ZERO) } else { Some(res) };
         } else {
-            ZERO
+            None
         }
+    }
+
+    /// # Standard Addition
+    /// 
+    /// Adds two components and always results in a multivector.
+    /// 
+    /// If the components share the same basis, the resulting Multivector
+    /// will only have a singlular component.
+    pub fn std_comp_add(&self, rhs: &Component) -> Multivector {
+        let temp: Multivector = self.to_mv();
+        temp.add_component(rhs)
     }
 
     /// # Scalar Multiplication
@@ -480,6 +499,29 @@ impl Component {
         self.bases.as_ref()
     }
 
+    /// # Same Bases
+    /// 
+    /// Checks if two components share the exact same bases, returns false if
+    /// not.
+    pub fn same_bases(&self, other: Component) -> bool {
+        if self.bases.len() != other.bases.len() {
+            return false;
+        }
+        for basis in self.bases.iter() {
+            if !other.bases.contains(&basis) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// # To Multivector
+    /// 
+    /// A quick conversion from Component to Multivector.
+    pub fn to_mv(&self) -> Multivector {
+        Multivector::new(vec![self.clone()])
+    }
+
     pub fn to_string(&self) -> String {
         let mut result = String::new();
         // add magnitude.
@@ -489,6 +531,13 @@ impl Component {
             result.push_str(basis.to_string().as_str());
         }
         result
+    }
+
+    /// # From Float
+    /// 
+    /// Creates a grade 0 component from a float.
+    pub fn from_float(rhs: &f64) -> Component {
+        Component::new(*rhs, vec![])
     }
 }
 
@@ -701,70 +750,44 @@ impl ops::BitXor<&Component> for Component {
 
 // real + real
 impl ops::Add for Component {
-    type Output = Component;
+    type Output = Multivector;
 
     fn add(self, rhs: Self) -> Self::Output {
-        self.comp_add(&rhs)
+        self.std_comp_add(&rhs)
     }
 }
 
 // ref + ref
 impl ops::Add<&Component> for &Component {
-    type Output = Component;
+    type Output = Multivector;
 
     fn add(self, rhs: &Component) -> Self::Output {
-        self.comp_add(rhs)
+        self.std_comp_add(rhs)
     }
 }
 
 // ref + real
 impl ops::Add<Component> for &Component {
-    type Output = Component;
+    type Output = Multivector;
 
     fn add(self, rhs: Component) -> Self::Output {
-        self.comp_add(&rhs)
+        self.std_comp_add(&rhs)
     }
 }
 
 // real + ref
 impl ops::Add<&Component> for Component {
-    type Output = Component;
+    type Output = Multivector;
 
     fn add(self, rhs: &Component) -> Self::Output {
-        self.comp_add(rhs)
+        self.std_comp_add(rhs)
     }
 }
 
-// comp + mv
-impl ops::Add<Multivector> for Component {
-    type Output = Multivector;
-
-    fn add(self, rhs: Multivector) -> Self::Output {
-        rhs.add_component(&self)
-    }
-}
-// &comp + mv
-impl ops::Add<Multivector> for &Component {
-    type Output = Multivector;
-
-    fn add(self, rhs: Multivector) -> Self::Output {
-        rhs.add_component(rhs)
-    }
-}
-// comp + &mv
-impl ops::Add<&Multivector> for Component {
-    type Output = Multivector;
-
-    fn add(self, rhs: &Multivector) -> Self::Output {
-        rhs.add(self)
-    }
-}
-// &comp + &mv
-impl ops::Add<&Multivector> for &Component {
-    type Output = Multivector;
-
-    fn add(self, rhs: &Multivector) -> Self::Output {
-        rhs.add_component(self)
+// Into Multivector
+impl Into<Multivector> for Component {
+    fn into(self) -> Multivector {
+        Multivector::new(vec![self.clone()])
     }
 }
 
@@ -772,37 +795,37 @@ impl ops::Add<&Multivector> for &Component {
 
 // real + real
 impl ops::Sub for Component {
-    type Output = Component;
+    type Output = Multivector;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        self.comp_add(&-rhs)
+        self.std_comp_add(&-rhs)
     }
 }
 
 // ref + ref
 impl ops::Sub<&Component> for &Component {
-    type Output = Component;
+    type Output = Multivector;
 
     fn sub(self, rhs: &Component) -> Self::Output {
-        self.comp_add(&-rhs)
+        self.std_comp_add(&-rhs)
     }
 }
 
 // ref + real
 impl ops::Sub<Component> for &Component {
-    type Output = Component;
+    type Output = Multivector;
 
     fn sub(self, rhs: Component) -> Self::Output {
-        self.comp_add(&-rhs)
+        self.std_comp_add(&-rhs)
     }
 }
 
 // real + ref
 impl ops::Sub<&Component> for Component {
-    type Output = Component;
+    type Output = Multivector;
 
     fn sub(self, rhs: &Component) -> Self::Output {
-        self.comp_add(&-rhs)
+        self.std_comp_add(&-rhs)
     }
 }
 
