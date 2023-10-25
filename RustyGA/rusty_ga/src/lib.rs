@@ -144,17 +144,37 @@ mod tests {
                         if lhs == rhs {
                             // if along the diagonal, it should have a value.
                             if lhs.grade() / 2 % 2 > 0 { // magnitude flips every 2 grades.
-                                // positive grades
-                                assert_eq!(1.0, result, "Testing inner product on {} and {}", lhs.to_string(), rhs.to_string());
-                            } else {
                                 // negative grades
                                 assert_eq!(-1.0, result, "Testing inner product on {} and {}", lhs.to_string(), rhs.to_string());
+                            } else {
+                                // positive grades
+                                assert_eq!(1.0, result, "Testing inner product on {} and {}", lhs.to_string(), rhs.to_string());
                             }
                         } else {
-                            assert_eq!(0.0, result);
+                            assert_eq!(0.0, result, "Testing inner product on {} and {}", lhs.to_string(), rhs.to_string());
                         }
                     }
                 }
+            }
+
+            #[test]
+            pub fn correctly_square_matched_bases() {
+                let p_1 = ONBasis::P(1);
+                let n_1 = ONBasis::N(1);
+                let z_1 = ONBasis::Z(1);
+
+                let p = Component::new(1.0, vec![p_1]);
+                let n = Component::new(1.0, vec![n_1]);
+                let z = Component::new(1.0, vec![z_1]);
+
+                let resp = p.inner_product(&p);
+                assert_eq!(resp, 1.0);
+
+                let resn = n.inner_product(&n);
+                assert_eq!(resn, -1.0);
+
+                let resz = z.inner_product(&z);
+                assert_eq!(resz, 0.0);
             }
         }
 
@@ -663,16 +683,16 @@ mod tests {
                 assert_eq!(c12.mag, 4.0);
 
                 let c12 = (&c123 >> &c1) >> &c2;
-                assert_eq!(c12.mag, 6.0);
+                assert_eq!(c12.mag, -6.0);
 
                 let c12 = (&c123 >> &c1) >> &c3;
-                assert_eq!(c12.mag, -8.0);
+                assert_eq!(c12.mag, 8.0);
 
                 let c12 = (&c123 >> &c2) >> &c3;
-                assert_eq!(c12.mag, 12.0);
+                assert_eq!(c12.mag, -12.0);
 
                 let c12 = (&c123 >> &c1) >> &c2 >> &c3;
-                assert_eq!(c12.mag, 24.0);
+                assert_eq!(c12.mag, -24.0);
             }
         }
 
@@ -1017,7 +1037,7 @@ mod tests {
         }
     
         mod add_component_should {
-            use crate::{basis::ONBasis, component::Component, multivector::{self}};
+            use crate::{basis::ONBasis, component::{Component, self}, multivector::{self, Multivector}};
 
             #[test]
             pub fn correctly_add_component_to_multivector() {
@@ -1033,24 +1053,24 @@ mod tests {
 
                 let mv = multivector::ZERO;
 
-                let mv1 = mv.add_component(&comp1);
+                let mv1 = mv.component_add(&comp1);
                 assert_eq!(mv1.len(), 1);
                 assert_eq!(mv1.components()[0].mag, 1.0);
                 assert_eq!(mv1.components()[0].bases(), vec![b1]);
 
-                let mv1p = mv1.add_component(&comp1);
+                let mv1p = mv1.component_add(&comp1);
                 assert_eq!(mv1p.len(), 1);
                 assert_eq!(mv1p.components()[0].mag, 2.0);
                 assert_eq!(mv1p.components()[0].bases(), vec![b1]);
 
-                let mv12 = mv1p.add_component(&comp2);
+                let mv12 = mv1p.component_add(&comp2);
                 assert_eq!(mv12.len(), 2);
                 assert_eq!(mv12.components()[0].mag, 2.0);
                 assert_eq!(mv12.components()[0].bases(), vec![b1]);
                 assert_eq!(mv12.components()[1].mag, 1.0);
                 assert_eq!(mv12.components()[1].bases(), vec![b2]);
 
-                let mv12p = mv12.add_component(&comp12);
+                let mv12p = mv12.component_add(&comp12);
                 assert_eq!(mv12p.len(), 3);
                 assert_eq!(mv12p.components()[0].mag, 2.0);
                 assert_eq!(mv12p.components()[0].bases(), vec![b1]);
@@ -1058,6 +1078,33 @@ mod tests {
                 assert_eq!(mv12p.components()[1].bases(), vec![b2]);
                 assert_eq!(mv12p.components()[2].mag, 1.0);
                 assert_eq!(mv12p.components()[2].bases(), vec![b1, b2]);
+            }
+
+            #[test]
+            pub fn nullify_added_zero_components() {
+                let b1 = ONBasis::P(1);
+                let b2 = ONBasis::P(2);
+
+                let comp1 = Component::new(1.0, 
+                    vec![b1]);
+                let comp2 = Component::new(1.0, 
+                    vec![b2]);
+                let comp12 = Component::new(1.0, 
+                    vec![b1, b2]);
+
+                let mv = multivector::ZERO;
+
+                let mv1 = mv.component_add(&component::ZERO);
+                assert_eq!(mv1.len(), 0);
+
+                let mv = Multivector::new(vec![
+                    comp1.clone(), comp2.clone(), comp12.clone()
+                ]);
+                let mv1 = mv.component_add(&component::ZERO);
+                assert_eq!(mv1.len(), 3);
+                assert_eq!(mv.components()[0], comp1);
+                assert_eq!(mv.components()[1], comp2);
+                assert_eq!(mv.components()[2], comp12);
             }
         }
 
@@ -1170,6 +1217,27 @@ mod tests {
 
                 let g3 = mv.take_grade(3);
                 assert_eq!(g3.len(), 0);
+            }
+        }
+
+        mod comp_geo_product_should {
+            use crate::{basis::ONBasis, component::Component, multivector::{self, Multivector}};
+
+            #[test]
+            pub fn add_correctly() {
+                let b1 = ONBasis::P(1);
+                let b2 = ONBasis::P(2);
+
+                let comp0 = Component::new(1.0, vec![]);
+                let comp1 = Component::new(1.0, 
+                    vec![b1]);
+                let comp2 = Component::new(1.0, 
+                    vec![b2]);
+
+                let mv1 = Multivector::new(vec![
+                    comp0,
+                    comp1.clone(), comp2.clone()
+                ]);
             }
         }
 

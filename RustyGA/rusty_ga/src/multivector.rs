@@ -1,8 +1,6 @@
 use std::{ops::{self, Index}, collections::{HashSet, btree_map::Values}, sync::Mutex};
 
-use rusty_ga::multivector;
-
-use crate::component::Component;
+use crate::component::{Component, self};
 
 /// # Multivector
 /// 
@@ -122,6 +120,10 @@ impl Multivector {
     /// If the resulting component is zero, it removes it from the 
     /// resulting multivector.
     pub fn component_add(&self, rhs: &Component) -> Multivector {
+        // if the right hand size is zero, then skip adding.
+        if rhs.mag == 0.0 {
+            return self.clone();
+        }
         // get the grade and split off those parts
         let mut result = vec![];
         let mut contracted = false;
@@ -135,7 +137,10 @@ impl Multivector {
             let temp = comp.force_comp_add(rhs);
             if let Some(val) = temp {
                 // if it added, then we have a contraction
-                result.push(val);
+                if val != component::ZERO {
+                    // only include if it's not a zero component.
+                    result.push(val);
+                }
                 contracted = true;
             } else { // if no value returned, then keep the original.
                 result.push(comp.clone());
@@ -188,12 +193,12 @@ impl Multivector {
     /// 
     /// Multiplies the component with all components in the multivector.
     pub fn comp_geo_product(&self, rhs: &Component) -> Multivector {
-        let mut result = vec![];
+        let mut result = ZERO;
         for comp in self.components.iter() {
             let temp = comp * rhs;
-            result.push(temp);
+            result = result + temp;
         }
-        Multivector::new(result)
+        result
     }
 
     /// # Multivector Geometric Product

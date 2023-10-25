@@ -3,37 +3,37 @@ use std::{ops::{self, Add}, collections::HashSet};
 use crate::{basis::ONBasis, multivector::Multivector};
 
 /// # Component
-/// 
+///
 /// A Component is the mathimatical construct which in formed out of
 /// a combination of a magnitude and a basis k-vector.
-/// 
+///
 /// Components are guaranteed to have their bases in order
-/// 
+///
 /// Contains 2 part of data. The magnitude (mag) and the bases.
 /// Magnitude * Bases is the component.
 #[derive(Debug, Clone)]
 pub struct Component {
     /// # Magnitude
-    /// 
+    ///
     /// The size of the component.
     pub mag: f64,
     /// # Basis
-    /// 
+    ///
     /// The basis of the component. IE the e_{bases} of the component.
     /// These should always be in id order after being new'd up.
     bases: Vec<ONBasis>
 }
 
 /// # Zero Component
-/// 
+///
 /// Returns a component with a magnitude of 0.0 and no bases.
 pub const ZERO: Component = Component { mag: 0.0, bases: vec![] };
 
 impl Component {
     /// # New
-    /// 
+    ///
     /// creates a new component based on a magnitude and basis.
-    /// 
+    ///
     /// If basis is not ordered correctly, it reorders the bases appropriately.
     pub fn new(mag: f64, bases: Vec<ONBasis>) -> Component {
         let mut unique = HashSet::new();
@@ -56,9 +56,9 @@ impl Component {
     }
 
     /// # Reorder Bases
-    /// 
+    ///
     /// creates a copy of the component with it's basis vectors organized by
-    /// id. Magnitude flips based on how many 
+    /// id. Magnitude flips based on how many
     fn reorder_bases(&self) -> Component {
         let mut result = Component { mag: self.mag, bases: self.bases.clone() };
 
@@ -96,11 +96,11 @@ impl Component {
     }
 
     /// # Force Component Addition
-    /// 
+    ///
     /// Adds two components if they share the same basis vectors.
-    /// 
+    ///
     /// Useful for adding components but maintaining the component struct.
-    /// 
+    ///
     /// If components don't add at all, it returns None. If they do add
     /// it returns the result.
     pub fn force_comp_add(&self, rhs: &Component) -> Option<Component> {
@@ -113,7 +113,7 @@ impl Component {
                 }
             }
             // if bases match, then add magnitudes
-            let res = Component { mag: self.mag + rhs.mag, 
+            let res = Component { mag: self.mag + rhs.mag,
                 bases: self.bases.clone()};
             // if magnitude is zero, then return zero component for simplicity reasons.
             return if res.mag == 0.0 { Some(ZERO) } else { Some(res) };
@@ -123,9 +123,9 @@ impl Component {
     }
 
     /// # Standard Addition
-    /// 
+    ///
     /// Adds two components and always results in a multivector.
-    /// 
+    ///
     /// If the components share the same basis, the resulting Multivector
     /// will only have a singlular component.
     pub fn std_comp_add(&self, rhs: &Component) -> Multivector {
@@ -134,19 +134,19 @@ impl Component {
     }
 
     /// # Scalar Multiplication
-    /// 
+    ///
     /// Multiplies the component by a scalar.
     pub fn scalar_mult(&self, rhs: f64) -> Component {
         Component::new(self.mag * rhs, self.bases.clone())
     }
 
     /// # geometric Product
-    /// 
+    ///
     /// Multiplies two components together via Geometric Product.
-    /// 
-    /// Bases are comibned directly, reordered, then if any squares, 
+    ///
+    /// Bases are comibned directly, reordered, then if any squares,
     /// those are applied.
-    /// 
+    ///
     /// If any results in the result being 0, then it shortcuts out.
     pub fn geo_product(&self, rhs: &Component) -> Component {
         // combine bases first
@@ -157,8 +157,8 @@ impl Component {
     }
 
     /// # Outer Product
-    /// 
-    /// Takes the outer product of two components. Components which share a 
+    ///
+    /// Takes the outer product of two components. Components which share a
     /// basis produce a zero.
     pub fn outer_product(&self, rhs: &Component) -> Component {
         // check for overlapping bases
@@ -182,23 +182,23 @@ impl Component {
     }
 
     /// # Project Onto
-    /// 
+    ///
     /// Projects the component blade onto another component.
-    /// 
-    /// Currently does not work for degenerate dimensions due to the basis 
+    ///
+    /// Currently does not work for degenerate dimensions due to the basis
     /// squaring to 0.
     pub fn project_onto(&self, rhs: &Component) -> Component {
         self << rhs.inverse() << rhs
     }
 
     /// # Reciprocal Frame
-    /// 
+    ///
     /// Treats the current component as a pseudoscalar of a subspace
     /// then returns the given reciprocal bases.
-    /// 
+    ///
     /// IE, if the component is B = b1 ^ b2 ^ b3 ^ b4
     /// then B.reciprocal_frame(2) = - b1 ^ b3 ^ b4 << B.inverse
-    /// 
+    ///
     /// Returns zero if the vector selected is beyond our array.
     pub fn reciprocal_frame(&self, i: usize) -> Component {
         if i >= self.bases.len() {
@@ -206,14 +206,14 @@ impl Component {
         } else {
             let mut rep_bas = self.bases.clone();
             rep_bas.remove(i);
-            (-1.0_f64).powi(i as i32) * Component::new(self.mag, 
+            (-1.0_f64).powi(i as i32) * Component::new(self.mag,
                 rep_bas) << self.inverse()
         }
     }
 
     /// # Reversion
-    /// 
-    /// Produces the reverse of a blade in the grade ordering of 
+    ///
+    /// Produces the reverse of a blade in the grade ordering of
     /// ++--++--...
     pub fn reversion(&self) -> Component {
         let grade = self.grade() / 2;
@@ -225,7 +225,7 @@ impl Component {
     }
 
     /// # Involution
-    /// 
+    ///
     /// Involutes the the component based on it's grade.
     /// +-+-+-+-
     pub fn involution(&self) -> Component {
@@ -233,11 +233,11 @@ impl Component {
     }
 
     /// # Inverse
-    /// 
+    ///
     /// Returns the standardized Inverse of this component.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Blades with Degenerate bases (bases^2 = 0) do not have
     /// an inverse value.
     pub fn inverse(&self) -> Component {
@@ -248,15 +248,15 @@ impl Component {
     }
 
     /// # Dualization
-    /// 
+    ///
     /// Returns the Dual of this component.
-    /// 
+    ///
     /// Must be given the Pseudoscalar of the geometry.
-    /// 
+    ///
     /// The Dual of a Dual is not always the same as the original blade, as such
     /// there is also an Undual function.
-    /// 
-    /// The dual of the Dual results in an alterating pattern dependent on the 
+    ///
+    /// The dual of the Dual results in an alterating pattern dependent on the
     /// dimensions of the space. ++--++--
     /// 0, 1, 4,5 ... A = A.dual().dual()
     /// 2,3, 6,7 ... -A = A.dual().dual()
@@ -265,23 +265,23 @@ impl Component {
     }
 
     /// # Undualization
-    /// 
-    /// Depending on the geometry, the Dual of a Dual is not always the same 
-    /// as the original. 
-    /// 
-    /// As such, Undualization guarantees the property that for a blade A, 
-    /// with pseudoscalar i that 
-    /// 
+    ///
+    /// Depending on the geometry, the Dual of a Dual is not always the same
+    /// as the original.
+    ///
+    /// As such, Undualization guarantees the property that for a blade A,
+    /// with pseudoscalar i that
+    ///
     /// A = A.dual(i).undual(i)
-    /// 
+    ///
     /// in all cases.
     pub fn undual(&self, i: &Component) -> Component {
         self << i
     }
 
     /// # Scalar Product
-    /// 
-    /// Scalar Product multiplies blades of like grade. Since all components 
+    ///
+    /// Scalar Product multiplies blades of like grade. Since all components
     /// are blades, they always go. If the blades are of different grades
     /// it returns 0. If they are of the same it takes the determinant of them
     /// if they are both scalars, it multiplies them.
@@ -290,25 +290,25 @@ impl Component {
             return 0.0;
         }
         // if 1 or zero, multiply the bases and end there.
-        if self.grade() < 2 {
-            return self.mag * rhs.mag;
+        let temp = self * rhs;
+        if temp.grade() == 0 {
+            return temp.mag;
+        } else {
+            return 0.0;
         }
-        // if not zero, then do a determinant on it
-        let matrix = self.scalar_product_matrix_form(rhs);
-        Component::determinant(matrix)
     }
 
     /// # Determinant function
-    /// 
+    ///
     /// Takes a square matrix and returns the determinant of it.
-    /// 
+    ///
     /// Uses the Laplace Expansion method to do this, which is
     /// recursive.
-    /// 
+    ///
     /// TODO this should be moved elsewhere.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// If matrix isn't square it panics.
     pub fn determinant(m: Vec<Vec<f64>>) -> f64 {
         let n = m.len();
@@ -338,18 +338,18 @@ impl Component {
     }
 
     /// # Scalar Product Matrix Form
-    /// 
-    /// Takes two components of the same grade, and generates a matrix form 
+    ///
+    /// Takes two components of the same grade, and generates a matrix form
     /// based on it.
-    /// 
+    ///
     /// a_1 . b_k --> a_1 . b_1
     /// v                   v
     /// v                   v
     /// v                   v
     /// a_k . b_k --> a_k . b_1
-    /// 
+    ///
     /// This assumes they are the same grade, and will not work if they are not.
-    /// 
+    ///
     /// This does not include the magnitude, just the basis multiplications.
     pub fn scalar_product_matrix_form(&self, rhs: &Component) -> Vec<Vec<f64>> {
         // build out the initial matrix
@@ -371,25 +371,25 @@ impl Component {
     }
 
     /// # Left Contraction
-    /// 
-    /// Left Contraction (>>) removes the lhs from the rhs and returns the 
+    ///
+    /// Left Contraction (>>) removes the lhs from the rhs and returns the
     /// remaining vectors.
-    /// 
+    ///
     /// When the the left grade is greater than the right, it returns 0.
-    /// 
+    ///
     /// When the Right Grade returns left, it returns a blade.
-    /// 
+    ///
     /// When the two grades are equal it is equivalent to the inner product
     /// of the two components.
-    /// 
+    ///
     /// Because these are components, each basis vector is guaranteed to be
     /// othogonal to all others. So, unless all of lhs is within rhs, then it
     /// will result in a zero.
-    /// 
+    ///
     /// ## Left Contraction Properties
-    /// 
+    ///
     /// Given Scalar a, vectors b and c, and Blades A,B, and C.
-    /// 
+    ///
     /// - a>>B = aB.
     /// - A>>B = 0 if grade(A) > grade(B)
     /// - a>>b = a.inner_product(b)
@@ -415,20 +415,20 @@ impl Component {
             // get the position of the first basis which matches
             let idx = final_bases.iter().position(|&x| x == *basis).unwrap();
             // multiply the magnitude by -1^swaps and the square of the basis.
-            mag *= (-1.0_f64).powf(idx as f64) * basis.sqr(); 
+            mag *= (-1.0_f64).powf(idx as f64) * basis.sqr();
             if mag == 0.0 { // if magnitude is now zero, just return zero.
                 return ZERO;
             }
             // with it squared, remove that basis from our final bases.
             final_bases.remove(idx);
         }
-        // since we've removed all the lhs bases and didn't run into any zeroes, 
+        // since we've removed all the lhs bases and didn't run into any zeroes,
         // return the final_bases and the new magnitude as a component.
         Component::new(mag, final_bases)
     }
 
     /// # Right Contraction
-    /// 
+    ///
     /// Same as left, but reversed.
     pub fn right_cont(&self, rhs: &Component) -> Component {
         let result = (-1.0_f64).powi(rhs.grade() as i32 * (1 + self.grade() as i32)) * rhs.left_cont(self);
@@ -440,38 +440,42 @@ impl Component {
     }
 
     /// # Inner Product
-    /// 
+    ///
     /// Performs a inner/dot product, but only returns when the grades are equal.
-    /// 
+    ///
     /// Returns 0.0 if there is any mismatched basis.
-    /// 
-    /// Note: This is only meant for blades, all components are blades, 
+    ///
+    /// Note: This is only meant for blades, all components are blades,
     /// but multivectors or other k-vectors may not be blades.
     pub fn inner_product(&self, rhs: &Component) -> f64 {
         if self.grade() == rhs.grade() {
+            if self.bases.len() == 0 {
+                // if no bases vectors, just multiply and return
+                return self.mag * rhs.mag;
+            }
             for (b1, b2) in self.bases
             .iter().zip(rhs.bases.iter()) {
                 if b1 != b2 { // if any basis mismatch, return 0
                     return 0.0;
                 }
-                // if they match, make a new component so that the bases 
-                // vectors are reordered and consolidated.
-                let mut bases = self.bases.clone();
-                bases.extend(rhs.bases.clone());
-                let temp = Component::new(self.mag * rhs.mag, bases);
-                return temp.mag;
             }
+            // if they match, make a new component so that the bases
+            // vectors are reordered and consolidated.
+            let mut bases = self.bases.clone();
+            bases.extend(rhs.bases.clone());
+            let temp = Component::new(self.mag * rhs.mag, bases);
+            return temp.mag;
         }
         0.0
     }
 
     /// # Norm squared
-    /// 
+    ///
     /// Norm^2 of a vector (a) is equal to a . a
-    /// 
-    /// We peek ahead a bit and for any blade define 
+    ///
+    /// We peek ahead a bit and for any blade define
     /// the norm^2 as A . A.inverse()
-    /// 
+    ///
     /// This may be reworked in the future to be more
     /// efficient as it creates a new component, and applies
     /// reversion to it, just so it can drop it.
@@ -480,16 +484,16 @@ impl Component {
     }
 
     /// # Norm
-    /// 
+    ///
     /// As Norm Squared, but includes the square Root.
-    /// 
+    ///
     /// Remember, negative values will return Nan.
     pub fn norm(&self) -> f64 {
         self.inner_product(self).sqrt()
     }
 
     /// # Grade
-    /// 
+    ///
     /// Retieves what the grade of the component is, IE how many bases it has.
     pub fn grade(&self) -> usize {
         self.bases.len()
@@ -500,7 +504,7 @@ impl Component {
     }
 
     /// # Same Bases
-    /// 
+    ///
     /// Checks if two components share the exact same bases, returns false if
     /// not.
     pub fn same_bases(&self, other: Component) -> bool {
@@ -516,7 +520,7 @@ impl Component {
     }
 
     /// # To Multivector
-    /// 
+    ///
     /// A quick conversion from Component to Multivector.
     pub fn to_mv(&self) -> Multivector {
         Multivector::new(vec![self.clone()])
@@ -534,7 +538,7 @@ impl Component {
     }
 
     /// # From Float
-    /// 
+    ///
     /// Creates a grade 0 component from a float.
     pub fn from_float(rhs: &f64) -> Component {
         Component::new(*rhs, vec![])
@@ -548,9 +552,9 @@ impl PartialEq for Component {
     }
 }
 
-// scalar division 
+// scalar division
 
-// &comp / f64 
+// &comp / f64
 impl ops::Div<f64> for &Component {
     type Output = Component;
 
@@ -575,12 +579,12 @@ impl ops::Shl for Component {
     type Output = Component;
 
     /// # Left Contraction
-    /// 
+    ///
     /// Removes the left side bases from the right side.
     /// If lhs.grade() > rhs.grade(), then it returns 0.
-    /// if lhs.grade() <= rhs.grade(), 
+    /// if lhs.grade() <= rhs.grade(),
     /// then it returns a component of grade rhs.grade() - rhs.grade()
-    /// 
+    ///
     /// Scalar values multiply.
     fn shl(self, rhs: Self) -> Self::Output {
         self.left_cont(&rhs)
@@ -592,12 +596,12 @@ impl ops::Shl<&Component> for &Component {
     type Output = Component;
 
     /// # Left Contraction
-    /// 
+    ///
     /// Removes the left side bases from the right side.
     /// If lhs.grade() > rhs.grade(), then it returns 0.
-    /// if lhs.grade() <= rhs.grade(), 
+    /// if lhs.grade() <= rhs.grade(),
     /// then it returns a component of grade rhs.grade() - rhs.grade()
-    /// 
+    ///
     /// Scalar values multiply.
     fn shl(self, rhs: &Component) -> Self::Output {
         self.left_cont(rhs)
@@ -609,12 +613,12 @@ impl ops::Shl<Component> for &Component {
     type Output = Component;
 
     /// # Left Contraction
-    /// 
+    ///
     /// Removes the left side bases from the right side.
     /// If lhs.grade() > rhs.grade(), then it returns 0.
-    /// if lhs.grade() <= rhs.grade(), 
+    /// if lhs.grade() <= rhs.grade(),
     /// then it returns a component of grade rhs.grade() - rhs.grade()
-    /// 
+    ///
     /// Scalar values multiply.
     fn shl(self, rhs: Component) -> Self::Output {
         self.left_cont(&rhs)
@@ -626,12 +630,12 @@ impl ops::Shl<&Component> for Component {
     type Output = Component;
 
     /// # Left Contraction
-    /// 
+    ///
     /// Removes the left side bases from the right side.
     /// If lhs.grade() > rhs.grade(), then it returns 0.
-    /// if lhs.grade() <= rhs.grade(), 
+    /// if lhs.grade() <= rhs.grade(),
     /// then it returns a component of grade rhs.grade() - rhs.grade()
-    /// 
+    ///
     /// Scalar values multiply.
     fn shl(self, rhs: &Component) -> Self::Output {
         self.left_cont(rhs)
@@ -645,12 +649,12 @@ impl ops::Shr for Component {
     type Output = Component;
 
     /// # Right Contraction
-    /// 
+    ///
     /// Removes the right side bases from the left side.
     /// If lhs.grade() < rhs.grade(), then it returns 0.
-    /// if lhs.grade() >= rhs.grade(), 
+    /// if lhs.grade() >= rhs.grade(),
     /// then it returns a component of grade lhs.grade() - rhs.grade()
-    /// 
+    ///
     /// Scalar values multiply.
     fn shr(self, rhs: Self) -> Self::Output {
         self.right_cont(&rhs)
@@ -662,12 +666,12 @@ impl ops::Shr<&Component> for &Component {
     type Output = Component;
 
     /// # Right Contraction
-    /// 
+    ///
     /// Removes the right side bases from the left side.
     /// If lhs.grade() < rhs.grade(), then it returns 0.
-    /// if lhs.grade() >= rhs.grade(), 
+    /// if lhs.grade() >= rhs.grade(),
     /// then it returns a component of grade lhs.grade() - rhs.grade()
-    /// 
+    ///
     /// Scalar values multiply.
     fn shr(self, rhs: &Component) -> Self::Output {
         self.right_cont(rhs)
@@ -679,12 +683,12 @@ impl ops::Shr<Component> for &Component {
     type Output = Component;
 
     /// # Right Contraction
-    /// 
+    ///
     /// Removes the right side bases from the left side.
     /// If lhs.grade() < rhs.grade(), then it returns 0.
-    /// if lhs.grade() >= rhs.grade(), 
+    /// if lhs.grade() >= rhs.grade(),
     /// then it returns a component of grade lhs.grade() - rhs.grade()
-    /// 
+    ///
     /// Scalar values multiply.
     fn shr(self, rhs: Component) -> Self::Output {
         self.right_cont(&rhs)
@@ -696,12 +700,12 @@ impl ops::Shr<&Component> for Component {
     type Output = Component;
 
     /// # Right Contraction
-    /// 
+    ///
     /// Removes the right side bases from the left side.
     /// If lhs.grade() < rhs.grade(), then it returns 0.
-    /// if lhs.grade() >= rhs.grade(), 
+    /// if lhs.grade() >= rhs.grade(),
     /// then it returns a component of grade lhs.grade() - rhs.grade()
-    /// 
+    ///
     /// Scalar values multiply.
     fn shr(self, rhs: &Component) -> Self::Output {
         self.right_cont(rhs)
