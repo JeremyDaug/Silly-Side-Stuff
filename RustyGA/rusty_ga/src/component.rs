@@ -130,7 +130,7 @@ impl Component {
     /// will only have a singlular component.
     pub fn std_comp_add(&self, rhs: &Component) -> Multivector {
         let temp: Multivector = self.to_mv();
-        temp.add_component(rhs)
+        temp.component_add(rhs)
     }
 
     /// # Scalar Multiplication

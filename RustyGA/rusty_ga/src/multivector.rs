@@ -1,4 +1,6 @@
-use std::{ops::{self, Index}, collections::{HashSet, btree_map::Values}};
+use std::{ops::{self, Index}, collections::{HashSet, btree_map::Values}, sync::Mutex};
+
+use rusty_ga::multivector;
 
 use crate::component::Component;
 
@@ -27,14 +29,18 @@ impl Multivector {
     /// 
     /// When created, it sorts the components by grade before puting them into the
     /// resulting multivector.
+    /// 
+    /// # Note
+    /// 
+    /// Components may have duplicate component bases and currently this function
+    /// does not automatically consolidate them for efficiency reasons.
+    /// 
+    /// If you want to ensure that consolidation occurs, use alternative methods
+    /// to create this such as addition 
     pub fn new(components: Vec<Component>) -> Multivector {
         let mut components = components
             .clone();
         components.sort_by(|a, b| a.grade().cmp(&b.grade()));
-        // sanity check if there are components with duplicate bases.
-        for comp in components.iter() {
-            
-        }
         Multivector { components }
     }
 
@@ -115,13 +121,8 @@ impl Multivector {
     /// 
     /// If the resulting component is zero, it removes it from the 
     /// resulting multivector.
-    pub fn add_component(&self, rhs: &Component) -> Multivector {
+    pub fn component_add(&self, rhs: &Component) -> Multivector {
         // get the grade and split off those parts
-        let rhsgrade = rhs.grade();
-        let mut lhsgrades = HashSet::new();
-        for comp in self.components.iter() {
-            lhsgrades.insert(comp.grade());
-        }
         let mut result = vec![];
         let mut contracted = false;
         for comp in self.components.iter() {
@@ -154,7 +155,7 @@ impl Multivector {
     /// if they add to 0, they are removed.
     /// 
     /// TODO consider improving to reduce computation cost.
-    pub fn base_add(&self, rhs: &Multivector) -> Multivector {
+    pub fn multivector_add(&self, rhs: &Multivector) -> Multivector {
         let mut result = self.clone();
         for comp in rhs.components.iter() {
             result = result + comp;
@@ -166,7 +167,7 @@ impl Multivector {
     /// 
     /// Multivector Addition between a Multivector and a Scalar value.
     pub fn scalar_add(&self, rhs: &f64) -> Multivector {
-        self.add_component(&Component::from_float(rhs))
+        self.component_add(&Component::from_float(rhs))
     }
 
     /// # Take Grade
@@ -181,11 +182,44 @@ impl Multivector {
         Multivector::new(result)
     }
 
+    /// # Component Geometric Product
+    /// 
+    /// Does geometric product between a multivector and a component.
+    /// 
+    /// Multiplies the component with all components in the multivector.
+    pub fn comp_geo_product(&self, rhs: &Component) -> Multivector {
+        let mut result = vec![];
+        for comp in self.components.iter() {
+            let temp = comp * rhs;
+            result.push(temp);
+        }
+        Multivector::new(result)
+    }
+
+    /// # Multivector Geometric Product
+    /// 
+    /// Geometric Product between two multivectors.
+    pub fn mv_geo_product(&self, rhs: &Multivector) -> Multivector {
+        let mut accumulator = ZERO;
+        for comp in rhs.components.iter() {
+            let temp = self.comp_geo_product(comp);
+            accumulator = accumulator + temp;
+        }
+        accumulator
+    }
+
     pub fn norm_sqrd(&self) -> f64 {
         todo!()
     }
 
+    /// # Scalar Multiplication
+    /// 
+    /// Exactly what it says. Only speical case is that if rhs is 0.0, then
+    /// it returns the Zero Multivector.
     pub fn scalar_mult(&self, rhs: f64) -> Multivector {
+        if rhs == 0.0 {
+            return ZERO;
+        }
         let mut result = vec![];
         for comp in self.components.iter() {
             result.push(comp.clone() * rhs);
@@ -219,6 +253,24 @@ impl Multivector {
     }
 }
 
+
+// Equality
+impl PartialEq for Multivector {
+    fn eq(&self, other: &Self) -> bool {
+        // check that we have the same number of components
+        if self.components.len() != other.components.len() {
+            return false;
+        }
+        // Check that all components in lhs are in rhs, order doesn't matter.
+        for comp in self.components.iter() {
+            if !other.components.contains(comp) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
 // Addition
 
 // mv + mv
@@ -226,7 +278,7 @@ impl ops::Add for Multivector {
     type Output = Multivector;
 
     fn add(self, rhs: Self) -> Self::Output {
-        self.base_add(&rhs)
+        self.multivector_add(&rhs)
     }
 }
 // mv + &mv
@@ -234,7 +286,7 @@ impl ops::Add<&Multivector> for Multivector {
     type Output = Multivector;
 
     fn add(self, rhs: &Multivector) -> Self::Output {
-        self.base_add(&rhs)
+        self.multivector_add(&rhs)
     }
 }
 // &mv + mv
@@ -242,7 +294,7 @@ impl ops::Add<Multivector> for &Multivector {
     type Output = Multivector;
 
     fn add(self, rhs: Multivector) -> Self::Output {
-        self.base_add(&rhs)
+        self.multivector_add(&rhs)
     }
 }
 // &mv + &mv
@@ -250,7 +302,7 @@ impl ops::Add<&Multivector> for &Multivector {
     type Output = Multivector;
 
     fn add(self, rhs: &Multivector) -> Self::Output {
-        self.base_add(&rhs)
+        self.multivector_add(&rhs)
     }
 }
 
@@ -259,7 +311,7 @@ impl ops::Add<Component> for Multivector {
     type Output = Multivector;
 
     fn add(self, rhs: Component) -> Self::Output {
-        self.add_component(&rhs)
+        self.component_add(&rhs)
     }
 }
 // &mv + comp
@@ -267,7 +319,7 @@ impl ops::Add<Component> for &Multivector {
     type Output = Multivector;
 
     fn add(self, rhs: Component) -> Self::Output {
-        self.add_component(&rhs)
+        self.component_add(&rhs)
     }
 }
 // mv + &comp
@@ -275,7 +327,7 @@ impl ops::Add<&Component> for Multivector {
     type Output = Multivector;
 
     fn add(self, rhs: &Component) -> Self::Output {
-        self.add_component(rhs)
+        self.component_add(rhs)
     }
 }
 // &mv + &comp
@@ -283,7 +335,7 @@ impl ops::Add<&Component> for &Multivector {
     type Output = Multivector;
 
     fn add(self, rhs: &Component) -> Self::Output {
-        self.add_component(rhs)
+        self.component_add(rhs)
     }
 }
 
@@ -293,7 +345,7 @@ impl ops::Add<Multivector> for Component {
     type Output = Multivector;
 
     fn add(self, rhs: Multivector) -> Self::Output {
-        rhs.add_component(&self)
+        rhs.component_add(&self)
     }
 }
 // &comp + mv
@@ -301,7 +353,7 @@ impl ops::Add<Multivector> for &Component {
     type Output = Multivector;
 
     fn add(self, rhs: Multivector) -> Self::Output {
-        rhs.add_component(&self)
+        rhs.component_add(&self)
     }
 }
 // comp + &mv
@@ -309,7 +361,7 @@ impl ops::Add<&Multivector> for Component {
     type Output = Multivector;
 
     fn add(self, rhs: &Multivector) -> Self::Output {
-        rhs.add_component(&self)
+        rhs.component_add(&self)
     }
 }
 // &comp + &mv
@@ -317,7 +369,7 @@ impl ops::Add<&Multivector> for &Component {
     type Output = Multivector;
 
     fn add(self, rhs: &Multivector) -> Self::Output {
-        rhs.add_component(&self)
+        rhs.component_add(&self)
     }
 }
 
@@ -353,6 +405,7 @@ impl ops::Add<&f64> for &Multivector {
         self.scalar_add(rhs)
     }
 }
+
 // scalar  + mv 
 impl ops::Add<Multivector> for f64 {
     type Output = Multivector;
@@ -392,7 +445,7 @@ impl ops::Sub for Multivector {
     type Output = Multivector;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        self.base_add(&-rhs)
+        self.multivector_add(&-rhs)
     }
 }
 // mv - &mv
@@ -400,7 +453,7 @@ impl ops::Sub<&Multivector> for Multivector {
     type Output = Multivector;
 
     fn sub(self, rhs: &Multivector) -> Self::Output {
-        self.base_add(&-rhs)
+        self.multivector_add(&-rhs)
     }
 }
 // &mv - mv
@@ -408,7 +461,7 @@ impl ops::Sub<Multivector> for &Multivector {
     type Output = Multivector;
 
     fn sub(self, rhs: Multivector) -> Self::Output {
-        self.base_add(&-rhs)
+        self.multivector_add(&-rhs)
     }
 }
 // &mv - &mv
@@ -416,7 +469,7 @@ impl ops::Sub<&Multivector> for &Multivector {
     type Output = Multivector;
 
     fn sub(self, rhs: &Multivector) -> Self::Output {
-        self.base_add(&-rhs)
+        self.multivector_add(&-rhs)
     }
 }
 
@@ -425,7 +478,7 @@ impl ops::Sub<Component> for Multivector {
     type Output = Multivector;
 
     fn sub(self, rhs: Component) -> Self::Output {
-        self.add_component(&-rhs)
+        self.component_add(&-rhs)
     }
 }
 // &mv - comp
@@ -433,7 +486,7 @@ impl ops::Sub<Component> for &Multivector {
     type Output = Multivector;
 
     fn sub(self, rhs: Component) -> Self::Output {
-        self.add_component(&-rhs)
+        self.component_add(&-rhs)
     }
 }
 // mv - &comp
@@ -441,7 +494,7 @@ impl ops::Sub<&Component> for Multivector {
     type Output = Multivector;
 
     fn sub(self, rhs: &Component) -> Self::Output {
-        self.add_component(&-rhs)
+        self.component_add(&-rhs)
     }
 }
 // &mv - &comp
@@ -449,7 +502,7 @@ impl ops::Sub<&Component> for &Multivector {
     type Output = Multivector;
 
     fn sub(self, rhs: &Component) -> Self::Output {
-        self.add_component(&-rhs)
+        self.component_add(&-rhs)
     }
 }
 
@@ -458,7 +511,7 @@ impl ops::Sub<Multivector> for Component {
     type Output = Multivector;
 
     fn sub(self, rhs: Multivector) -> Self::Output {
-        -rhs.add_component(&-self)
+        -rhs.component_add(&-self)
     }
 }
 // &comp - mv
@@ -466,7 +519,7 @@ impl ops::Sub<Multivector> for &Component {
     type Output = Multivector;
 
     fn sub(self, rhs: Multivector) -> Self::Output {
-        -rhs.add_component(&-self)
+        -rhs.component_add(&-self)
     }
 }
 // comp - &mv
@@ -474,7 +527,7 @@ impl ops::Sub<&Multivector> for Component {
     type Output = Multivector;
 
     fn sub(self, rhs: &Multivector) -> Self::Output {
-        -rhs.add_component(&-self)
+        -rhs.component_add(&-self)
     }
 }
 // &comp - &mv
@@ -482,7 +535,7 @@ impl ops::Sub<&Multivector> for &Component {
     type Output = Multivector;
 
     fn sub(self, rhs: &Multivector) -> Self::Output {
-        -rhs.add_component(&-self)
+        -rhs.component_add(&-self)
     }
 }
 
@@ -518,6 +571,7 @@ impl ops::Sub<&f64> for &Multivector {
         self.scalar_add(&-rhs)
     }
 }
+
 // scalar - mv
 impl ops::Sub<Multivector> for f64 {
     type Output = Multivector;
@@ -584,6 +638,7 @@ impl ops::Mul<&f64> for &Multivector {
         self.scalar_mult(*rhs)
     }
 }
+
 // mv  * f64 
 impl ops::Mul<Multivector> for f64 {
     type Output = Multivector;
@@ -618,7 +673,6 @@ impl ops::Mul<&Multivector> for &f64 {
 }
 
 // Negative
-
 impl ops::Neg for Multivector {
     type Output = Multivector;
 

@@ -947,14 +947,21 @@ mod tests {
 
     mod multivector_tests {
         mod new_should {
-            use crate::{basis::ONBasis, component::Component};
+            use crate::{basis::ONBasis, component::Component, multivector::Multivector};
 
+            #[test]
             pub fn sort_list_of_components_buy_grade() {
                 let b1 = ONBasis::P(0);
                 let b2 = ONBasis::P(1);
 
                 let comp1 = Component::new(1.0, vec![b1]);
                 let comp2 = Component::new(1.0, vec![b2]);
+                let comp12 = Component::new(1.0, vec![b1, b2]);
+
+                let test = Multivector::new(vec![comp12, comp1, comp2]);
+                assert_eq!(test.components()[0].grade(), 1);
+                assert_eq!(test.components()[1].grade(), 1);
+                assert_eq!(test.components()[2].grade(), 2);
             }
         }
 
@@ -1010,9 +1017,7 @@ mod tests {
         }
     
         mod add_component_should {
-            use std::ops::Add;
-
-            use crate::{basis::ONBasis, component::Component, multivector::{Multivector, self}};
+            use crate::{basis::ONBasis, component::Component, multivector::{self}};
 
             #[test]
             pub fn correctly_add_component_to_multivector() {
@@ -1030,7 +1035,209 @@ mod tests {
 
                 let mv1 = mv.add_component(&comp1);
                 assert_eq!(mv1.len(), 1);
-                assert_eq!(true, true);
+                assert_eq!(mv1.components()[0].mag, 1.0);
+                assert_eq!(mv1.components()[0].bases(), vec![b1]);
+
+                let mv1p = mv1.add_component(&comp1);
+                assert_eq!(mv1p.len(), 1);
+                assert_eq!(mv1p.components()[0].mag, 2.0);
+                assert_eq!(mv1p.components()[0].bases(), vec![b1]);
+
+                let mv12 = mv1p.add_component(&comp2);
+                assert_eq!(mv12.len(), 2);
+                assert_eq!(mv12.components()[0].mag, 2.0);
+                assert_eq!(mv12.components()[0].bases(), vec![b1]);
+                assert_eq!(mv12.components()[1].mag, 1.0);
+                assert_eq!(mv12.components()[1].bases(), vec![b2]);
+
+                let mv12p = mv12.add_component(&comp12);
+                assert_eq!(mv12p.len(), 3);
+                assert_eq!(mv12p.components()[0].mag, 2.0);
+                assert_eq!(mv12p.components()[0].bases(), vec![b1]);
+                assert_eq!(mv12p.components()[1].mag, 1.0);
+                assert_eq!(mv12p.components()[1].bases(), vec![b2]);
+                assert_eq!(mv12p.components()[2].mag, 1.0);
+                assert_eq!(mv12p.components()[2].bases(), vec![b1, b2]);
+            }
+        }
+
+        mod base_add_should {
+            use crate::{basis::ONBasis, component::Component, multivector::{self, Multivector}};
+
+            #[test]
+            pub fn add_two_multivectors_correctly() {
+                let b1 = ONBasis::P(1);
+                let b2 = ONBasis::P(2);
+
+                let comp0 = Component::new(1.0, vec![]);
+                let comp1 = Component::new(1.0, 
+                    vec![b1]);
+                let comp2 = Component::new(1.0, 
+                    vec![b2]);
+                let comp12 = Component::new(1.0, 
+                    vec![b1, b2]);
+
+                let mv1 = Multivector::new(vec![
+                    comp0,
+                    comp1.clone(), comp2.clone()
+                ]);
+                let mv2 = Multivector::new(vec![
+                    comp1, comp2, comp12
+                ]);
+
+                let test = mv1 + mv2;
+                assert_eq!(test.len(), 4);
+                assert_eq!(test.components()[0].mag, 1.0);
+                assert_eq!(test.components()[0].bases(), vec![]);
+                assert_eq!(test.components()[1].mag, 2.0);
+                assert_eq!(test.components()[1].bases(), vec![b1]);
+                assert_eq!(test.components()[2].mag, 2.0);
+                assert_eq!(test.components()[2].bases(), vec![b2]);
+                assert_eq!(test.components()[3].mag, 1.0);
+                assert_eq!(test.components()[3].bases(), vec![b1, b2]);
+            }
+        }
+
+        mod scalar_add_should {
+            use crate::{basis::ONBasis, component::Component, multivector::{self, Multivector}};
+
+            #[test]
+            pub fn add_correctly() {
+                let b1 = ONBasis::P(1);
+                let b2 = ONBasis::P(2);
+
+                let comp0 = Component::new(1.0, vec![]);
+                let comp1 = Component::new(1.0, 
+                    vec![b1]);
+                let comp2 = Component::new(1.0, 
+                    vec![b2]);
+
+                let mv1 = Multivector::new(vec![
+                    comp0,
+                    comp1.clone(), comp2.clone()
+                ]);
+                let mv2 = Multivector::new(vec![
+                    comp1.clone()
+                ]);
+
+                let test = mv1 + 1.0;
+                assert_eq!(test.len(), 3);
+                assert_eq!(test.components()[0].mag, 2.0);
+                assert_eq!(test.components()[0].bases(), vec![]);
+                assert_eq!(test.components()[1], comp1);
+                assert_eq!(test.components()[2], comp2);
+
+                let test = 1.0 + mv2;
+                assert_eq!(test.len(), 2);
+                assert_eq!(test.components()[0].mag, 1.0);
+                assert_eq!(test.components()[0].bases(), vec![]);
+                assert_eq!(test.components()[1].mag, 1.0);
+                assert_eq!(test.components()[1].bases(), vec![b1]);
+            }
+        }
+    
+        mod take_grade_should {
+            use crate::{component::Component, basis::ONBasis, multivector::Multivector};
+
+            #[test]
+            pub fn correctly_take_grade_from_multivector() {
+                let b1 = ONBasis::P(1);
+                let b2 = ONBasis::P(2);
+
+                let comp0 = Component::new(1.0, vec![]);
+                let comp1 = Component::new(1.0, 
+                    vec![b1]);
+                let comp2 = Component::new(1.0, 
+                    vec![b2]);
+                let comp12 = Component::new(1.0, 
+                    vec![b1, b2]);
+
+                let mv = Multivector::new(vec![
+                    comp0.clone(), comp1.clone(), comp2.clone(), comp12.clone()
+                ]);
+                let g0 = mv.take_grade(0);
+                assert_eq!(g0.len(), 1);
+                assert_eq!(g0.components()[0], comp0);
+
+                let g1 = mv.take_grade(1);
+                assert_eq!(g1.len(), 2);
+                assert_eq!(g1.components()[0], comp1);
+                assert_eq!(g1.components()[1], comp2);
+
+                let g2 = mv.take_grade(2);
+                assert_eq!(g2.len(), 1);
+                assert_eq!(g2.components()[0], comp12);
+
+                let g3 = mv.take_grade(3);
+                assert_eq!(g3.len(), 0);
+            }
+        }
+
+        mod scalar_mult_should {
+            use crate::{component::Component, basis::ONBasis, multivector::{Multivector, self}};
+
+            #[test]
+            pub fn correctly_take_grade_from_multivector() {
+                let b1 = ONBasis::P(1);
+                let b2 = ONBasis::P(2);
+
+                let comp0 = Component::new(1.0, vec![]);
+                let comp1 = Component::new(1.0, 
+                    vec![b1]);
+                let comp2 = Component::new(1.0, 
+                    vec![b2]);
+                let comp12 = Component::new(1.0, 
+                    vec![b1, b2]);
+
+                let mv = Multivector::new(vec![
+                    comp0.clone(), comp1.clone(), comp2.clone(), comp12.clone()
+                ]);
+                let test = &mv * 3.0;
+                assert_eq!(test.len(), 4);
+                assert_eq!(test.components()[0].mag, 3.0);
+                assert_eq!(test.components()[1].mag, 3.0);
+                assert_eq!(test.components()[2].mag, 3.0);
+                assert_eq!(test.components()[3].mag, 3.0);
+                assert_eq!(test.components()[0].bases(), vec![]);
+                assert_eq!(test.components()[1].bases(), vec![b1]);
+                assert_eq!(test.components()[2].bases(), vec![b2]);
+                assert_eq!(test.components()[3].bases(), vec![b1, b2]);
+
+                let test = 0.0 * mv;
+                assert_eq!(test, multivector::ZERO);
+            }
+        }
+
+        mod negative_should {
+            use crate::{basis::ONBasis, component::Component, multivector::Multivector};
+
+            #[test]
+            pub fn work_correctly() {
+                let b1 = ONBasis::P(1);
+                let b2 = ONBasis::P(2);
+
+                let comp0 = Component::new(1.0, vec![]);
+                let comp1 = Component::new(1.0, 
+                    vec![b1]);
+                let comp2 = Component::new(1.0, 
+                    vec![b2]);
+                let comp12 = Component::new(1.0, 
+                    vec![b1, b2]);
+
+                let mv = Multivector::new(vec![
+                    comp0.clone(), comp1.clone(), comp2.clone(), comp12.clone()
+                ]);
+
+                let test = -mv;
+                assert_eq!(test.len(), 4);
+                assert_eq!(test.components()[0].mag, -1.0);
+                assert_eq!(test.components()[1].mag, -1.0);
+                assert_eq!(test.components()[2].mag, -1.0);
+                assert_eq!(test.components()[3].mag, -1.0);
+                assert_eq!(test.components()[0].bases(), vec![]);
+                assert_eq!(test.components()[1].bases(), vec![b1]);
+                assert_eq!(test.components()[2].bases(), vec![b2]);
+                assert_eq!(test.components()[3].bases(), vec![b1, b2]);
             }
         }
     }
