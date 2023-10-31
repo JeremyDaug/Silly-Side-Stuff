@@ -1,6 +1,6 @@
 use std::{ops::{self, Add}, collections::HashSet};
 
-use crate::{basis::ONBasis, multivector::Multivector};
+use crate::{basis::ONBasis, multivector::{Multivector, self}};
 
 /// # Component
 ///
@@ -542,6 +542,18 @@ impl Component {
     /// Creates a grade 0 component from a float.
     pub fn from_float(rhs: &f64) -> Component {
         Component::new(*rhs, vec![])
+    }
+
+    /// # Geometric Product between Multivectors
+    /// 
+    /// Takes the Geometric product between a component and a Multivector with
+    /// the Component on the left and multivector on the right.
+    pub fn geo_product_mv(&self, rhs: &Multivector) -> Multivector {
+        let mut result = multivector::ZERO;
+        for comp in rhs.components().iter() {
+            result = result + self * comp;
+        }
+        result
     }
 }
 

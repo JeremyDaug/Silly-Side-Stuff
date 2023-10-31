@@ -192,7 +192,7 @@ impl Multivector {
     /// Does geometric product between a multivector and a component.
     /// 
     /// Multiplies the component with all components in the multivector.
-    pub fn comp_geo_product(&self, rhs: &Component) -> Multivector {
+    pub fn geo_prod_comp(&self, rhs: &Component) -> Multivector {
         let mut result = ZERO;
         for comp in self.components.iter() {
             let temp = comp * rhs;
@@ -204,10 +204,10 @@ impl Multivector {
     /// # Multivector Geometric Product
     /// 
     /// Geometric Product between two multivectors.
-    pub fn mv_geo_product(&self, rhs: &Multivector) -> Multivector {
+    pub fn geo_prod_mv(&self, rhs: &Multivector) -> Multivector {
         let mut accumulator = ZERO;
         for comp in rhs.components.iter() {
-            let temp = self.comp_geo_product(comp);
+            let temp = self.geo_prod_comp(comp);
             accumulator = accumulator + temp;
         }
         accumulator
@@ -241,6 +241,48 @@ impl Multivector {
             result.push(-comp);
         }
         Multivector::new(result)
+    }
+
+    /// # Float Outer Product
+    /// 
+    /// Outer Product between a multivector and a scalar.
+    /// 
+    /// Equivalent to scalar mult.
+    pub fn outer_prod_scalar(&self, rhs: f64) -> Multivector {
+        self.scalar_mult(rhs)
+    }
+
+    /// # Component Outer Product
+    /// 
+    /// Outer Product between a multivector and a component.
+    pub fn outer_prod_comp(&self, rhs: &Component) -> Multivector {
+        let mut result = ZERO;
+        for comp in self.components.iter() {
+            result = result + (comp ^ rhs);
+        }
+        result
+    }
+
+    /// # Multivector Outer Product
+    /// 
+    /// Takes the Outer Product between two multivectors
+    pub fn outer_product_mv(&self, rhs: &Multivector) -> Multivector {
+        let mut result = ZERO;
+        for lcomp in self.components.iter() {
+            result = result + lcomp ^ rhs;
+        }
+        result
+    }
+
+    /// # Multivector Inverse
+    /// 
+    /// Inverts the multivector, same as taking it to the power -1.
+    pub fn inverse(&self) -> Multivector {
+        let mut result = ZERO;
+        for comp in self.components.iter() {
+            result = result + comp.inverse();
+        }
+        result
     }
 
     pub fn components(&self) -> &[Component] {
@@ -277,7 +319,6 @@ impl PartialEq for Multivector {
 }
 
 // Addition
-
 // mv + mv
 impl ops::Add for Multivector {
     type Output = Multivector;
@@ -343,7 +384,6 @@ impl ops::Add<&Component> for &Multivector {
         self.component_add(rhs)
     }
 }
-
 
 // comp + mv
 impl ops::Add<Multivector> for Component {
@@ -674,6 +714,275 @@ impl ops::Mul<&Multivector> for &f64 {
 
     fn mul(self, rhs: &Multivector) -> Self::Output {
         rhs.scalar_mult(*self)
+    }
+}
+
+// Component Mult
+// comp * mv
+impl ops::Mul<Multivector> for Component {
+    type Output = Multivector;
+
+    fn mul(self, rhs: Multivector) -> Self::Output {
+        self.geo_product_mv(&rhs)
+    }
+}
+// &comp * mv
+impl ops::Mul<Multivector> for &Component {
+    type Output = Multivector;
+
+    fn mul(self, rhs: Multivector) -> Self::Output {
+        self.geo_product_mv(&rhs)
+    }
+}
+// comp * &mv
+impl ops::Mul<&Multivector> for Component {
+    type Output = Multivector;
+
+    fn mul(self, rhs: &Multivector) -> Self::Output {
+        self.geo_product_mv(rhs)
+    }
+}
+// &comp * &mv
+impl ops::Mul<&Multivector> for &Component {
+    type Output = Multivector;
+
+    fn mul(self, rhs: &Multivector) -> Self::Output {
+        self.geo_product_mv(rhs)
+    }
+}
+
+// mv * comp
+impl ops::Mul<Component> for Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: Component) -> Self::Output {
+        self.geo_prod_comp(&rhs)
+    }
+}
+// &mv * comp
+impl ops::Mul<Component> for &Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: Component) -> Self::Output {
+        self.geo_prod_comp(&rhs)
+    }
+}
+// mv * &comp
+impl ops::Mul<&Component> for Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: &Component) -> Self::Output {
+        self.geo_prod_comp(&rhs)
+    }
+}
+// &mv * &comp
+impl ops::Mul<&Component> for &Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: &Component) -> Self::Output {
+        self.geo_prod_comp(&rhs)
+    }
+}
+
+// Geometric Product
+// mv * mv
+impl ops::Mul<Multivector> for Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: Multivector) -> Self::Output {
+        self.geo_prod_mv(&rhs)
+    }
+}
+// &mv * mv
+impl ops::Mul<&Multivector> for Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: &Multivector) -> Self::Output {
+        self.geo_prod_mv(rhs)
+    }
+}
+// mv * &mv
+impl ops::Mul<Multivector> for &Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: Multivector) -> Self::Output {
+        self.geo_prod_mv(&rhs)
+    }
+}
+// &mv * &mv
+impl ops::Mul<&Multivector> for &Multivector {
+    type Output = Multivector;
+
+    fn mul(self, rhs: &Multivector) -> Self::Output {
+        self.geo_prod_mv(rhs)
+    }
+}
+
+// scalar outer product
+// f64 ^ mv
+impl ops::BitXor<Multivector> for f64 {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: Multivector) -> Self::Output {
+        rhs.scalar_mult(self)
+    }
+}
+// &f64 ^ mv
+impl ops::BitXor<Multivector> for &f64 {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: Multivector) -> Self::Output {
+        rhs.scalar_mult(*self)
+    }
+}
+// f64 ^ &mv
+impl ops::BitXor<&Multivector> for f64 {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: &Multivector) -> Self::Output {
+        rhs.scalar_mult(self)
+    }
+}
+// &f64 ^ &mv
+impl ops::BitXor<&Multivector> for &f64 {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: &Multivector) -> Self::Output {
+        rhs.scalar_mult(*self)
+    }
+}
+
+// mv ^ f64
+impl ops::BitXor<f64> for Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: f64) -> Self::Output {
+        self.scalar_mult(rhs)
+    }
+}
+// &mv ^ f64
+impl ops::BitXor<f64> for &Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: f64) -> Self::Output {
+        self.scalar_mult(rhs)
+    }
+}
+// mv ^ &f64
+impl ops::BitXor<&f64> for Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: &f64) -> Self::Output {
+        self.scalar_mult(*rhs)
+    }
+}
+// &mv ^ &f64
+impl ops::BitXor<&f64> for &Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: &f64) -> Self::Output {
+        self.scalar_mult(*rhs)
+    }
+}
+
+// component outer product
+// comp ^ mv
+impl ops::BitXor<Multivector> for Component {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: Multivector) -> Self::Output {
+        (-rhs).outer_prod_comp(&self)
+    }
+}
+// &comp ^ mv
+impl ops::BitXor<Multivector> for &Component {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: Multivector) -> Self::Output {
+        (-rhs).outer_prod_comp(&self)
+    }
+}
+// comp ^ &mv
+impl ops::BitXor<&Multivector> for Component {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: &Multivector) -> Self::Output {
+        (-rhs).outer_prod_comp(&self)
+    }
+}
+// &comp ^ &mv
+impl ops::BitXor<&Multivector> for &Component {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: &Multivector) -> Self::Output {
+        (-rhs).outer_prod_comp(&self)
+    }
+}
+
+// mv ^ comp
+impl ops::BitXor<Component> for Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: Component) -> Self::Output {
+        self.outer_prod_comp(&rhs)
+    }
+}
+// &mv ^ comp
+impl ops::BitXor<Component> for &Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: Component) -> Self::Output {
+        self.outer_prod_comp(&rhs)
+    }
+}
+// mv ^ &comp
+impl ops::BitXor<&Component> for Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: &Component) -> Self::Output {
+        self.outer_prod_comp(&rhs)
+    }
+}
+// &mv ^ &comp
+impl ops::BitXor<&Component> for &Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: &Component) -> Self::Output {
+        self.outer_prod_comp(&rhs)
+    }
+}
+
+// multivector outer product
+// mv ^ mv
+impl ops::BitXor<Multivector> for Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: Multivector) -> Self::Output {
+        self.outer_product_mv(&rhs)
+    }
+}
+// &mv ^ mv
+impl ops::BitXor<&Multivector> for Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: &Multivector) -> Self::Output {
+        self.outer_product_mv(&rhs)
+    }
+}
+// mv ^ &mv
+impl ops::BitXor<Multivector> for &Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: Multivector) -> Self::Output {
+        self.outer_product_mv(&rhs)
+    }
+}
+// &mv ^ &mv
+impl ops::BitXor<&Multivector> for &Multivector {
+    type Output = Multivector;
+
+    fn bitxor(self, rhs: &Multivector) -> Self::Output {
+        self.outer_product_mv(&rhs)
     }
 }
 
