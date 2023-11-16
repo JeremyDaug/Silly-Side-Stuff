@@ -49,6 +49,17 @@ impl Multivector {
         self.components.len()
     }
 
+    /// # Is Single Grade
+    /// 
+    /// Checks if the multivector is a single grade.
+    pub fn is_single_grade(&self) -> bool {
+        let mut grades = HashSet::new();
+        for comp in self.components.iter() {
+            grades.insert(comp.grade());
+        }
+        grades.len() > 1
+    }
+
     /// # Is Blade
     /// 
     /// Checks whether this multivector is a blade. IE, it
@@ -79,19 +90,16 @@ impl Multivector {
     /// The multivector p1p2 + p3p4 is not a blade because they do not share
     /// a basis.
     pub fn is_blade(&self) -> bool {
-        todo!("Come back here later.");
-        let mut grades = HashSet::new();
-        for comp in self.components.iter() {
-            grades.insert(comp.grade());
-        }
-        if grades.len() > 1 {
-            // if more than 1 grade, then we cannot be a blade.
+        if !self.is_single_grade() {
             return false;
         }
-        // get the grade we have to quick check for a vector.
-        let mut grade = grades.into_iter().next().unwrap();
-        // if of grade 1 or 0, it must be a blade, regardless of space.
-        if grade < 2 {
+        // since it must be a single grade, get the first component and check it's grade.
+        let grade = self.components.first().unwrap_or(&component::ZERO).grade();
+        if grade < 2 { // if it's grade is less than 2 than it is, by definition, a blade.
+            return true;
+        }
+        // If there is only one or no component(s), that must be a blade.
+        if self.len() < 2 {
             return true;
         }
         // For items to add together, they must share a basis, connecting all of them together.
@@ -99,18 +107,40 @@ impl Multivector {
         // we group them together using the groups vec. The idx in group is the
         // idx of the component. 
         // we initialize them to zero, then set the first as group 1
-        let mut groups = vec![0; self.components.len()];
-        groups[0] = 1;
-        for (idx, comp) in self.components.iter().enumerate() {
+        let mut groups = vec![vec![]; self.components.len()];
+        for (curr_idx, comp) in self.components.iter().enumerate() {
             for (oidx, other) in self.components.iter().enumerate() {
-
                 if comp.bases().iter().any(|x| other.bases().contains(x)) {
-
+                    groups[curr_idx].push(oidx);
                 }
             }
         }
-        // if we got past the overlap filter, none are isolate from any o
-        true
+        // with connections found, connect and see if all are in the same group.
+        let mut stack = vec![];
+        stack.push(0);
+        let mut reached_from_zero = HashSet::new();
+        while let Some(curr) = stack.pop() {
+            for &idx in groups[curr].iter() {
+                if reached_from_zero.insert(idx) {
+                    stack.push(idx);
+                }
+            }
+        }
+        // If we mapped out everything, then we should have the same length in set and components
+        return reached_from_zero.len() == self.components.len();
+    }
+
+    /// # Blade Breakdown
+    /// 
+    /// Breakdown takes takes the multivector and decomposes it into vectors that, when their outer product
+    /// is taken, produce the resulting blade.
+    /// 
+    /// If this multivector is not a blade, it returns an empty vector.
+    pub fn blade_breakdown(&self) -> Vec<Multivector> {
+        if !self.is_blade() { return vec![]; }
+        // since we are a blade, begin breaking it down
+        // look for any common simple vectors first.
+        todo!()
     }
 
     /// # Add Component
