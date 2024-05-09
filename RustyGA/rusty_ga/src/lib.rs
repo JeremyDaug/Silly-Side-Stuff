@@ -141,7 +141,7 @@ mod tests {
 
                 for lhs in comps.iter() {
                     for rhs in comps.iter() {
-                        let result = lhs.inner_product(rhs);
+                        let result = lhs.inner_product_f64(rhs);
                         if lhs == rhs {
                             // if along the diagonal, it should have a value.
                             if lhs.grade() / 2 % 2 > 0 { // magnitude flips every 2 grades.
@@ -168,132 +168,14 @@ mod tests {
                 let n = Component::new(1.0, vec![n_1]);
                 let z = Component::new(1.0, vec![z_1]);
 
-                let resp = p.inner_product(&p);
+                let resp = p.inner_product_f64(&p);
                 assert_eq!(resp, 1.0);
 
-                let resn = n.inner_product(&n);
+                let resn = n.inner_product_f64(&n);
                 assert_eq!(resn, -1.0);
 
-                let resz = z.inner_product(&z);
+                let resz = z.inner_product_f64(&z);
                 assert_eq!(resz, 0.0);
-            }
-        }
-
-        mod determinant_should {
-            use crate::component::Component;
-
-            #[test]
-            pub fn correctly_calculate_determinant_3x3() {
-                let matrix = vec![
-                    vec![12.0, 1.0, 11.0, 3.0],
-                    vec![6.0, 14.0, 6.0, 2.0],
-                    vec![8.0, 4.0, 4.0, 5.0],
-                    vec![4.0, 2.0, 1.0, -4.0],
-                ];
-                let result = Component::determinant(matrix);
-
-                assert_eq!(result, 4106.0);
-
-                let matrix = vec![
-                    vec![12.0, 1.0, 11.0, 3.0],
-                    vec![6.0, -3.0, 6.0, 2.0],
-                    vec![8.0, 4.0, 4.0, 5.0],
-                    vec![4.0, 2.0, 1.0, -4.0],
-                ];
-                let result = Component::determinant(matrix);
-
-                assert_eq!(result, -926.0);
-
-                let matrix = vec![
-                    vec![12.0, 1.0, 11.0],
-                    vec![6.0, 14.0, 6.0],
-                    vec![8.0, 4.0, 4.0],
-                ];
-                let result = Component::determinant(matrix);
-
-                assert_eq!(result, -560.0);
-            }
-        }
-
-        mod scalar_product_matrix_form_should {
-            use crate::{basis::ONBasis, component::Component};
-
-            #[test]
-            pub fn produce_correct_matrix() {
-                let e1 = ONBasis::P(1);
-                let e2 = ONBasis::P(2);
-                let e3 = ONBasis::P(3);
-                // simple vector components
-                let c1 = Component::new(
-                    1.0,
-                    vec![e1.clone()],
-                );
-                let c2 = Component::new(
-                    1.0,
-                    vec![e2.clone()],
-                );
-                let c3 = Component::new(
-                    1.0,
-                    vec![e3.clone()],
-                );
-
-                let a = &c1 ^ &c2 ^ &c3;
-                let b = &c1 ^ &c2 ^ &c3;
-
-                let resulta = a.scalar_product_matrix_form(&b);
-
-                assert_eq!(resulta[0][0], 0.0);
-                assert_eq!(resulta[0][1], 0.0);
-                assert_eq!(resulta[0][2], 1.0);
-
-                assert_eq!(resulta[1][0], 0.0);
-                assert_eq!(resulta[1][1], 1.0);
-                assert_eq!(resulta[1][2], 0.0);
-                
-                assert_eq!(resulta[2][0], 1.0);
-                assert_eq!(resulta[2][1], 0.0);
-                assert_eq!(resulta[2][2], 0.0);
-            }
-
-            #[test]
-            pub fn correctly_include_magnitude() {
-                let e1 = ONBasis::P(1);
-                let e2 = ONBasis::P(2);
-                let e3 = ONBasis::P(3);
-                // simple vector components
-                let a1 = Component::new(
-                    4.0,
-                    vec![e1.clone()],
-                );
-                let b1 = Component::new(
-                    2.0,
-                    vec![e1.clone()],
-                );
-                let c2 = Component::new(
-                    1.0,
-                    vec![e2.clone()],
-                );
-                let c3 = Component::new(
-                    1.0,
-                    vec![e3.clone()],
-                );
-
-                let a = &a1 ^ &c2 ^ &c3;
-                let b = &b1 ^ &c2 ^ &c3;
-
-                let resulta = a.scalar_product_matrix_form(&b);
-
-                assert_eq!(resulta[0][0], 0.0);
-                assert_eq!(resulta[0][1], 0.0);
-                assert_eq!(resulta[0][2], 8.0);
-
-                assert_eq!(resulta[1][0], 0.0);
-                assert_eq!(resulta[1][1], 1.0);
-                assert_eq!(resulta[1][2], 0.0);
-                
-                assert_eq!(resulta[2][0], 1.0);
-                assert_eq!(resulta[2][1], 0.0);
-                assert_eq!(resulta[2][2], 0.0);
             }
         }
 
@@ -952,7 +834,7 @@ mod tests {
                 // dot i with reciprocal of i and ensure c_i . c^i = 1
                 for (cidx, c) in cs.iter().enumerate() {
                     for (ridx, r) in rs.iter().enumerate() {
-                        let result = c.inner_product(r);
+                        let result = c.inner_product_f64(r);
                         println!("{}", result.to_string());
                         if cidx == ridx {
                             assert_eq!(result, 1.0, "{} . {}", c.to_string(), r.to_string());
