@@ -2,6 +2,7 @@ pub mod blade;
 pub mod basis;
 pub mod component;
 pub mod multivector;
+pub mod sta_multivec;
 
 #[cfg(test)]
 mod tests {

@@ -36,18 +36,10 @@ impl Component {
     ///
     /// If basis is not ordered correctly, it reorders the bases appropriately.
     pub fn new(mag: f64, bases: Vec<ONBasis>) -> Component {
-        let mut unique = HashSet::new();
-        for basis in bases.iter() {
-            unique.insert(basis);
-        }
-        // if duplicate ids, cleare out duplicate bases.
-        if unique.len() != bases.len() {
-            return Component {mag, bases}.reorder_bases();
-        }
         if bases.len() > 0 {
             for idx in 0..(bases.len()-1) {
-                // if any disorder, make then reorder bases immediately.
-                if bases[idx].unwrap() > bases[idx+1].unwrap() {
+                // if any disorder or duplicates, make then reorder bases immediately.
+                if bases[idx].unwrap() >= bases[idx+1].unwrap() {
                     return Component {mag, bases}.reorder_bases();
                 }
             }
@@ -57,8 +49,8 @@ impl Component {
 
     /// # Reorder Bases
     ///
-    /// creates a copy of the component with it's basis vectors organized by
-    /// id. Magnitude flips based on how many
+    /// Creates a copy of the component with it's basis vectors organized 
+    /// properly. Deals with duplicates as well.
     fn reorder_bases(&self) -> Component {
         let mut result = Component { mag: self.mag, bases: self.bases.clone() };
 
@@ -122,6 +114,13 @@ impl Component {
         }
     }
 
+    /// # To Multivector
+    ///
+    /// A quick conversion from Component to Multivector.
+    pub fn to_mv(&self) -> Multivector {
+        Multivector::new(vec![self.clone()])
+    }
+
     /// # Standard Addition
     ///
     /// Adds two components and always results in a multivector.
@@ -140,7 +139,7 @@ impl Component {
         Component::new(self.mag * rhs, self.bases.clone())
     }
 
-    /// # geometric Product
+    /// # Geometric Product
     ///
     /// Multiplies two components together via Geometric Product.
     ///
@@ -149,6 +148,10 @@ impl Component {
     ///
     /// If any results in the result being 0, then it shortcuts out.
     pub fn geo_product(&self, rhs: &Component) -> Component {
+        let res_mag = self.mag * rhs.mag;
+        if res_mag == 0.0 {
+            return ZERO;
+        }
         // combine bases first
         let mut bases = self.bases.clone();
         bases.extend(rhs.bases.clone());
@@ -517,13 +520,6 @@ impl Component {
             }
         }
         return true;
-    }
-
-    /// # To Multivector
-    ///
-    /// A quick conversion from Component to Multivector.
-    pub fn to_mv(&self) -> Multivector {
-        Multivector::new(vec![self.clone()])
     }
 
     pub fn to_string(&self) -> String {
