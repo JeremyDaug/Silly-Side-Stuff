@@ -57,7 +57,7 @@ impl Multivector {
         for comp in self.components.iter() {
             grades.insert(comp.grade());
         }
-        grades.len() > 1
+        grades.len() <= 1
     }
 
     /// # Is Blade
@@ -209,6 +209,9 @@ impl Multivector {
     /// 
     /// Takes those parts of a multivector of a particular grade.
     pub fn take_grade(&self, grade: usize) -> Multivector {
+        if grade < 0 {
+            panic!("Grade must be non-negative.")
+        }
         let mut result = vec![];
         for comp in self.components.iter()
         .filter(|x| x.grade() == grade) {
@@ -243,8 +246,14 @@ impl Multivector {
         accumulator
     }
 
+    /// # Magnitude Squared
+    /// 
+    /// Gets the Magnitude of the multivector squared.
+    /// 
+    /// Multiplies self.inverse * self .take grade 0
     pub fn norm_sqrd(&self) -> f64 {
-        todo!()
+        // multiply self by it's inverse, take grade 0, then get the magnitude
+        (self.inverse() * self).take_grade(0).components[0].mag
     }
 
     /// # Scalar Multiplication

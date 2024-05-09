@@ -30,6 +30,27 @@ pub struct Component {
 pub const ZERO: Component = Component { mag: 0.0, bases: vec![] };
 
 impl Component {
+    /// # Default
+    /// 
+    /// Returns a default (zero) component.
+    pub fn default() -> Component {
+        ZERO
+    }
+
+    /// # Grade
+    ///
+    /// Retieves what the grade of the component is, IE how many bases it has.
+    pub fn grade(&self) -> usize {
+        self.bases.len()
+    }
+
+    /// # Bases
+    /// 
+    /// Gets a reference to the component's bases.
+    pub fn bases(&self) -> &[ONBasis] {
+        self.bases.as_ref()
+    }
+
     /// # New
     ///
     /// creates a new component based on a magnitude and basis.
@@ -184,36 +205,6 @@ impl Component {
         }
     }
 
-    /// # Project Onto
-    ///
-    /// Projects the component blade onto another component.
-    ///
-    /// Currently does not work for degenerate dimensions due to the basis
-    /// squaring to 0.
-    pub fn project_onto(&self, rhs: &Component) -> Component {
-        self << rhs.inverse() << rhs
-    }
-
-    /// # Reciprocal Frame
-    ///
-    /// Treats the current component as a pseudoscalar of a subspace
-    /// then returns the given reciprocal bases.
-    ///
-    /// IE, if the component is B = b1 ^ b2 ^ b3 ^ b4
-    /// then B.reciprocal_frame(2) = - b1 ^ b3 ^ b4 << B.inverse
-    ///
-    /// Returns zero if the vector selected is beyond our array.
-    pub fn reciprocal_frame(&self, i: usize) -> Component {
-        if i >= self.bases.len() {
-            ZERO
-        } else {
-            let mut rep_bas = self.bases.clone();
-            rep_bas.remove(i);
-            (-1.0_f64).powi(i as i32) * Component::new(self.mag,
-                rep_bas) << self.inverse()
-        }
-    }
-
     /// # Reversion
     ///
     /// Produces the reverse of a blade in the grade ordering of
@@ -227,12 +218,50 @@ impl Component {
         }
     }
 
+    /// # Norm squared
+    ///
+    /// Norm^2 of a vector (a) is equal to a . a
+    ///
+    /// We peek ahead a bit and for any blade define
+    /// the norm^2 as A . A.inverse()
+    ///
+    /// This may be reworked in the future to be more
+    /// efficient as it creates a new component, and applies
+    /// reversion to it, just so it can drop it.
+    pub fn norm_sqrd(&self) -> f64 {
+        self.inner_product_f64(&self.reversion())
+    }
+
+    /// # Norm
+    ///
+    /// As Norm Squared, but includes the square Root.
+    ///
+    /// Remember, negative values will return Nan.
+    pub fn norm(&self) -> f64 {
+        self.inner_product_f64(self).sqrt()
+    }
+
     /// # Involution
     ///
     /// Involutes the the component based on it's grade.
     /// +-+-+-+-
     pub fn involution(&self) -> Component {
         Component::new(self.mag * (-1.0_f64).powf(self.grade() as f64) , self.bases.clone())
+    }
+
+    /// # Scalar Product
+    ///
+    /// Scalar Product multiplies blades of like grade. Since all components
+    /// are blades, they always go. If the blades are of different grades
+    /// it returns 0. If they are of the same it takes the determinant of them
+    /// if they are both scalars, it multiplies them.
+    pub fn scalar_product(&self, rhs: &Component) -> f64 {
+        let result = self * rhs;
+        if result.grade() == 0 { // geometric product, select grade 0 result.
+            result.mag
+        } else {
+            0.0
+        }
     }
 
     /// # Inverse
@@ -247,129 +276,6 @@ impl Component {
         let rev = self.reversion();
         let norm = self.norm_sqrd();
         let result = rev / norm;
-        result
-    }
-
-    /// # Dualization
-    ///
-    /// Returns the Dual of this component.
-    ///
-    /// Must be given the Pseudoscalar of the geometry.
-    ///
-    /// The Dual of a Dual is not always the same as the original blade, as such
-    /// there is also an Undual function.
-    ///
-    /// The dual of the Dual results in an alterating pattern dependent on the
-    /// dimensions of the space. ++--++--
-    /// 0, 1, 4,5 ... A = A.dual().dual()
-    /// 2,3, 6,7 ... -A = A.dual().dual()
-    pub fn dual(&self, i: &Component) -> Component {
-        self << &i.inverse()
-    }
-
-    /// # Undualization
-    ///
-    /// Depending on the geometry, the Dual of a Dual is not always the same
-    /// as the original.
-    ///
-    /// As such, Undualization guarantees the property that for a blade A,
-    /// with pseudoscalar i that
-    ///
-    /// A = A.dual(i).undual(i)
-    ///
-    /// in all cases.
-    pub fn undual(&self, i: &Component) -> Component {
-        self << i
-    }
-
-    /// # Scalar Product
-    ///
-    /// Scalar Product multiplies blades of like grade. Since all components
-    /// are blades, they always go. If the blades are of different grades
-    /// it returns 0. If they are of the same it takes the determinant of them
-    /// if they are both scalars, it multiplies them.
-    pub fn scalar_product(&self, rhs: &Component) -> f64 {
-        if self.grade() != rhs.grade() {
-            return 0.0;
-        }
-        // if 1 or zero, multiply the bases and end there.
-        let temp = self * rhs;
-        if temp.grade() == 0 {
-            return temp.mag;
-        } else {
-            return 0.0;
-        }
-    }
-
-    /// # Determinant function
-    ///
-    /// Takes a square matrix and returns the determinant of it.
-    ///
-    /// Uses the Laplace Expansion method to do this, which is
-    /// recursive.
-    ///
-    /// TODO this should be moved elsewhere.
-    ///
-    /// # Panics
-    ///
-    /// If matrix isn't square it panics.
-    pub fn determinant(m: Vec<Vec<f64>>) -> f64 {
-        let n = m.len();
-        if m.iter().any(|x| x.len() != n) {
-            panic!("Matrix is not square.");
-        }
-        if m.len() == 2 {
-            return m[0][0] * m[1][1] - m[0][1] * m[1][0];
-        }
-        // if not 2x2 do expansion
-        let mut result = 0.0;
-        for idx in 0..m.len() {
-            // get the sub-matrix
-            let mut cm = vec![];
-            for row in 1..m.len() {
-                cm.push(vec![]);
-                for col in 0..m.len() {
-                    if col == idx { continue; }
-                    cm.last_mut().unwrap()
-                    .push(m[row][col]);
-                }
-            }
-            // with the next matrix run determinant on that matrix.
-            result += (-1.0_f64).powi(idx as i32) * m[0][idx] * Component::determinant(cm);
-        }
-        result
-    }
-
-    /// # Scalar Product Matrix Form
-    ///
-    /// Takes two components of the same grade, and generates a matrix form
-    /// based on it.
-    ///
-    /// a_1 . b_k --> a_1 . b_1
-    /// v                   v
-    /// v                   v
-    /// v                   v
-    /// a_k . b_k --> a_k . b_1
-    ///
-    /// This assumes they are the same grade, and will not work if they are not.
-    ///
-    /// This does not include the magnitude, just the basis multiplications.
-    pub fn scalar_product_matrix_form(&self, rhs: &Component) -> Vec<Vec<f64>> {
-        // build out the initial matrix
-        let mut result = vec![];
-        for lidx in 0..self.grade() {
-            result.push(vec![]);
-            for ridx in (0..rhs.grade()).rev() {
-                result[lidx].push(self.bases[lidx].dot(&rhs.bases[ridx]));
-                let lhsval = if lidx == 0 {
-                    self.mag
-                } else {1.0};
-                let rhsval = if ridx == 0 {
-                    rhs.mag
-                } else {1.0};
-                result[lidx][rhs.bases.len() - (ridx + 1)] *= lhsval * rhsval;
-            }
-        }
         result
     }
 
@@ -406,39 +312,33 @@ impl Component {
     /// - The norm of A>>B is proportional to the norms of A and B and the
     ///     cosine between A and it's projection on B.
     pub fn left_cont(&self, rhs: &Component) -> Component {
-        // since we are components, lhs must be totally contained in rhs, else it is Zero.
-        if self.bases.iter().any(|x| !rhs.bases.contains(x)) {
+        // shortcircuit if self.grade > rhs.grade
+        if self.grade() > rhs.grade() {
             return ZERO;
         }
-        // since all of lhs bases are contained in rhs's bases, combine the magnitudes
-        let mut mag = self.mag * rhs.mag;
-        // and iterate over the bases, reordering to combine to their squares.
-        let mut final_bases = rhs.bases.clone();
-        for basis in self.bases.iter().rev() {
-            // get the position of the first basis which matches
-            let idx = final_bases.iter().position(|&x| x == *basis).unwrap();
-            // multiply the magnitude by -1^swaps and the square of the basis.
-            mag *= (-1.0_f64).powf(idx as f64) * basis.sqr();
-            if mag == 0.0 { // if magnitude is now zero, just return zero.
-                return ZERO;
-            }
-            // with it squared, remove that basis from our final bases.
-            final_bases.remove(idx);
+        // Geometric Product, select grade rhs.grade - self.grade
+        let result = self * rhs;
+        if result.grade() == (rhs.grade() - self.grade()) {
+            result
+        } else {
+            ZERO
         }
-        // since we've removed all the lhs bases and didn't run into any zeroes,
-        // return the final_bases and the new magnitude as a component.
-        Component::new(mag, final_bases)
     }
 
     /// # Right Contraction
     ///
     /// Same as left, but reversed.
     pub fn right_cont(&self, rhs: &Component) -> Component {
-        let result = (-1.0_f64).powi(rhs.grade() as i32 * (1 + self.grade() as i32)) * rhs.left_cont(self);
-        if result.mag.is_sign_negative() && result.mag == 0.0 {
-            Component::new(result.mag.abs(), result.bases)
-        } else {
+        // shortcircuit if rhs.grade > self.grade
+        if self.grade() < rhs.grade() {
+            return  ZERO;
+        }
+        // otherwise geometric product, select grade self.grade - rhs.grade
+        let result = self * rhs;
+        if result.grade() == (self.grade() - rhs.grade()) {
             result
+        } else {
+            ZERO
         }
     }
 
@@ -450,60 +350,93 @@ impl Component {
     ///
     /// Note: This is only meant for blades, all components are blades,
     /// but multivectors or other k-vectors may not be blades.
-    pub fn inner_product(&self, rhs: &Component) -> f64 {
-        if self.grade() == rhs.grade() {
-            if self.bases.len() == 0 {
-                // if no bases vectors, just multiply and return
-                return self.mag * rhs.mag;
-            }
-            for (b1, b2) in self.bases
-            .iter().zip(rhs.bases.iter()) {
-                if b1 != b2 { // if any basis mismatch, return 0
-                    return 0.0;
-                }
-            }
-            // if they match, make a new component so that the bases
-            // vectors are reordered and consolidated.
-            let mut bases = self.bases.clone();
-            bases.extend(rhs.bases.clone());
-            let temp = Component::new(self.mag * rhs.mag, bases);
-            return temp.mag;
+    pub fn inner_product_f64(&self, rhs: &Component) -> f64 {
+        let result = self * rhs;
+        if result.grade() > 0 {
+            0.0
+        } else {
+            result.mag
         }
-        0.0
     }
 
-    /// # Norm squared
-    ///
-    /// Norm^2 of a vector (a) is equal to a . a
-    ///
-    /// We peek ahead a bit and for any blade define
-    /// the norm^2 as A . A.inverse()
-    ///
-    /// This may be reworked in the future to be more
-    /// efficient as it creates a new component, and applies
-    /// reversion to it, just so it can drop it.
-    pub fn norm_sqrd(&self) -> f64 {
-        self.inner_product(&self.reversion())
+    /// # Component Product
+    /// 
+    /// Performs an inner/dot product, but only returns a value if the grade 
+    /// resulting is zero.
+    /// 
+    /// This function forces the result to be a component instead of a float.
+    /// 
+    /// Note: This is only meant for blades, all components are blades,
+    /// but multivectors or other k-vectors may not be blades.
+    pub fn inner_product(&self, rhs: &Component) -> Component {
+        let result = self * rhs;
+        if result.grade() > 0 {
+            ZERO
+        } else {
+            result
+        }
     }
 
-    /// # Norm
+    /// # Dualization
     ///
-    /// As Norm Squared, but includes the square Root.
+    /// Returns the Dual of this component.
     ///
-    /// Remember, negative values will return Nan.
-    pub fn norm(&self) -> f64 {
-        self.inner_product(self).sqrt()
+    /// Must be given the Pseudoscalar of the geometry.
+    ///
+    /// The Dual of a Dual is not always the same as the original blade, as such
+    /// there is also an Undual function.
+    ///
+    /// The dual of the Dual results in an alterating pattern dependent on the
+    /// dimensions of the space. ++--++--
+    /// 0, 1, 4,5 ... A = A.dual().dual()
+    /// 2,3, 6,7 ... -A = A.dual().dual()
+    pub fn dual(&self, i: &Component) -> Component {
+        self << &i.inverse()
     }
 
-    /// # Grade
+    /// # Undualization
     ///
-    /// Retieves what the grade of the component is, IE how many bases it has.
-    pub fn grade(&self) -> usize {
-        self.bases.len()
+    /// Depending on the geometry, the Dual of a Dual is not always the same
+    /// as the original.
+    ///
+    /// As such, Undualization guarantees the property that for a blade A,
+    /// with pseudoscalar i that
+    ///
+    /// A = A.dual(i).undual(i)
+    ///
+    /// in all cases.
+    pub fn undual(&self, i: &Component) -> Component {
+        self << i
     }
 
-    pub fn bases(&self) -> &[ONBasis] {
-        self.bases.as_ref()
+    /// # Project Onto
+    ///
+    /// Projects the component blade onto another component.
+    ///
+    /// Currently does not work for degenerate dimensions due to the basis
+    /// squaring to 0.
+    pub fn project_onto(&self, rhs: &Component) -> Component {
+        self << rhs.inverse() << rhs
+    }
+
+    /// # Reciprocal Frame
+    ///
+    /// Treats the current component as a pseudoscalar of a subspace
+    /// then returns the given reciprocal bases.
+    ///
+    /// IE, if the component is B = b1 ^ b2 ^ b3 ^ b4
+    /// then B.reciprocal_frame(2) = - b1 ^ b3 ^ b4 << B.inverse
+    ///
+    /// Returns zero if the vector selected is beyond our array.
+    pub fn reciprocal_frame(&self, i: usize) -> Component {
+        if i >= self.bases.len() {
+            ZERO
+        } else {
+            let mut rep_bas = self.bases.clone();
+            rep_bas.remove(i);
+            (-1.0_f64).powi(i as i32) * Component::new(self.mag,
+                rep_bas) << self.inverse()
+        }
     }
 
     /// # Same Bases
