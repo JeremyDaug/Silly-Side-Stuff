@@ -484,6 +484,61 @@ impl Component {
         }
         result
     }
+
+    /// # From String
+    /// 
+    /// Translates a string into a Component. Returns an Err result if invalid
+    /// formatting.
+    /// 
+    /// All of them are in the format of #.#B(id)B(id)
+    pub fn from_string(val: String) -> Result<Component, &'static str> {
+        // get value from the first, checking to ensure nothing is wrong.
+        let mut whole = String::new();
+        let mut decimal_found = false;
+        let mut decimal = String::new();
+        let mut bases = String::new();
+        for c in val.chars() {
+            if c.is_ascii_digit() {
+                if !decimal_found {
+                    whole.push(c);
+                } else { // past decimal
+                    decimal.push(c);
+                }
+            } else if c == '.' { // if decimal
+                if decimal_found {
+                    return Err("Extra Decimal Found");
+                } else {
+                    decimal_found = true;
+                }
+            } else { // if character found should be the start of the bases.
+                let prefix = if decimal.len() > 0 {
+                    whole.len() + 1 + decimal.len()
+                } else { whole.len() };
+                bases = val.clone().split_at(prefix).1.to_string();
+            }
+        }
+        let poss_number = (whole + "." + if decimal.len() > 0 { decimal.as_str() } else { "0" }).parse::<f64>();
+        let mut number = 0.0;
+        if let Err(_) = poss_number {
+            return Err("Invalid number given.");
+        } else if let Ok(num) = poss_number {
+            number = num;
+        }
+
+        // with number gotten, break up the bases and convert them.
+        let mut split_bases = vec![];
+        for section in bases.split(")") {
+            let basis = String::from(section) + ")";
+            let res = ONBasis::from_string(basis);
+            if let Ok(b) = res {
+                split_bases.push(b);
+            } else if let Err(e) = res {
+                return Err(e);
+            }
+        }
+        // we've done all the work, return the result.
+        Ok(Component::new(number, split_bases))
+    }
 }
 
 

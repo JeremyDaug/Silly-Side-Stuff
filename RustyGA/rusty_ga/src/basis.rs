@@ -89,6 +89,41 @@ impl ONBasis {
             0.0
         }
     }
+
+    /// # From Str
+    /// 
+    /// Takes a str, processes it, and 
+    pub fn from_string(val: String) -> Result<ONBasis, &'static str> {
+        if val.len() < 4 {
+            return Err("Text Invalid, too short to be valid.");
+        }
+        let mut clone = val;
+        // check that it's wrapped correctly.
+        let kind = clone.remove(0);
+        if !(kind == 'P' || 
+        kind == 'N' ||
+        kind == 'Z') {
+            return Err("Invalid Basis Type, must be 'P', 'N', or 'Z'.");
+        }
+        let open = clone.remove(0);
+        let close = clone.pop().unwrap();
+        if open != '(' || close != ')' {
+            return Err("Invalid parens, parenthesis must close and only 1 character allowed before open.");
+        }
+        // all that's left is the number
+        let id = clone.parse::<usize>();
+        if let Ok(id) = id {
+            return if kind == 'P' {
+                Ok(ONBasis::P(id))
+            } else if kind == 'N' {
+                Ok(ONBasis::N(id))
+            } else {
+                Ok(ONBasis::Z(id))
+            };
+        } else {
+            return Err("Invalid Id, must be a non-negative Integer");
+        }
+    }
 }
 
 impl PartialOrd for ONBasis {

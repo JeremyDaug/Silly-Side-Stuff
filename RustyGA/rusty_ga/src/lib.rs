@@ -6,8 +6,59 @@ pub mod sta_multivec;
 
 #[cfg(test)]
 mod tests {
+    mod basis_tests {
+        use crate::basis::ONBasis;
+
+        mod from_string_should {
+            use crate::basis::ONBasis;
+
+            #[test]
+            pub fn correctly_parse_string_values() {
+                let result = ONBasis::from_string(String::from("P(0)")).expect("Didn't work!");
+                assert_eq!(result, ONBasis::P(0));
+
+                let result = ONBasis::from_string(String::from("N(0)")).expect("Didn't work!");
+                assert_eq!(result, ONBasis::N(0));
+
+                let result = ONBasis::from_string(String::from("Z(0)")).expect("Didn't work!");
+                assert_eq!(result, ONBasis::Z(0));
+
+                let result = ONBasis::from_string(String::from("P(1000000)")).expect("Didn't work!");
+                assert_eq!(result, ONBasis::P(1000000));
+
+                let result = ONBasis::from_string(String::from("N(1000000)")).expect("Didn't work!");
+                assert_eq!(result, ONBasis::N(1000000));
+
+                let result = ONBasis::from_string(String::from("Z(1000000)")).expect("Didn't work!");
+                assert_eq!(result, ONBasis::Z(1000000));
+            }
+        }
+
+        #[test]
+        pub fn correctly_fail_invalid_strings() {
+            let _result = ONBasis::from_string(String::from("PP(0)"))
+                .err().expect("No err for PP(0)");
+            let _result = ONBasis::from_string(String::from("Q(0)"))
+                .err().expect("No err for Q(0)");
+            let _result = ONBasis::from_string(String::from("P(-0)"))
+                .err().expect("No err for P(-0)");
+            let _result = ONBasis::from_string(String::from("P(1.0)"))
+                .err().expect("No err for P(1.0)");
+            let _result = ONBasis::from_string(String::from("P(A)"))
+                .err().expect("No err for P(A)");
+        }
+    }
 
     mod component_tests {
+        mod from_string_should {
+            use crate::{basis::ONBasis, component::Component};
+
+            #[test]
+            pub fn correctly_parse_string() {
+                
+            }
+        }
+
         mod reorder_bases_should {
             use crate::{basis::ONBasis, component::Component};
         
