@@ -337,6 +337,37 @@ impl Multivector {
         result.truncate(result.len()-3);
         result
     }
+
+    /// # From String
+    /// 
+    /// Takes a correctly formated string and returns a multivector based on it.
+    /// 
+    /// All multivectors come in the form 
+    /// Component[(+/-)Component]*.
+    pub fn from_string(val: String) -> Result<Multivector, &'static str> {
+        // get the indices of + and -
+        let mut accumulator = ZERO;
+        let mut working = val.as_str();
+        let mut pluses: Vec<usize> = val.match_indices('+').map(|x| x.0).collect();
+        let mut minuses: Vec<usize> = val.match_indices('-').map(|x| x.0).collect();
+        while pluses.len() > 0 && minuses.len() > 0 {
+            let mut is_pos = false;
+            let idx = if pluses.last().unwrap_or(&0) >
+            minuses.last().unwrap_or(&0) {
+                // if plus before minus, pop that end and go negative
+                is_pos = true;
+                pluses.pop().unwrap()
+            } else {
+                minuses.pop().unwrap()
+            };
+
+            let curr = working.split_at(idx);
+            working = curr.0;
+            let curr = curr.1;
+            accumulator = accumulator + Component::from_string(String::from(curr))?;
+        }
+        Ok(accumulator)
+    }
 }
 
 

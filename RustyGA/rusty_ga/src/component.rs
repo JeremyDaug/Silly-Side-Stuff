@@ -498,7 +498,9 @@ impl Component {
         let mut decimal = String::new();
         let mut bases = String::new();
         for c in val.chars() {
-            if c.is_ascii_digit() {
+            if c.is_ascii_digit() ||
+            c == '-' ||
+            c == '+' {
                 if !decimal_found {
                     whole.push(c);
                 } else { // past decimal
@@ -515,19 +517,34 @@ impl Component {
                     whole.len() + 1 + decimal.len()
                 } else { whole.len() };
                 bases = val.clone().split_at(prefix).1.to_string();
+                break;
             }
         }
-        let poss_number = (whole + "." + if decimal.len() > 0 { decimal.as_str() } else { "0" }).parse::<f64>();
-        let mut number = 0.0;
-        if let Err(_) = poss_number {
+        let whole_len = whole.len();
+        let num_res = whole + "." + if decimal.len() > 0 { decimal.as_str() } else { "0" };
+        let poss_number = num_res.parse::<f64>();
+        let number = if let Ok(num) = poss_number {
+            if whole_len == 0 && decimal.len() == 0 {
+                1.0
+            } else if num_res.get(0..1).unwrap() == "-" &&
+            bases.len() > 0 { // if just negative and basis, -1.0
+                -1.0
+            } else if num_res.get(0..1).unwrap() == "+" &&
+            bases.len() > 0 { // if just + and basis, 
+                1.0
+            } else {
+                num
+            }
+        } else {
             return Err("Invalid number given.");
-        } else if let Ok(num) = poss_number {
-            number = num;
-        }
+        };
 
         // with number gotten, break up the bases and convert them.
         let mut split_bases = vec![];
         for section in bases.split(")") {
+            if section == "" {
+                break; // if empty, then last basis past, gtfo
+            }
             let basis = String::from(section) + ")";
             let res = ONBasis::from_string(basis);
             if let Ok(b) = res {

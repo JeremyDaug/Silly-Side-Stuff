@@ -55,7 +55,122 @@ mod tests {
 
             #[test]
             pub fn correctly_parse_string() {
-                
+                let result = Component::from_string(
+                    String::from("1.0P(1)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![ONBasis::P(1)]));
+
+                let result = Component::from_string(
+                    String::from("1.0N(1)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![ONBasis::N(1)]));
+
+                let result = Component::from_string(
+                    String::from("1.0P(1)N(1)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![ONBasis::P(1), ONBasis::N(1)]));
+
+                let result = Component::from_string(
+                    String::from("1.0P(1)P(1)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![]));
+
+                let result = Component::from_string(
+                    String::from("1.0N(1)P(1)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(-1.0, vec![ONBasis::P(1), ONBasis::N(1)]));
+
+                let result = Component::from_string(
+                    String::from("1.0N(1)N(1)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(-1.0, vec![]));
+
+                let result = Component::from_string(
+                    String::from("1P(1)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![ONBasis::P(1)]));
+
+                let result = Component::from_string(
+                    String::from("254P(1)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(254.0, vec![ONBasis::P(1)]));
+
+                let result = Component::from_string(
+                    String::from("1.125P(1)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.125, vec![ONBasis::P(1)]));
+
+                let result = Component::from_string(
+                    String::from("1")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![]));
+
+                let result = Component::from_string(
+                    String::from("1.0")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![]));
+
+                let result = Component::from_string(
+                    String::from("1.")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![]));
+
+                let result = Component::from_string(
+                    String::from(".0")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(0.0, vec![]));
+
+                let result = Component::from_string(
+                    String::from("-1.0")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(-1.0, vec![]));
+
+                let result = Component::from_string(
+                    String::from("+1.0")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![]));
+
+                let result = Component::from_string(
+                    String::from("P(0)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![ONBasis::P(0)]));
+
+                let result = Component::from_string(
+                    String::from("+P(0)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(1.0, vec![ONBasis::P(0)]));
+
+                let result = Component::from_string(
+                    String::from("-P(0)")
+                ).expect("Invalid Conversion");
+                assert_eq!(result, Component::new(-1.0, vec![ONBasis::P(0)]));
+            }
+
+            #[test]
+            pub fn correctly_fail_string() {
+                Component::from_string(
+                    String::from("1..")
+                ).err().expect("Double radix point.");
+
+                Component::from_string(
+                    String::from("1.0.0")
+                ).err().expect("Double Radix Point (mk 2).");
+
+                Component::from_string(
+                    String::from("1.0P")
+                ).err().expect("Bad Basis");
+
+                Component::from_string(
+                    String::from("1.0-")
+                ).err().expect("Negative After Decimal.");
+
+                Component::from_string(
+                    String::from("1.-0")
+                ).err().expect("Negative placed incorrectly.");
+
+                Component::from_string(
+                    String::from("1.+0")
+                ).err().expect("Negative placed incorrectly.");
             }
         }
 
@@ -900,6 +1015,47 @@ mod tests {
     }
 
     mod multivector_tests {
+        mod from_string_should {
+            use crate::{basis::ONBasis, component::Component, multivector::Multivector};
+
+            #[test]
+            pub fn correctly_parse_valid_multivectors() {
+                let result = Multivector::from_string(
+                    String::from("P(1)")
+                ).expect("Single Component");
+                assert_eq!(result, Multivector::new(vec![
+                    Component::new(1.0, vec![ONBasis::P(1)])
+                ]));
+
+                let result = Multivector::from_string(
+                    String::from("")
+                ).expect("Empty.");
+                assert_eq!(result, Multivector::new(vec![
+                    Component::new(1.0, vec![ONBasis::P(1)])
+                ]));
+
+                let result = Multivector::from_string(
+                    String::from("")
+                ).expect("Multicomponent");
+                assert_eq!(result, Multivector::new(vec![ ]));
+
+                let result = Multivector::from_string(
+                    String::from("P(1)-P(2)")
+                ).expect("Multicomponent with negative");
+                assert_eq!(result, Multivector::new(vec![
+                    Component::new(1.0, vec![ONBasis::P(1)]),
+                    Component::new(-1.0, vec![ONBasis::P(2)])
+                ]));
+
+                let result = Multivector::from_string(
+                    String::from("-P(1)+P(2)")
+                ).expect("Single Component");
+                assert_eq!(result, Multivector::new(vec![
+                    Component::new(1.0, vec![ONBasis::P(1)])
+                ]));
+            }
+        }
+
         mod new_should {
             use crate::{basis::ONBasis, component::Component, multivector::Multivector};
 
