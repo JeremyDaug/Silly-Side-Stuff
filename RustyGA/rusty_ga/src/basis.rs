@@ -93,11 +93,11 @@ impl ONBasis {
     /// # From Str
     /// 
     /// Takes a str, processes it, and 
-    pub fn from_string(val: String) -> Result<ONBasis, &'static str> {
+    pub fn from_string(val: &String) -> Result<ONBasis, &'static str> {
         if val.len() < 4 {
             return Err("Text Invalid, too short to be valid.");
         }
-        let mut clone = val;
+        let mut clone = val.clone();
         // check that it's wrapped correctly.
         let kind = clone.remove(0);
         if !(kind == 'P' || 

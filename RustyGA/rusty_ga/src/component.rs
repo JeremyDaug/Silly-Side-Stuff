@@ -491,8 +491,11 @@ impl Component {
     /// formatting.
     /// 
     /// All of them are in the format of #.#B(id)B(id)
-    pub fn from_string(val: String) -> Result<Component, &'static str> {
+    pub fn from_string(val: &String) -> Result<Component, &'static str> {
         // get value from the first, checking to ensure nothing is wrong.
+        if val.len() == 0 {
+            return Ok(ZERO);
+        }
         let mut whole = String::new();
         let mut decimal_found = false;
         let mut decimal = String::new();
@@ -546,7 +549,7 @@ impl Component {
                 break; // if empty, then last basis past, gtfo
             }
             let basis = String::from(section) + ")";
-            let res = ONBasis::from_string(basis);
+            let res = ONBasis::from_string(&basis);
             if let Ok(b) = res {
                 split_bases.push(b);
             } else if let Err(e) = res {

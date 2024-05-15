@@ -344,18 +344,21 @@ impl Multivector {
     /// 
     /// All multivectors come in the form 
     /// Component[(+/-)Component]*.
-    pub fn from_string(val: String) -> Result<Multivector, &'static str> {
+    pub fn from_string(val: &String) -> Result<Multivector, &'static str> {
         // get the indices of + and -
         let mut accumulator = ZERO;
         let mut working = val.as_str();
         let mut pluses: Vec<usize> = val.match_indices('+').map(|x| x.0).collect();
         let mut minuses: Vec<usize> = val.match_indices('-').map(|x| x.0).collect();
-        while pluses.len() > 0 && minuses.len() > 0 {
-            let mut is_pos = false;
+        // sanity check for singular, unsigned components
+        if pluses.len() == 0 && minuses.len() == 0 {
+            accumulator = accumulator + Component::from_string(val)?;
+            return Ok(accumulator);
+        }
+        while pluses.len() > 0 || minuses.len() > 0 {
             let idx = if pluses.last().unwrap_or(&0) >
             minuses.last().unwrap_or(&0) {
                 // if plus before minus, pop that end and go negative
-                is_pos = true;
                 pluses.pop().unwrap()
             } else {
                 minuses.pop().unwrap()
@@ -364,7 +367,11 @@ impl Multivector {
             let curr = working.split_at(idx);
             working = curr.0;
             let curr = curr.1;
-            accumulator = accumulator + Component::from_string(String::from(curr))?;
+            accumulator = accumulator + Component::from_string(&String::from(curr))?;
+        }
+        // get any remaining components
+        if working.len() > 0 {
+            accumulator = accumulator + Component::from_string(&String::from(working))?;
         }
         Ok(accumulator)
     }
