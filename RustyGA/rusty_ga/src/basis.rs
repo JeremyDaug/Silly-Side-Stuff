@@ -1,5 +1,9 @@
 use std::{cmp::Ordering::{self}, hash::Hash, fmt::format};
 
+use regex::Regex;
+
+pub const BASIS_REGEX: &str = r"^(?<e>[PNZ])[(](?<id>0|[1-9][0-9]*)[)]$";
+
 /// # ONBasis (Orthonomal Basis)
 /// 
 /// Basis data storage. Contains the id of the basis and
@@ -93,36 +97,24 @@ impl ONBasis {
     /// # From Str
     /// 
     /// Takes a str, processes it, and 
-    pub fn from_string(val: &String) -> Result<ONBasis, &'static str> {
-        if val.len() < 4 {
-            return Err("Text Invalid, too short to be valid.");
-        }
-        let mut clone = val.clone();
-        // check that it's wrapped correctly.
-        let kind = clone.remove(0);
-        if !(kind == 'P' || 
-        kind == 'N' ||
-        kind == 'Z') {
-            return Err("Invalid Basis Type, must be 'P', 'N', or 'Z'.");
-        }
-        let open = clone.remove(0);
-        let close = clone.pop().unwrap();
-        if open != '(' || close != ')' {
-            return Err("Invalid parens, parenthesis must close and only 1 character allowed before open.");
-        }
-        // all that's left is the number
-        let id = clone.parse::<usize>();
-        if let Ok(id) = id {
-            return if kind == 'P' {
-                Ok(ONBasis::P(id))
-            } else if kind == 'N' {
-                Ok(ONBasis::N(id))
-            } else {
-                Ok(ONBasis::Z(id))
-            };
-        } else {
-            return Err("Invalid Id, must be a non-negative Integer");
-        }
+    pub fn from_string(val: &String) -> Result<ONBasis, String> {
+        let re = Regex::new(BASIS_REGEX).unwrap();
+        let Some(caps) = re.captures(val) else {
+            return Err(format!("'{val}' does not match the form P(1)."));
+        };
+        let e = &caps["e"];
+        let id = &caps["id"];
+
+        let Ok(id_val) = id.parse::<usize>() else {
+            return Err(String::from(format!("Id in '{val}' could not parse into integer.")));
+        };
+
+        Ok(match e {
+            "P" => ONBasis::P(id_val),
+            "N" => ONBasis::N(id_val),
+            "Z" => ONBasis::Z(id_val),
+            _ => unreachable!()
+        })
     }
 }
 

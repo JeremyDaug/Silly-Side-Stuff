@@ -3,6 +3,7 @@ pub mod basis;
 pub mod component;
 pub mod multivector;
 pub mod sta_multivec;
+pub mod interpreter;
 
 #[cfg(test)]
 mod tests {
@@ -10,7 +11,9 @@ mod tests {
         use crate::basis::ONBasis;
 
         mod from_string_should {
-            use crate::basis::ONBasis;
+            use regex::Regex;
+
+            use crate::{basis::ONBasis};
 
             #[test]
             pub fn correctly_parse_string_values() {
@@ -40,6 +43,10 @@ mod tests {
                 .err().expect("No err for PP(0)");
             let _result = ONBasis::from_string(&String::from("Q(0)"))
                 .err().expect("No err for Q(0)");
+            let _result = ONBasis::from_string(&String::from("P(00)"))
+                .err().expect("No err for P(00)");
+            let _result = ONBasis::from_string(&String::from("P(01)"))
+                .err().expect("No err for P(01)");
             let _result = ONBasis::from_string(&String::from("P(-0)"))
                 .err().expect("No err for P(-0)");
             let _result = ONBasis::from_string(&String::from("P(1.0)"))
@@ -51,10 +58,46 @@ mod tests {
 
     mod component_tests {
         mod from_string_should {
+            use regex::Regex;
+
             use crate::{basis::ONBasis, component::{Component, ZERO}};
 
             #[test]
+            pub fn correctly_regex_string() {
+                let FLOAT_RE = r"(?<val>[-+]?[0]|[1-9][0-9]*|[1-9][0-9]*[.][0-9]+|[1-9][0-9]*[.]|[.][0-9]+([eE]\^[+-]?[0-9]+)?)";
+                let COMPONENT_REGEX: &str = r"(?<val>[+-]?)"; //(?<b>(?<e>[PNZ])\((?<id>0|[1-9][0-9]*)\))";
+
+                let re = Regex::new(&FLOAT_RE).unwrap();
+                assert!(re.captures(".").is_none());
+
+                let Some(caps) = re.captures("+0") else {
+                    assert!(false);
+                    return;
+                };
+                println!("{}", &caps["val"]);
+
+                let Some(caps) = re.captures("1.") else {
+                    assert!(false);
+                    return;
+                };
+                println!("{}", &caps["val"]);
+
+                let Some(caps) = re.captures(".1") else {
+                    assert!(false);
+                    return;
+                };
+                println!("{}", &caps["val"]);
+
+                let Some(caps) = re.captures("1.e^10") else {
+                    assert!(false);
+                    return;
+                };
+                println!("{}", &caps["val"]);
+            }
+
+            #[test]
             pub fn correctly_parse_string() {
+
                 let result = Component::from_string(
                     &String::from("1.0P(1)")
                 ).expect("Invalid Conversion");

@@ -344,7 +344,7 @@ impl Multivector {
     /// 
     /// All multivectors come in the form 
     /// Component[(+/-)Component]*.
-    pub fn from_string(val: &String) -> Result<Multivector, &'static str> {
+    pub fn from_string(val: &String) -> Result<Multivector, String> {
         // get the indices of + and -
         let mut accumulator = ZERO;
         let mut working = val.as_str();

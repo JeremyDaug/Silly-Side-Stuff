@@ -1,5 +1,7 @@
 use std::{ops::{self, Add}, collections::HashSet};
 
+use regex::Regex;
+
 use crate::{basis::ONBasis, multivector::{Multivector, self}};
 
 /// # Component
@@ -491,7 +493,10 @@ impl Component {
     /// formatting.
     /// 
     /// All of them are in the format of #.#B(id)B(id)
-    pub fn from_string(val: &String) -> Result<Component, &'static str> {
+    pub fn from_string(val: &String) -> Result<Component, String> {
+        let COMPONENT_REGEX: &str = r"(?<val>[+-]\d*[.]?\d*)"; //(?<b>(?<e>[PNZ])\((?<id>0|[1-9][0-9]*)\))";
+        let re = Regex::new(COMPONENT_REGEX).unwrap();
+        //let Some(caps) = re.captures(val) else {Err};
         // get value from the first, checking to ensure nothing is wrong.
         if val.len() == 0 {
             return Ok(ZERO);
@@ -511,7 +516,7 @@ impl Component {
                 }
             } else if c == '.' { // if decimal
                 if decimal_found {
-                    return Err("Extra Decimal Found");
+                    return Err(String::from("Extra Decimal Found"));
                 } else {
                     decimal_found = true;
                 }
@@ -539,7 +544,7 @@ impl Component {
                 num
             }
         } else {
-            return Err("Invalid number given.");
+            return Err(String::from("Invalid number given."));
         };
 
         // with number gotten, break up the bases and convert them.
