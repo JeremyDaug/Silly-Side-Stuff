@@ -1,4 +1,4 @@
-use std::{ops::{self, Index}, collections::{HashSet, btree_map::Values}, sync::Mutex};
+use std::{ops::{self}, collections::HashSet};
 
 use crate::component::{Component, self};
 
@@ -164,8 +164,7 @@ impl Multivector {
                 result.push(comp.clone());
                 continue;
             }
-            let temp = comp.force_comp_add(rhs);
-            if let Some(val) = temp {
+            if let Some(val) = comp.force_comp_add(rhs) {
                 // if it added, then we have a contraction
                 if val != component::ZERO {
                     // only include if it's not a zero component.
@@ -209,9 +208,6 @@ impl Multivector {
     /// 
     /// Takes those parts of a multivector of a particular grade.
     pub fn take_grade(&self, grade: usize) -> Multivector {
-        if grade < 0 {
-            panic!("Grade must be non-negative.")
-        }
         let mut result = vec![];
         for comp in self.components.iter()
         .filter(|x| x.grade() == grade) {

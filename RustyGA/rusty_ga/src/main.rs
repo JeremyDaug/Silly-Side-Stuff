@@ -39,7 +39,7 @@ pub fn process_input(inputs: String) -> Result<String, String> {
     if let Some(first_word) = first {
         if first_word.to_lowercase() == "help" ||
         first_word.to_lowercase() == "h" {
-            print!("{}", help_text);
+            print!("{}", HELP_TEXT);
         } else if first_word.to_lowercase() == "quit" ||
         first_word.to_lowercase() == "q" {
             return Err(String::from("Quit"));
@@ -77,7 +77,7 @@ pub fn process_input(inputs: String) -> Result<String, String> {
     Ok(String::from("No Comments"))
 }
 
-const help_text: &str = 
+const HELP_TEXT: &str = 
 "System currently uses Postfix Notation for ease of management.
 ----------
 Token Shorthands

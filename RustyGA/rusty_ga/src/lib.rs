@@ -8,12 +8,9 @@ pub mod interpreter;
 #[cfg(test)]
 mod tests {
     mod basis_tests {
-        use crate::basis::ONBasis;
 
         mod from_string_should {
-            use regex::Regex;
-
-            use crate::{basis::ONBasis};
+            use crate::basis::ONBasis;
 
             #[test]
             pub fn correctly_parse_string_values() {
@@ -35,24 +32,24 @@ mod tests {
                 let result = ONBasis::from_string(&String::from("Z(1000000)")).expect("Didn't work!");
                 assert_eq!(result, ONBasis::Z(1000000));
             }
-        }
 
-        #[test]
-        pub fn correctly_fail_invalid_strings() {
-            let _result = ONBasis::from_string(&String::from("PP(0)"))
-                .err().expect("No err for PP(0)");
-            let _result = ONBasis::from_string(&String::from("Q(0)"))
-                .err().expect("No err for Q(0)");
-            let _result = ONBasis::from_string(&String::from("P(00)"))
-                .err().expect("No err for P(00)");
-            let _result = ONBasis::from_string(&String::from("P(01)"))
-                .err().expect("No err for P(01)");
-            let _result = ONBasis::from_string(&String::from("P(-0)"))
-                .err().expect("No err for P(-0)");
-            let _result = ONBasis::from_string(&String::from("P(1.0)"))
-                .err().expect("No err for P(1.0)");
-            let _result = ONBasis::from_string(&String::from("P(A)"))
-                .err().expect("No err for P(A)");
+            #[test]
+            pub fn correctly_fail_invalid_strings() {
+                let _result = ONBasis::from_string(&String::from("PP(0)"))
+                    .err().expect("No err for PP(0)");
+                let _result = ONBasis::from_string(&String::from("Q(0)"))
+                    .err().expect("No err for Q(0)");
+                let _result = ONBasis::from_string(&String::from("P(00)"))
+                    .err().expect("No err for P(00)");
+                let _result = ONBasis::from_string(&String::from("P(01)"))
+                    .err().expect("No err for P(01)");
+                let _result = ONBasis::from_string(&String::from("P(-0)"))
+                    .err().expect("No err for P(-0)");
+                let _result = ONBasis::from_string(&String::from("P(1.0)"))
+                    .err().expect("No err for P(1.0)");
+                let _result = ONBasis::from_string(&String::from("P(A)"))
+                    .err().expect("No err for P(A)");
+            }
         }
     }
 
@@ -64,10 +61,10 @@ mod tests {
 
             #[test]
             pub fn correctly_regex_string() {
-                let FLOAT_RE = r"(?<val>[-+]?[0]|[1-9][0-9]*|[1-9][0-9]*[.][0-9]+|[1-9][0-9]*[.]|[.][0-9]+([eE]\^[+-]?[0-9]+)?)";
-                let COMPONENT_REGEX: &str = r"(?<val>[+-]?)"; //(?<b>(?<e>[PNZ])\((?<id>0|[1-9][0-9]*)\))";
+                let float_re = r"(?<val>[-+]?[0]|[1-9][0-9]*|[1-9][0-9]*[.][0-9]+|[1-9][0-9]*[.]|[.][0-9]+([eE]\^[+-]?[0-9]+)?)";
+                let _component_regex: &str = r"(?<val>[+-]?)"; //(?<b>(?<e>[PNZ])\((?<id>0|[1-9][0-9]*)\))";
 
-                let re = Regex::new(&FLOAT_RE).unwrap();
+                let re = Regex::new(&float_re).unwrap();
                 assert!(re.captures(".").is_none());
 
                 let Some(caps) = re.captures("+0") else {
@@ -314,7 +311,7 @@ mod tests {
         }
 
         mod inner_product_should {
-            use crate::{basis::ONBasis, component::{Component, self}};
+            use crate::{basis::ONBasis, component::Component};
 
             #[test]
             pub fn check_truth_table_with_all_positive_bases() {

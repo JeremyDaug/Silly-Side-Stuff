@@ -1,4 +1,4 @@
-use std::{cmp::Ordering::{self}, hash::Hash, fmt::format};
+use std::{cmp::Ordering::{self}, hash::Hash};
 
 use regex::Regex;
 
@@ -86,8 +86,8 @@ impl ONBasis {
     /// # Dot function
     /// 
     /// Used to take the inner product between two bases.
-    pub fn dot(&self, ridx: &ONBasis) -> f64 {
-        if self == ridx {
+    pub fn dot(&self, rhs: &ONBasis) -> f64 {
+        if self == rhs {
             self.sqr()
         } else {
             0.0
@@ -96,19 +96,27 @@ impl ONBasis {
 
     /// # From Str
     /// 
-    /// Takes a str, processes it, and 
+    /// Takes a str, processes it, and outputs an ONBasis, if possible.
+    /// 
+    /// If fails, it returns an error.
     pub fn from_string(val: &String) -> Result<ONBasis, String> {
+        // Use Regex to break it up nicely.
         let re = Regex::new(BASIS_REGEX).unwrap();
+        // If it doesn't match the regex, return an error.
+        // This also checks if the Basis is P,N, or Z.
         let Some(caps) = re.captures(val) else {
-            return Err(format!("'{val}' does not match the form P(1)."));
+            return Err(format!("'{val}' does not match the form P(#), N(#), or Z(#)."));
         };
+        // Get the basis name and basis ID.
         let e = &caps["e"];
         let id = &caps["id"];
 
+        // If ID can't be parsed into uint, return error.
         let Ok(id_val) = id.parse::<usize>() else {
             return Err(String::from(format!("Id in '{val}' could not parse into integer.")));
         };
 
+        // turns e and ID into an ON Basis and returns.
         Ok(match e {
             "P" => ONBasis::P(id_val),
             "N" => ONBasis::N(id_val),
@@ -119,6 +127,12 @@ impl ONBasis {
 }
 
 impl PartialOrd for ONBasis {
+    /// Partial Compare
+    /// 
+    /// Compares 2 ONBasis, used for multibasis organization.
+    /// 
+    /// Organizes them by Positive, Zero, and Negative magnitude, then by Basis Id
+    /// between them.
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let val = self.sqr().partial_cmp(&other.sqr());
         if let Some(Ordering::Equal) = val {
@@ -127,7 +141,7 @@ impl PartialOrd for ONBasis {
             let r = other.unwrap();
             return l.partial_cmp(&r);
         } else {
-            // otherwise, return the kind ordering.
+            // otherwise, return the kind ordering. +, 0, -
             return val;
         }
     }

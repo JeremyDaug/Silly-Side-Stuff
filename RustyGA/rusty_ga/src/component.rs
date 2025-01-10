@@ -1,4 +1,5 @@
-use std::{ops::{self, Add}, collections::HashSet};
+use std::collections::HashSet;
+use std::ops;
 
 use regex::Regex;
 
@@ -30,6 +31,12 @@ pub struct Component {
 ///
 /// Returns a component with a magnitude of 0.0 and no bases.
 pub const ZERO: Component = Component { mag: 0.0, bases: vec![] };
+
+impl Default for Component {
+    fn default() -> Self {
+        Self { mag: Default::default(), bases: Default::default() }
+    }
+}
 
 impl Component {
     /// # Default
@@ -102,7 +109,7 @@ impl Component {
                 }
                 current += 1; // end by stepping up.
             }
-            if !change {
+            if !change { // if no changes made, reordering is done.
                 break;
             }
         }
@@ -166,10 +173,10 @@ impl Component {
     ///
     /// Multiplies two components together via Geometric Product.
     ///
-    /// Bases are comibned directly, reordered, then if any squares,
+    /// Bases are combined directly, reordered, then if any squares,
     /// those are applied.
     ///
-    /// If any results in the result being 0, then it shortcuts out.
+    /// If any part comes out to 0, then it shortcuts out.
     pub fn geo_product(&self, rhs: &Component) -> Component {
         let res_mag = self.mag * rhs.mag;
         if res_mag == 0.0 {
@@ -187,6 +194,11 @@ impl Component {
     /// Takes the outer product of two components. Components which share a
     /// basis produce a zero.
     pub fn outer_product(&self, rhs: &Component) -> Component {
+        // check for magnitudes multiplying to zero.
+        let mag = self.mag * rhs.mag;
+        if mag == 0.0 {
+            return ZERO;
+        };
         // check for overlapping bases
         let mut uniques = HashSet::new();
         for basis in self.bases.iter() {
@@ -203,7 +215,7 @@ impl Component {
         } else {
             let mut bases = self.bases.clone();
             bases.extend(rhs.bases.clone());
-            Component {mag: self.mag * rhs.mag, bases }
+            Component {mag, bases }
         }
     }
 
@@ -220,12 +232,29 @@ impl Component {
         }
     }
 
+    /// # Inner Product f64
+    ///
+    /// Performs a inner/dot product, but always returns a f64
+    /// 
+    /// This is equivalent to Geometric product, but select only the scalar part.
+    ///
+    /// Note: This is only meant for blades, all components are blades,
+    /// but multivectors or other k-vectors may not be blades.
+    pub fn inner_product_f64(&self, rhs: &Component) -> f64 {
+        let result = self.geo_product(rhs);
+        if result.grade() > 0 {
+            0.0
+        } else {
+            result.mag
+        }
+    }
+
     /// # Norm squared
     ///
     /// Norm^2 of a vector (a) is equal to a . a
     ///
     /// We peek ahead a bit and for any blade define
-    /// the norm^2 as A . A.inverse()
+    /// the norm^2 as A . A.reversion()
     ///
     /// This may be reworked in the future to be more
     /// efficient as it creates a new component, and applies
@@ -269,6 +298,8 @@ impl Component {
     /// # Inverse
     ///
     /// Returns the standardized Inverse of this component.
+    /// 
+    /// If A Blade is Degenerate, it returns an error String instead.
     ///
     /// # Note
     ///
@@ -288,7 +319,7 @@ impl Component {
     ///
     /// When the the left grade is greater than the right, it returns 0.
     ///
-    /// When the Right Grade returns left, it returns a blade.
+    /// When the Right Grade is greater than the left, it returns a blade (Component).
     ///
     /// When the two grades are equal it is equivalent to the inner product
     /// of the two components.
@@ -303,8 +334,8 @@ impl Component {
     ///
     /// - a>>B = aB.
     /// - A>>B = 0 if grade(A) > grade(B)
-    /// - a>>b = a.inner_product(b)
-    /// - a>>(B ^ C) = (a>>B) ^ C + (-1)^grade(B) B ^ (a>>C)
+    /// - b>>c = a.inner_product(b)
+    /// - b>>(B ^ C) = (a>>B) ^ C + (-1)^grade(B) B ^ (a>>C)
     /// - (A^B)>>C = A>>(B>>C)
     /// - (A + B)>>C = A>>C + B>>C
     /// - A>>(B+C) = A>>B + A>>C
@@ -344,23 +375,6 @@ impl Component {
         }
     }
 
-    /// # Inner Product
-    ///
-    /// Performs a inner/dot product, but only returns when the grades are equal.
-    ///
-    /// Returns 0.0 if there is any mismatched basis.
-    ///
-    /// Note: This is only meant for blades, all components are blades,
-    /// but multivectors or other k-vectors may not be blades.
-    pub fn inner_product_f64(&self, rhs: &Component) -> f64 {
-        let result = self * rhs;
-        if result.grade() > 0 {
-            0.0
-        } else {
-            result.mag
-        }
-    }
-
     /// # Component Product
     /// 
     /// Performs an inner/dot product, but only returns a value if the grade 
@@ -383,7 +397,7 @@ impl Component {
     ///
     /// Returns the Dual of this component.
     ///
-    /// Must be given the Pseudoscalar of the geometry.
+    /// Must be given the Pseudoscalar of the geometry (i).
     ///
     /// The Dual of a Dual is not always the same as the original blade, as such
     /// there is also an Undual function.
@@ -457,6 +471,9 @@ impl Component {
         return true;
     }
 
+    /// # To String
+    /// 
+    /// Converts a Component to a string.
     pub fn to_string(&self) -> String {
         let mut result = String::new();
         // add magnitude.
@@ -494,8 +511,8 @@ impl Component {
     /// 
     /// All of them are in the format of #.#B(id)B(id)
     pub fn from_string(val: &String) -> Result<Component, String> {
-        let COMPONENT_REGEX: &str = r"(?<val>[+-]\d*[.]?\d*)"; //(?<b>(?<e>[PNZ])\((?<id>0|[1-9][0-9]*)\))";
-        let re = Regex::new(COMPONENT_REGEX).unwrap();
+        let comp_regex: &str = r"(?<val>[+-]\d*[.]?\d*)"; //(?<b>(?<e>[PNZ])\((?<id>0|[1-9][0-9]*)\))";
+        let _re = Regex::new(comp_regex).unwrap();
         //let Some(caps) = re.captures(val) else {Err};
         // get value from the first, checking to ensure nothing is wrong.
         if val.len() == 0 {

@@ -23,8 +23,8 @@ pub struct Blade {
 /// Geometry, the context of our 
 pub struct Geometry {
     /// The Orthonormal Bases of this geometry.
-    onbases: Vec<ONBasis>,
+    _onbases: Vec<ONBasis>,
     /// Other available spaces/bases in this Geometry. These are not 
     /// guaranteed to be orthonormal.
-    spaces: Vec<Vec<ONBasis>>,
+    _spaces: Vec<Vec<ONBasis>>,
 }
