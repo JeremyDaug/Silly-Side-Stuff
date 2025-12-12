@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, str::Bytes};
 use std::ops;
 
 use regex::Regex;
@@ -10,7 +10,7 @@ use crate::{basis::ONBasis, multivector::{Multivector, self}};
 /// A Component is the mathimatical construct which in formed out of
 /// a combination of a magnitude and a basis k-vector.
 ///
-/// Components are guaranteed to have their bases in order
+/// Components are guaranteed to have their bases in order and are also always blades.
 ///
 /// Contains 2 part of data. The magnitude (mag) and the bases.
 /// Magnitude * Bases is the component.
@@ -65,6 +65,9 @@ impl Component {
     /// creates a new component based on a magnitude and basis.
     ///
     /// If basis is not ordered correctly, it reorders the bases appropriately.
+    /// 
+    /// Duplicate Basis vectors in the Bases will also be consolidated and treated 
+    /// as thouh multiplying.
     pub fn new(mag: f64, bases: Vec<ONBasis>) -> Component {
         if bases.len() > 0 {
             for idx in 0..(bases.len()-1) {
@@ -80,7 +83,9 @@ impl Component {
     /// # Reorder Bases
     ///
     /// Creates a copy of the component with it's basis vectors organized 
-    /// properly. Deals with duplicates as well.
+    /// properly. Deals with duplicates as well by multiplying them to get their result.
+    /// 
+    /// This can return ZERO, if duplicated basis multiply to 0.
     fn reorder_bases(&self) -> Component {
         let mut result = Component { mag: self.mag, bases: self.bases.clone() };
 
@@ -95,6 +100,10 @@ impl Component {
                     result.bases.remove(current);
                     // Note: e_11 == e_1 . e_1 == e_1.norm()^2
                     result.mag *= basis.sqr();
+                    // If duplicate basis are degenerate (square to 0) return ZERO and move on.
+                    if result.mag == 0.0 {
+                        return ZERO;
+                    }
                     change = true;
                     // if after the removal we would step out of the list, get out of the current loop.
                     if current+1 >= result.bases.len() {

@@ -102,7 +102,6 @@ reverse: Value reverse, returns the reversion of the blades in a multivector. IE
 dual: Value I Dual, returns the dual of the value with respect to a given pseudoscalar I, such that A dual = A >> I^-1
 undual: Value I Dual, returns the undual of the value with repect to a given Pseudoscalar I. Depending on the space, not all double duals equal the original value, as such, the undual guarantees that the original value is returned. Notes: In cases where the double dual doesn't equal the original blade, the 4 dual will. Both of these hold so long as no basis is degenerate (ie, no ONB::Z)
 generate I: value generate_I, returns a pseudoscalar which uses all the bases vectors contained in value.
-Is Blade: Value is_blade?, returns true (+inf) or false(-inf) if the given value is a blade.
 Equality: Value Value ==, returns +inf if values are equal, -inf otherwise.
 Not Equal: Value Value !=, returns the Negative of Equality
 Less Than: Value Value <, Returns +inf if true, -inf if false and NaN if it the values cannot be defined as such. Note: You can only compare multivectors which share all their components. In that case it compares their magnitudes.
