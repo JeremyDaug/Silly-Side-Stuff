@@ -415,7 +415,7 @@ impl Component {
 
     /// # Dualization
     ///
-    /// Returns the Dual of this component.
+    /// Returns the Dual of this component, or none if I is degenerate
     ///
     /// Must be given the Pseudoscalar of the geometry (i).
     ///
