@@ -80,6 +80,15 @@ impl Component {
         Component { mag, bases }
     }
 
+    /// # Quick New
+    /// 
+    /// A useful function for quickly copying a component into a new component.
+    /// 
+    /// This skips over reordering, as such, this is private to the Component.
+    fn quick_new(mag: f64, bases: Vec<ONBasis>) -> Component {
+        Component {mag, bases}
+    }
+
     /// # Reorder Bases
     ///
     /// Creates a copy of the component with it's basis vectors organized 
@@ -144,8 +153,7 @@ impl Component {
                 }
             }
             // if bases match, then add magnitudes
-            let res = Component { mag: self.mag + rhs.mag,
-                bases: self.bases.clone()};
+            let res = Component::quick_new(self.mag + rhs.mag, self.bases.clone());
             // if magnitude is zero, then return zero component for simplicity reasons.
             return if res.mag == 0.0 { Some(ZERO) } else { Some(res) };
         } else {
@@ -175,7 +183,7 @@ impl Component {
     ///
     /// Multiplies the component by a scalar.
     pub fn scalar_mult(&self, rhs: f64) -> Component {
-        Component::new(self.mag * rhs, self.bases.clone())
+        Component::quick_new(self.mag * rhs, self.bases.clone())
     }
 
     /// # Geometric Product
@@ -214,18 +222,15 @@ impl Component {
             uniques.insert(basis);
         }
         for basis in rhs.bases.iter() {
-            uniques.insert(basis);
+            // if any overlap, return ZERO.
+            if !uniques.insert(basis) {
+                return ZERO;
+            }
         }
-        // if the number of unique bases is not equal to the sum of the grades
-        // then it must have at least one similar basis, thus the outer product
-        // is zero
-        if uniques.len() != (self.grade() + rhs.grade()) {
-            ZERO
-        } else {
-            let mut bases = self.bases.clone();
-            bases.extend(rhs.bases.clone());
-            Component {mag, bases }
-        }
+        // if we get here, then the all basis are unique.
+        let mut bases = self.bases.clone();
+        bases.extend(rhs.bases.clone());
+        Component { mag, bases }
     }
 
     /// # Reversion
@@ -235,9 +240,9 @@ impl Component {
     pub fn reversion(&self) -> Component {
         let grade = self.grade() / 2;
         if grade % 2 == 0 { // 0, 1, 4, 5
-            Component::new(self.mag, self.bases.clone())
+            Component::quick_new(self.mag, self.bases.clone())
         } else { // 2, 3, 6, 7
-            Component::new(-self.mag, self.bases.clone())
+            Component::quick_new(-self.mag, self.bases.clone())
         }
     }
 
@@ -260,7 +265,7 @@ impl Component {
 
     /// # Norm squared
     ///
-    /// Norm^2 of a vector (a) is equal to a . a
+    /// Norm^2 of a blade (a) is equal to a . a
     ///
     /// We peek ahead a bit and for any blade define
     /// the norm^2 as A . A.reversion()
@@ -314,11 +319,14 @@ impl Component {
     ///
     /// Blades with Degenerate bases (bases^2 = 0) do not have
     /// an inverse value.
-    pub fn inverse(&self) -> Component {
+    pub fn inverse(&self) -> Option<Component> {
         let rev = self.reversion();
         let norm = self.norm_sqrd();
+        if norm == 0.0 {
+            return None;
+        }
         let result = rev / norm;
-        result
+        Some(result)
     }
 
     /// # Left Contraction
@@ -343,7 +351,7 @@ impl Component {
     ///
     /// - a>>B = aB.
     /// - A>>B = 0 if grade(A) > grade(B)
-    /// - b>>c = a.inner_product(b)
+    /// - a>>c = a.inner_product(b)
     /// - b>>(B ^ C) = (a>>B) ^ C + (-1)^grade(B) B ^ (a>>C)
     /// - (A^B)>>C = A>>(B>>C)
     /// - (A + B)>>C = A>>C + B>>C
@@ -391,6 +399,9 @@ impl Component {
     /// 
     /// This function forces the result to be a component instead of a float.
     /// 
+    /// This is equivalent to the scalar_product, but returns a component instead of a
+    /// f64.
+    /// 
     /// Note: This is only meant for blades, all components are blades,
     /// but multivectors or other k-vectors may not be blades.
     pub fn inner_product(&self, rhs: &Component) -> Component {
@@ -415,8 +426,13 @@ impl Component {
     /// dimensions of the space. ++--++--
     /// 0, 1, 4,5 ... A = A.dual().dual()
     /// 2,3, 6,7 ... -A = A.dual().dual()
-    pub fn dual(&self, i: &Component) -> Component {
-        self << &i.inverse()
+    pub fn dual(&self, i: &Component) -> Option<Component> {
+        let result =  i.inverse();
+        if let Some(inv) = result {
+            Some(self << inv)
+        }  else {
+            None
+        }
     }
 
     /// # Undualization
@@ -621,7 +637,7 @@ impl ops::Div<f64> for Component {
 
 // Left Contraction <<
 
-// real + real
+// real << real
 impl ops::Shl for Component {
     type Output = Component;
 
@@ -638,7 +654,7 @@ impl ops::Shl for Component {
     }
 }
 
-// ref + ref
+// ref << ref
 impl ops::Shl<&Component> for &Component {
     type Output = Component;
 
@@ -655,7 +671,7 @@ impl ops::Shl<&Component> for &Component {
     }
 }
 
-// ref + real
+// ref << real
 impl ops::Shl<Component> for &Component {
     type Output = Component;
 
@@ -672,7 +688,7 @@ impl ops::Shl<Component> for &Component {
     }
 }
 
-// real + ref
+// real << ref
 impl ops::Shl<&Component> for Component {
     type Output = Component;
 
@@ -691,7 +707,7 @@ impl ops::Shl<&Component> for Component {
 
 // Right Contraction >>
 
-// real + real
+// real >> real
 impl ops::Shr for Component {
     type Output = Component;
 
@@ -708,7 +724,7 @@ impl ops::Shr for Component {
     }
 }
 
-// ref + ref
+// ref >> ref
 impl ops::Shr<&Component> for &Component {
     type Output = Component;
 
@@ -725,7 +741,7 @@ impl ops::Shr<&Component> for &Component {
     }
 }
 
-// ref + real
+// ref >> real
 impl ops::Shr<Component> for &Component {
     type Output = Component;
 
@@ -742,7 +758,7 @@ impl ops::Shr<Component> for &Component {
     }
 }
 
-// real + ref
+// real >> ref
 impl ops::Shr<&Component> for Component {
     type Output = Component;
 
@@ -761,7 +777,7 @@ impl ops::Shr<&Component> for Component {
 
 // Outer Product (^)
 
-// real + real
+// real ^ real
 impl ops::BitXor for Component {
     type Output = Component;
 
@@ -770,7 +786,7 @@ impl ops::BitXor for Component {
     }
 }
 
-// ref + ref
+// ref ^ ref
 impl ops::BitXor<&Component> for &Component {
     type Output = Component;
 
@@ -779,7 +795,7 @@ impl ops::BitXor<&Component> for &Component {
     }
 }
 
-// ref + real
+// ref ^ real
 impl ops::BitXor<Component> for &Component {
     type Output = Component;
 
@@ -788,7 +804,7 @@ impl ops::BitXor<Component> for &Component {
     }
 }
 
-// real + ref
+// real ^ ref
 impl ops::BitXor<&Component> for Component {
     type Output = Component;
 
@@ -844,7 +860,7 @@ impl Into<Multivector> for Component {
 
 // Subtraction
 
-// real + real
+// real - real
 impl ops::Sub for Component {
     type Output = Multivector;
 
@@ -853,7 +869,7 @@ impl ops::Sub for Component {
     }
 }
 
-// ref + ref
+// ref - ref
 impl ops::Sub<&Component> for &Component {
     type Output = Multivector;
 
@@ -862,7 +878,7 @@ impl ops::Sub<&Component> for &Component {
     }
 }
 
-// ref + real
+// ref - real
 impl ops::Sub<Component> for &Component {
     type Output = Multivector;
 
@@ -871,7 +887,7 @@ impl ops::Sub<Component> for &Component {
     }
 }
 
-// real + ref
+// real - ref
 impl ops::Sub<&Component> for Component {
     type Output = Multivector;
 
@@ -882,7 +898,7 @@ impl ops::Sub<&Component> for Component {
 
 // Geometric Product
 
-// real + real
+// real * real
 impl ops::Mul for Component {
     type Output = Component;
 
@@ -891,7 +907,7 @@ impl ops::Mul for Component {
     }
 }
 
-// ref + ref
+// ref * ref
 impl ops::Mul<&Component> for &Component {
     type Output = Component;
 
@@ -900,7 +916,7 @@ impl ops::Mul<&Component> for &Component {
     }
 }
 
-// ref + real
+// ref * real
 impl ops::Mul<Component> for &Component {
     type Output = Component;
 
@@ -909,7 +925,7 @@ impl ops::Mul<Component> for &Component {
     }
 }
 
-// real + ref
+// real * ref
 impl ops::Mul<&Component> for Component {
     type Output = Component;
 
