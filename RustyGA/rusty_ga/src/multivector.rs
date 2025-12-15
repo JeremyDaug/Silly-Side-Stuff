@@ -247,9 +247,13 @@ impl Multivector {
     /// Gets the Magnitude of the multivector squared.
     /// 
     /// Multiplies self.inverse * self .take grade 0
-    pub fn norm_sqrd(&self) -> f64 {
+    pub fn norm_sqrd(&self) -> Option<f64> {
         // multiply self by it's inverse, take grade 0, then get the magnitude
-        (self.inverse() * self).take_grade(0).components[0].mag
+        if let Some(inv) = self.inverse() {
+            Some((inv * self).take_grade(0).components[0].mag)
+        } else {
+            None
+        }
     }
 
     /// # Scalar Multiplication
@@ -312,12 +316,18 @@ impl Multivector {
     /// # Multivector Inverse
     /// 
     /// Inverts the multivector, same as taking it to the power -1.
-    pub fn inverse(&self) -> Multivector {
+    /// 
+    /// Returns None if Multivector has any factor which is not invertable.
+    pub fn inverse(&self) -> Option<Multivector> {
         let mut result = ZERO;
         for comp in self.components.iter() {
-            result = result + comp.inverse();
+            if let Some(inv) = comp.inverse() {
+                result = result + inv;
+            } else {
+                return None;
+            }
         }
-        result
+        Some(result)
     }
 
     pub fn components(&self) -> &[Component] {

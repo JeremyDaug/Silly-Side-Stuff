@@ -864,7 +864,7 @@ mod tests {
                 );
 
                 // vector inverse
-                let inv = c1.inverse();
+                let inv = c1.inverse().unwrap();
                 assert_eq!(inv.mag, 1.0/2.0);
                 assert_eq!(inv.bases(), c1.bases());
                 let combo = &c1 << &inv;
@@ -873,7 +873,7 @@ mod tests {
 
                 // bivector inverse
                 let c = &c1 ^ &c2;
-                let inv = c.inverse();
+                let inv = c.inverse().unwrap();
                 assert_eq!(inv.mag, -1.0/6.0);
                 assert_eq!(inv.bases(), c.bases());
                 let combo = &c << &inv;
@@ -882,7 +882,7 @@ mod tests {
 
                 // trivector inverse
                 let c = c1 ^ c2 ^ c3;
-                let inv = c.inverse();
+                let inv = c.inverse().unwrap();
                 assert_eq!(inv.mag, -1.0/24.0);
                 assert_eq!(inv.bases(), c.bases());
                 let combo = &c << &inv;
@@ -924,7 +924,7 @@ mod tests {
                 let i4 = &(&c1 ^ &c2 ^ &c3 ^ &c4);
 
                 let val = Component::new(2.0, vec![e1.clone()]);
-                let dual1 = val.dual(i1);
+                let dual1 = val.dual(i1).unwrap();
 
                 // no change in magnitude
                 assert_eq!(val.mag, dual1.mag);
@@ -933,7 +933,7 @@ mod tests {
                 // should combine to the full pseudoscalar
                 assert_eq!((&val ^ &dual1).bases(), i1.bases());
 
-                let dual2 = val.dual(i2);
+                let dual2 = val.dual(i2).unwrap();
 
                 // no change in magnitude
                 assert_eq!(-val.mag, dual2.mag);
@@ -942,7 +942,7 @@ mod tests {
                 // should combine to the full pseudoscalar
                 assert_eq!((&val ^ &dual2).bases(), i2.bases());
 
-                let dual3 = val.dual(i3);
+                let dual3 = val.dual(i3).unwrap();
 
                 // no change in magnitude
                 assert_eq!(-val.mag, dual3.mag);
@@ -951,7 +951,7 @@ mod tests {
                 // should combine to the full pseudoscalar
                 assert_eq!((&val ^ &dual3).bases(), i3.bases());
 
-                let dual4 = val.dual(i4);
+                let dual4 = val.dual(i4).unwrap();
 
                 // no change in magnitude
                 assert_eq!(val.mag, dual4.mag);
@@ -960,45 +960,45 @@ mod tests {
                 // should combine to the full pseudoscalar
                 assert_eq!((&val ^ &dual4).bases(), i4.bases());
 
-                let ddual1 = dual1.dual(i1);
+                let ddual1 = dual1.dual(i1).unwrap();
 
                 // no change in magnitude
                 assert_eq!(val.mag, ddual1.mag);
                 // no overlapping bases
                 assert!(val.bases().iter().all(|x| ddual1.bases().contains(x)));
 
-                let ddual2 = dual2.dual(i2);
+                let ddual2 = dual2.dual(i2).unwrap();
 
                 // no change in magnitude
                 assert_eq!(-val.mag, ddual2.mag);
                 // no overlapping bases
                 assert!(val.bases().iter().all(|x| ddual2.bases().contains(x)));
 
-                let ddual3 = dual3.dual(i3);
+                let ddual3 = dual3.dual(i3).unwrap();
 
                 // no change in magnitude
                 assert_eq!(-val.mag, ddual3.mag);
                 // no overlapping bases
                 assert!(val.bases().iter().all(|x| ddual3.bases().contains(x)));
 
-                let ddual4 = dual4.dual(i4);
+                let ddual4 = dual4.dual(i4).unwrap();
 
                 // no change in magnitude
                 assert_eq!(val.mag, ddual4.mag);
                 // no overlapping bases
                 assert!(val.bases().iter().all(|x| ddual4.bases().contains(x)));
 
-                let undual1 = dual1.undual(i1);
+                let undual1 = dual1.undual(i1).unwrap();
 
                 assert_eq!(val, undual1);
 
-                let undual2 = dual2.undual(i2);
+                let undual2 = dual2.undual(i2).unwrap();
                 assert_eq!(val, undual2);
 
-                let undual3 = dual3.undual(i3);
+                let undual3 = dual3.undual(i3).unwrap();
                 assert_eq!(val, undual3);
 
-                let undual4 = dual4.undual(i4);
+                let undual4 = dual4.undual(i4).unwrap();
                 assert_eq!(val, undual4);
             }
         }
@@ -1054,6 +1054,122 @@ mod tests {
                     }
                 }
                 // and c_i . c^j = 0 when i != j
+            }
+        }
+
+        mod is_degenerate_should {
+            use crate::{basis::ONBasis, component::Component};
+
+            #[test]
+            pub fn return_true_when_null_basis_included() {
+                let test = Component::new(1.0, vec![ONBasis::Z(0)]);
+
+                assert!(test.is_degenerate());
+            }
+
+            #[test]
+            pub fn return_false_when_null_basis_excluded() {
+                let test = Component::new(1.0, vec![ONBasis::N(0)]);
+
+                assert!(!test.is_degenerate());
+            }
+        }
+
+        mod project_onto {
+            use crate::{basis::ONBasis, component::Component};
+
+            #[test]
+            pub fn calculate_projection_correctly() {
+                let (p1, p2, n1, z1) = (
+                    ONBasis::P(1), ONBasis::P(2),
+                    ONBasis::N(1), ONBasis::Z(1),
+                );
+
+                // Test vs Scalar should be zero
+                let test1 = Component::new(1.0, vec![p1]);
+                let test2 = Component::new(1.0, vec![]);
+                assert_eq!(test1.project_onto(&test2).unwrap(), Component::new(0.0, vec![]));
+                println!("First Test Complete!");
+
+                let test2 = Component::new(1.0, vec![p1]);
+                assert_eq!(test1.project_onto(&test2).unwrap(), Component::new(1.0, vec![p1]));
+
+                let test2 = Component::new(1.0, vec![p2]);
+                assert_eq!(test1.project_onto(&test2).unwrap(), Component::new(0.0, vec![]));
+
+                let test2 = Component::new(1.0, vec![p1, n1]);
+                assert_eq!(test1.project_onto(&test2).unwrap(), Component::new(1.0, vec![p1]));
+
+                let test2 = Component::new(1.0, vec![p1, n1]);
+                assert_eq!(test1.project_onto(&test2).unwrap(), Component::new(1.0, vec![p1]));
+
+                let test1 = Component::new(1.0, vec![n1]);
+                let test2 = Component::new(1.0, vec![p1, n1]);
+                assert_eq!(test1.project_onto(&test2).unwrap(), Component::new(1.0, vec![n1]));
+
+                // bivectors
+                let test1 = Component::new(1.0, vec![p1, p2]);
+                let test2 = Component::new(1.0, vec![]);
+                assert_eq!(test1.project_onto(&test2).unwrap(), Component::new(0.0, vec![]));
+
+                let test1 = Component::new(1.0, vec![p1, p2]);
+                let test2 = Component::new(1.0, vec![p1]);
+                assert_eq!(test1.project_onto(&test2).unwrap(), Component::new(0.0, vec![]));
+
+                let test1 = Component::new(1.0, vec![p1, p2]);
+                let test2 = Component::new(1.0, vec![p1, p2]);
+                assert_eq!(test1.project_onto(&test2).unwrap(), Component::new(1.0, vec![p1, p2]));
+
+                // null-vectors
+                let test1 = Component::new(1.0, vec![z1]);
+                let test2 = Component::new(1.0, vec![z1]);
+                assert!(test1.project_onto(&test2).is_none());
+            }
+        }
+
+        mod rejection_by {
+            use crate::{basis::ONBasis, component::Component};
+
+            #[test]
+            pub fn calculate_rejection_correctly() {
+                let (p1, p2, n1, z1) = (
+                    ONBasis::P(1), ONBasis::P(2),
+                    ONBasis::N(1), ONBasis::Z(1),
+                );
+
+                // Test vs Scalar should be zero
+                let test1 = Component::new(1.0, vec![p1]);
+                let test2 = Component::new(1.0, vec![]);
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
+                println!("First Test Complete!");
+                // Test parallel vectors
+                let test2 = Component::new(1.0, vec![p1]);
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(1.0, vec![p1]));
+
+                // test perpendicular vectors
+                let test2 = Component::new(1.0, vec![p2]);
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
+
+                let test2 = Component::new(1.0, vec![p2, n1]);
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
+
+                // bivectors
+                let test1 = Component::new(1.0, vec![p1, p2]);
+                let test2 = Component::new(1.0, vec![]);
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
+
+                let test1 = Component::new(1.0, vec![p1, p2]);
+                let test2 = Component::new(1.0, vec![p1]);
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
+
+                let test1 = Component::new(1.0, vec![p1, p2]);
+                let test2 = Component::new(1.0, vec![p1, p2]);
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(1.0, vec![p1, p2]));
+
+                // null-vectors
+                let test1 = Component::new(1.0, vec![z1]);
+                let test2 = Component::new(1.0, vec![z1]);
+                assert!(test1.rejection_by(&test2).is_none());
             }
         }
     }

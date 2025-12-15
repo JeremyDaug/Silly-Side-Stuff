@@ -196,12 +196,14 @@ impl Component {
     /// If any part comes out to 0, then it shortcuts out.
     pub fn geo_product(&self, rhs: &Component) -> Component {
         let res_mag = self.mag * rhs.mag;
+        //println!("Product Magnitude: {:?}", res_mag);
         if res_mag == 0.0 {
             return ZERO;
         }
         // combine bases first
         let mut bases = self.bases.clone();
         bases.extend(rhs.bases.clone());
+        //println!("Bases: {:?}", bases);
         // get component
         Component::new(self.mag*rhs.mag, bases)
     }
@@ -364,13 +366,16 @@ impl Component {
     pub fn left_cont(&self, rhs: &Component) -> Component {
         // shortcircuit if self.grade > rhs.grade
         if self.grade() > rhs.grade() {
+            println!("lhs.grade > rhs.grade");
             return ZERO;
         }
         // Geometric Product, select grade rhs.grade - self.grade
         let result = self * rhs;
+        println!("Left Contraction Result: {:?}", result);
         if result.grade() == (rhs.grade() - self.grade()) {
             result
         } else {
+            println!("Left Contraction Grade Mismatch");
             ZERO
         }
     }
@@ -413,6 +418,16 @@ impl Component {
         }
     }
 
+    /// # Is Degenerate
+    /// 
+    /// Checks whether the basis vectors of this component are degenerate or not.
+    /// 
+    /// If they are degenerate, they can't have inverses, and they have a norm of 0.
+    pub fn is_degenerate(&self) -> bool {
+        // If any basis squares to 0, then it is degenerate.
+        self.bases.iter().any(|x| x.is_zero())
+    }
+
     /// # Dualization
     ///
     /// Returns the Dual of this component, or none if I is degenerate
@@ -446,8 +461,14 @@ impl Component {
     /// A = A.dual(i).undual(i)
     ///
     /// in all cases.
-    pub fn undual(&self, i: &Component) -> Component {
-        self << i
+    /// 
+    /// Returns None if I is a degenerate Pseudoscalar.
+    pub fn undual(&self, i: &Component) -> Option<Component> {
+        if i.is_degenerate() {
+            None
+        } else {
+            Some(self << i)
+        }
     }
 
     /// # Project Onto
@@ -456,8 +477,38 @@ impl Component {
     ///
     /// Currently does not work for degenerate dimensions due to the basis
     /// squaring to 0.
-    pub fn project_onto(&self, rhs: &Component) -> Component {
-        self << rhs.inverse() << rhs
+    /// 
+    /// Returns None if rhs is degenerate.
+    pub fn project_onto(&self, rhs: &Component) -> Option<Component> {
+        if let Some(inv) = rhs.inverse() {
+            // println!("lhs: {:?}", self);
+            // println!("rhs: {:?}", rhs);
+            // println!("Contraction: {:?}", self << rhs);
+            // println!("Inverse: {:?}", inv);
+            // println!("Self * Inv Product: {:?}", self * &inv);
+            // println!("Rhs * Inv Product: {:?}", rhs * &inv);
+            Some((self << rhs) * inv)
+        } else {
+            None
+        }
+    }
+
+    /// # Rejection By
+    /// 
+    /// Rejects the component blade away from another blade.
+    /// 
+    /// Currently does not work for degenerate Dimensions due to the basis
+    /// squaring to 0.
+    /// 
+    /// Returns None if rhs is degenerate.
+    /// 
+    /// This often returns Zero as any overlap causes the rejection to go to 0.
+    pub fn rejection_by(&self, rhs: &Component) -> Option<Component> {
+        if let Some(inv) = rhs.inverse() {
+            Some((self ^ rhs) * inv)
+        } else {
+            None
+        }
     }
 
     /// # Reciprocal Frame
@@ -469,14 +520,18 @@ impl Component {
     /// then B.reciprocal_frame(2) = - b1 ^ b3 ^ b4 << B.inverse
     ///
     /// Returns zero if the vector selected is beyond our array.
+    /// 
+    /// Returns Zero if 
     pub fn reciprocal_frame(&self, i: usize) -> Component {
         if i >= self.bases.len() {
             ZERO
-        } else {
+        } else if let Some(inv) = self.inverse() {
             let mut rep_bas = self.bases.clone();
             rep_bas.remove(i);
             (-1.0_f64).powi(i as i32) * Component::new(self.mag,
-                rep_bas) << self.inverse()
+                rep_bas) << inv
+        } else {
+            ZERO
         }
     }
 
