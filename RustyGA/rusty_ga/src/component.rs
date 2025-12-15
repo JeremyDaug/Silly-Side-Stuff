@@ -1,4 +1,4 @@
-use std::{collections::HashSet, str::Bytes};
+use std::collections::HashSet;
 use std::ops;
 
 use regex::Regex;
@@ -252,7 +252,8 @@ impl Component {
     ///
     /// Performs a inner/dot product, but always returns a f64
     /// 
-    /// This is equivalent to Geometric product, but select only the scalar part.
+    /// This is equivalent to Geometric product, but select only the scalar part. Which
+    /// is the same as the Scalar Product.
     ///
     /// Note: This is only meant for blades, all components are blades,
     /// but multivectors or other k-vectors may not be blades.
@@ -294,21 +295,6 @@ impl Component {
     /// +-+-+-+-
     pub fn involution(&self) -> Component {
         Component::new(self.mag * (-1.0_f64).powf(self.grade() as f64) , self.bases.clone())
-    }
-
-    /// # Scalar Product
-    ///
-    /// Scalar Product multiplies blades of like grade. Since all components
-    /// are blades, they always go. If the blades are of different grades
-    /// it returns 0. If they are of the same it takes the determinant of them
-    /// if they are both scalars, it multiplies them.
-    pub fn scalar_product(&self, rhs: &Component) -> f64 {
-        let result = self * rhs;
-        if result.grade() == 0 { // geometric product, select grade 0 result.
-            result.mag
-        } else {
-            0.0
-        }
     }
 
     /// # Inverse
@@ -441,6 +427,9 @@ impl Component {
     /// dimensions of the space. ++--++--
     /// 0, 1, 4,5 ... A = A.dual().dual()
     /// 2,3, 6,7 ... -A = A.dual().dual()
+    /// 
+    /// TODO: This may be made a guarantee if i.inverse can be replaced with a reversion as the inverse of a pseudoscalar is equal to i.reversion().
+    /// TODO: A more likely improvement is the inverse being replaced by the reciprocal of the the blade (our component)
     pub fn dual(&self, i: &Component) -> Option<Component> {
         let result =  i.inverse();
         if let Some(inv) = result {
@@ -495,7 +484,8 @@ impl Component {
 
     /// # Rejection By
     /// 
-    /// Rejects the component blade away from another blade.
+    /// Rejects the component blade away from another blade. Will go to 0, if any
+    /// overlapping basis exists.
     /// 
     /// Currently does not work for degenerate Dimensions due to the basis
     /// squaring to 0.
@@ -521,7 +511,7 @@ impl Component {
     ///
     /// Returns zero if the vector selected is beyond our array.
     /// 
-    /// Returns Zero if 
+    /// Returns Zero if the component given is degenerate.
     pub fn reciprocal_frame(&self, i: usize) -> Component {
         if i >= self.bases.len() {
             ZERO
@@ -539,7 +529,7 @@ impl Component {
     ///
     /// Checks if two components share the exact same bases, returns false if
     /// not.
-    pub fn same_bases(&self, other: Component) -> bool {
+    pub fn same_bases(&self, other: &Component) -> bool {
         if self.bases.len() != other.bases.len() {
             return false;
         }
@@ -666,7 +656,7 @@ impl Component {
 
 impl PartialEq for Component {
     fn eq(&self, other: &Self) -> bool {
-        self.mag == other.mag && self.bases == other.bases
+        self.mag == other.mag && self.same_bases(other)
     }
 }
 

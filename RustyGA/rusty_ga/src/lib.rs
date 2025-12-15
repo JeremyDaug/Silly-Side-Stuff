@@ -3,6 +3,7 @@ pub mod basis;
 pub mod component;
 pub mod multivector;
 pub mod interpreter;
+pub mod vector;
 
 #[cfg(test)]
 mod tests {
@@ -428,20 +429,10 @@ mod tests {
             #[test]
             pub fn zero_out_on_overlapping_bases() {
                 let e1 = ONBasis::P(1);
-                let e2 = ONBasis::P(2);
-                let e3 = ONBasis::P(3);
                 // simple vector components
                 let c1 = Component::new(
                     1.0,
                     vec![e1.clone()],
-                );
-                let c2 = Component::new(
-                    1.0,
-                    vec![e2.clone()],
-                );
-                let c3 = Component::new(
-                    1.0,
-                    vec![e3.clone()],
                 );
 
                 let c11 = &c1 ^ &c1;
@@ -1140,23 +1131,23 @@ mod tests {
                 // Test vs Scalar should be zero
                 let test1 = Component::new(1.0, vec![p1]);
                 let test2 = Component::new(1.0, vec![]);
-                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(1.0, vec![p1]));
                 println!("First Test Complete!");
                 // Test parallel vectors
                 let test2 = Component::new(1.0, vec![p1]);
-                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(1.0, vec![p1]));
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
 
                 // test perpendicular vectors
                 let test2 = Component::new(1.0, vec![p2]);
-                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(1.0, vec![p1]));
 
                 let test2 = Component::new(1.0, vec![p2, n1]);
-                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(1.0, vec![p1]));
 
                 // bivectors
                 let test1 = Component::new(1.0, vec![p1, p2]);
                 let test2 = Component::new(1.0, vec![]);
-                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(1.0, vec![p1, p2]));
 
                 let test1 = Component::new(1.0, vec![p1, p2]);
                 let test2 = Component::new(1.0, vec![p1]);
@@ -1164,7 +1155,7 @@ mod tests {
 
                 let test1 = Component::new(1.0, vec![p1, p2]);
                 let test2 = Component::new(1.0, vec![p1, p2]);
-                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(1.0, vec![p1, p2]));
+                assert_eq!(test1.rejection_by(&test2).unwrap(), Component::new(0.0, vec![]));
 
                 // null-vectors
                 let test1 = Component::new(1.0, vec![z1]);
@@ -1384,7 +1375,7 @@ mod tests {
         }
 
         mod base_add_should {
-            use crate::{basis::ONBasis, component::Component, multivector::{self, Multivector}};
+            use crate::{basis::ONBasis, component::Component, multivector::Multivector};
 
             #[test]
             pub fn add_two_multivectors_correctly() {
@@ -1421,7 +1412,7 @@ mod tests {
         }
 
         mod scalar_add_should {
-            use crate::{basis::ONBasis, component::Component, multivector::{self, Multivector}};
+            use crate::{basis::ONBasis, component::Component, multivector::Multivector};
 
             #[test]
             pub fn add_correctly() {
@@ -1496,7 +1487,7 @@ mod tests {
         }
 
         mod comp_geo_product_should {
-            use crate::{basis::ONBasis, component::Component, multivector::{self, Multivector}};
+            use crate::{basis::ONBasis, component::Component, multivector::Multivector};
 
             #[test]
             pub fn add_correctly() {
@@ -1510,9 +1501,13 @@ mod tests {
                     vec![b2]);
 
                 let mv1 = Multivector::new(vec![
-                    comp0,
+                    comp0.clone(),
                     comp1.clone(), comp2.clone()
                 ]);
+
+                let res = mv1.component_add(&comp0);
+
+                assert_eq!(res.components().get(0).unwrap().mag, 2.0);
             }
         }
 

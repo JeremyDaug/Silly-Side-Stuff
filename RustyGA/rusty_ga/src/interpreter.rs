@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, VecDeque}, fmt::format};
+use std::collections::{HashMap, VecDeque};
 
 use crate::{basis::ONBasis, component::Component, multivector::Multivector};
 
@@ -45,7 +45,7 @@ impl Interpreter {
 
     pub fn parse_line(&mut self, line: &String) -> Result<String, String> {
         //let mut tokens = vec![];
-        for token in line.split_ascii_whitespace() {
+        for _token in line.split_ascii_whitespace() {
             
             
             // Try to parse as multivec first
@@ -199,6 +199,6 @@ impl Token {
     }
 }
 
-const REGEX_BASIS: &str = r"[PNZ]\\(\d\*\\)";
-const REGEX_COMPONENT: &str = r"[+-]?\d\*\\.?\d\*([PNZ]\\(\d\*\\))*";
-const REGEX_MV: &str = r"[+-]?\d\*\\.?\d\*([PNZ]\\(\d\*\\))*([+-]\d\*\\.?\d\*([PNZ]\\(\d\*\\))*)*";
+const _REGEX_BASIS: &str = r"[PNZ]\\(\d\*\\)";
+const _REGEX_COMPONENT: &str = r"[+-]?\d\*\\.?\d\*([PNZ]\\(\d\*\\))*";
+const _REGEX_MV: &str = r"[+-]?\d\*\\.?\d\*([PNZ]\\(\d\*\\))*([+-]\d\*\\.?\d\*([PNZ]\\(\d\*\\))*)*";

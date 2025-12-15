@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, VecDeque}, env, io::{self, stdout, Stdout}};
+use std::{collections::{HashMap, VecDeque}, env, io::{self, stdout}};
 use rusty_ga::{basis::ONBasis, multivector::Multivector};
 use std::io::prelude::*;
 
@@ -8,12 +8,12 @@ pub mod component;
 pub mod multivector;
 
 fn main() {
-    let mut bases: HashMap<String, ONBasis> = HashMap::new();
-    let mut variables: HashMap<String, Multivector> = HashMap::new();
-    let mut backlog: VecDeque<String> = VecDeque::new();
+    let mut _bases: HashMap<String, ONBasis> = HashMap::new();
+    let mut _variables: HashMap<String, Multivector> = HashMap::new();
+    let mut _backlog: VecDeque<String> = VecDeque::new();
 
     // Commandline args 1-N
-    let args: Vec<String> = env::args().collect();
+    let _args: Vec<String> = env::args().collect();
 
     // input lines
     print!(">>>");

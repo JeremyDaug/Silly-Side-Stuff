@@ -1,4 +1,4 @@
-use std::{ops::{self}, collections::HashSet};
+use std::{collections::HashSet, ops::{self, Add}};
 
 use crate::component::{Component, self};
 
@@ -89,6 +89,8 @@ impl Multivector {
     /// 
     /// The multivector p1p2 + p3p4 is not a blade because they do not share
     /// a basis.
+    /// 
+    /// TODO: Come back here and rework this by using a multi-variable solution instead of this, which (I think) can be wrong.
     pub fn is_blade(&self) -> bool {
         if !self.is_single_grade() {
             return false;
@@ -143,6 +145,40 @@ impl Multivector {
         todo!()
     }
 
+    /// # Consolidate Components
+    /// 
+    /// This takes all components and adds components with like basis. 
+    /// 
+    /// ## For Example
+    /// 
+    /// MV = 1e_1 + 3e_1 => 4e_1
+    /// 
+    /// ## Notes
+    /// 
+    /// This should not need to be called more than once, and only after
+    /// a multivector is newed up using a list of components directly.
+    /// 
+    /// Adding or multiplying components into a Multivector should consolidate them 
+    /// implicitly.
+    pub fn consolidate_components(&self) -> Multivector {
+        let mut result: Vec<Component> = vec![];
+        for component in self.components.iter() {
+            let mut added = false;
+            for res_comp in result.iter_mut() {
+                if res_comp.same_bases(component) {
+                    res_comp.mag += component.mag;
+                    added = true;
+                    break;
+                }
+            }
+            if !added {
+                result.push(component.clone());
+            }
+        }
+
+        Multivector { components: result }
+    }
+
     /// # Add Component
     /// 
     /// Adds a component to the multivector (nondestructively).
@@ -166,8 +202,8 @@ impl Multivector {
             }
             if let Some(val) = comp.force_comp_add(rhs) {
                 // if it added, then we have a contraction
-                if val != component::ZERO {
-                    // only include if it's not a zero component.
+                if val.mag == 0.0 {
+                    // only include if it's adds to non-zero
                     result.push(val);
                 }
                 contracted = true;
@@ -226,6 +262,22 @@ impl Multivector {
         for comp in self.components.iter() {
             let temp = comp * rhs;
             result = result + temp;
+        }
+        result
+    }
+
+    /// # Geometric Product without adding
+    /// 
+    /// Does the geometric product, but does NOT add the resulting components together.
+    /// 
+    /// This is useful for various proofs that need to look at all results of the
+    /// geometric product.
+    pub fn geo_product_no_adding(&self, rhs: &Multivector) -> Vec<Component> {
+        let mut result = vec![];
+        for l_c in self.components.iter() {
+            for r_c in rhs.components.iter() {
+                result.push(l_c * r_c);
+            }
         }
         result
     }
