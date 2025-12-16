@@ -1,6 +1,6 @@
 use crate::{basis, blade::{self, Blade}, component::Component, multivector::Multivector};
 
-pub const ZERO: D1Vector = D1Vector { components: vec![] };
+pub const ZERO: Vector = Vector { components: vec![] };
 
 /// # D1 Vector
 /// 
@@ -17,12 +17,12 @@ pub const ZERO: D1Vector = D1Vector { components: vec![] };
 /// 
 /// TODO: Consider making component into a special restricted variant for D1Vector. Would reduce size, increase speed, and reduce extraction code for the basis.
 #[derive(Debug, Clone, PartialEq)]
-pub struct D1Vector {
+pub struct Vector {
     /// The components that make up our D1Vector
     pub components: Vec<Component>,
 }
 
-impl D1Vector {
+impl Vector {
     /// # Length
     /// 
     /// Gets how many components are in the D1Vector.
@@ -147,14 +147,14 @@ impl D1Vector {
     /// # Reverse
     /// 
     /// Reverses the vector, which is just the vector.
-    pub fn reverse(&self) -> D1Vector {
+    pub fn reverse(&self) -> Vector {
         self.clone()
     }
 
     /// # Scalar Product
     /// 
     /// Multiplies a vector by a scalar value.
-    pub fn scalar_product(&self, scalar: f64) -> D1Vector {
+    pub fn scalar_product(&self, scalar: f64) -> Vector {
         let mut result = ZERO;
         for comp in self.components.iter() {
             result.components.push(comp.scalar_mult(scalar));

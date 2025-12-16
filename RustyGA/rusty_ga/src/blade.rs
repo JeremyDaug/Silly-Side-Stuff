@@ -1,4 +1,4 @@
-use crate::{basis::ONBasis, component::Component, vector::D1Vector};
+use crate::{basis::ONBasis, component::Component, vector::Vector};
 
 pub const ZERO: Blade = Blade{ component: vec![], vectors: vec![] };
 
@@ -23,7 +23,7 @@ pub struct Blade {
     /// # Vectors
     /// 
     /// The vectors which make up the blade. Makes decomposition easy.
-    vectors: Vec<D1Vector>,
+    vectors: Vec<Vector>,
 }
 
 /// Geometry, the context of our 

@@ -60,6 +60,22 @@ impl Multivector {
         grades.len() <= 1
     }
 
+    /// # Grades
+    /// 
+    /// Gets all grades of the multivector.
+    /// 
+    /// Not the most useful, but still included.
+    pub fn grades(&self) -> Vec<usize> {
+        let mut result = vec![];
+        for comp in self.components.iter() {
+            let grade = comp.grade();
+            if !result.contains(&grade) {
+                result.push(grade);
+            }
+        }
+        result
+    }
+
     /// # Is Blade
     /// 
     /// Checks whether this multivector is a blade. IE, it
@@ -91,59 +107,59 @@ impl Multivector {
     /// a basis.
     /// 
     /// TODO: Come back here and rework this by using a multi-variable solution instead of this, which (I think) can be wrong.
-    pub fn is_blade(&self) -> bool {
-        if !self.is_single_grade() {
-            return false;
-        }
-        // since it must be a single grade, get the first component and check it's grade.
-        let grade = self.components.first().unwrap_or(&component::ZERO).grade();
-        if grade < 2 { // if it's grade is less than 2 than it is, by definition, a blade.
-            return true;
-        }
-        // If there is only one or no component(s), that must be a blade.
-        if self.len() < 2 {
-            return true;
-        }
-        // For items to add together, they must share a basis, connecting all of them together.
-        // To ensure they all connect together either directly or indirectly, 
-        // we group them together using the groups vec. The idx in group is the
-        // idx of the component. 
-        // we initialize them to zero, then set the first as group 1
-        let mut groups = vec![vec![]; self.components.len()];
-        for (curr_idx, comp) in self.components.iter().enumerate() {
-            for (oidx, other) in self.components.iter().enumerate() {
-                if comp.bases().iter().any(|x| other.bases().contains(x)) {
-                    groups[curr_idx].push(oidx);
-                }
-            }
-        }
-        // with connections found, connect and see if all are in the same group.
-        let mut stack = vec![];
-        stack.push(0);
-        let mut reached_from_zero = HashSet::new();
-        while let Some(curr) = stack.pop() {
-            for &idx in groups[curr].iter() {
-                if reached_from_zero.insert(idx) {
-                    stack.push(idx);
-                }
-            }
-        }
-        // If we mapped out everything, then we should have the same length in set and components
-        return reached_from_zero.len() == self.components.len();
-    }
+    // pub fn is_blade(&self) -> bool {
+    //     if !self.is_single_grade() {
+    //         return false;
+    //     }
+    //     // since it must be a single grade, get the first component and check it's grade.
+    //     let grade = self.components.first().unwrap_or(&component::ZERO).grade();
+    //     if grade < 2 { // if it's grade is less than 2 than it is, by definition, a blade.
+    //         return true;
+    //     }
+    //     // If there is only one or no component(s), that must be a blade.
+    //     if self.len() < 2 {
+    //         return true;
+    //     }
+    //     // For items to add together, they must share a basis, connecting all of them together.
+    //     // To ensure they all connect together either directly or indirectly, 
+    //     // we group them together using the groups vec. The idx in group is the
+    //     // idx of the component. 
+    //     // we initialize them to zero, then set the first as group 1
+    //     let mut groups = vec![vec![]; self.components.len()];
+    //     for (curr_idx, comp) in self.components.iter().enumerate() {
+    //         for (oidx, other) in self.components.iter().enumerate() {
+    //             if comp.bases().iter().any(|x| other.bases().contains(x)) {
+    //                 groups[curr_idx].push(oidx);
+    //             }
+    //         }
+    //     }
+    //     // with connections found, connect and see if all are in the same group.
+    //     let mut stack = vec![];
+    //     stack.push(0);
+    //     let mut reached_from_zero = HashSet::new();
+    //     while let Some(curr) = stack.pop() {
+    //         for &idx in groups[curr].iter() {
+    //             if reached_from_zero.insert(idx) {
+    //                 stack.push(idx);
+    //             }
+    //         }
+    //     }
+    //     // If we mapped out everything, then we should have the same length in set and components
+    //     return reached_from_zero.len() == self.components.len();
+    // }
 
-    /// # Blade Breakdown
-    /// 
-    /// Breakdown takes takes the multivector and decomposes it into vectors that, when their outer product
-    /// is taken, produce the resulting blade.
-    /// 
-    /// If this multivector is not a blade, it returns an empty vector.
-    pub fn blade_breakdown(&self) -> Vec<Multivector> {
-        if !self.is_blade() { return vec![]; }
-        // since we are a blade, begin breaking it down
-        // look for any common simple vectors first.
-        todo!()
-    }
+    // /// # Blade Breakdown
+    // /// 
+    // /// Breakdown takes takes the multivector and decomposes it into vectors that, when their outer product
+    // /// is taken, produce the resulting blade.
+    // /// 
+    // /// If this multivector is not a blade, it returns an empty vector.
+    // pub fn blade_breakdown(&self) -> Vec<Multivector> {
+    //     if !self.is_blade() { return vec![]; }
+    //     // since we are a blade, begin breaking it down
+    //     // look for any common simple vectors first.
+    //     todo!()
+    // }
 
     /// # Consolidate Components
     /// 
@@ -261,7 +277,9 @@ impl Multivector {
         let mut result = ZERO;
         for comp in self.components.iter() {
             let temp = comp * rhs;
-            result = result + temp;
+            if temp.mag != 0.0 {
+                result = result + temp;
+            }
         }
         result
     }
