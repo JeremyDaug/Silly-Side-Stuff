@@ -1,6 +1,6 @@
-use crate::{basis, component::Component, multivector::Multivector};
+use crate::{basis, blade::{self, Blade}, component::Component, multivector::Multivector};
 
-const ZERO: D1Vector = D1Vector { components: vec![] };
+pub const ZERO: D1Vector = D1Vector { components: vec![] };
 
 /// # D1 Vector
 /// 
@@ -160,6 +160,15 @@ impl D1Vector {
             result.components.push(comp.scalar_mult(scalar));
         }
         result
+    }
+
+    /// # Component Geometric Product
+    /// 
+    /// Does a geometric product on a singular component.
+    pub fn component_geo_product(&self, component: &Component) -> Multivector {
+        let result = blade::ZERO;
+
+        return result;
     }
 
     /// # Dot Product
