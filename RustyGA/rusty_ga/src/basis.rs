@@ -2,6 +2,8 @@ use std::{cmp::Ordering::{self}, hash::Hash};
 
 use regex::Regex;
 
+use crate::{blade::Blade, component::Component, multivector::Multivector, vector::Vector};
+
 pub const BASIS_REGEX: &str = r"^(?<e>[PNZ])[(](?<id>0|[1-9][0-9]*)[)]$";
 
 /// # ONBasis (Orthonomal Basis)
@@ -92,6 +94,34 @@ impl ONBasis {
         } else {
             0.0
         }
+    }
+
+    /// # To Component
+    /// 
+    /// Converts an Orthonormal Basis to a Component of magnitude 1.
+    pub fn to_component(&self) -> Component {
+        Component { mag: 1.0, bases: vec![self.clone()] }
+    }
+
+    /// # To Vector 
+    /// 
+    /// Converts an Orthonormal Basis to a Vector of magnitude 1.
+    pub fn to_vector(&self) -> Vector {
+        Vector { components: vec![self.to_component()] }
+    }
+
+    /// # To Blade
+    /// 
+    /// Converts an Orthonormal Basis to a Blade of magnitude 1.
+    pub fn to_blade(&self) -> Blade {
+        Blade { components: vec![self.to_component()], vectors: vec![self.to_vector()]}
+    }
+
+    /// # To Multivector
+    /// 
+    /// Converts an Orthonormal Basis to a Multivector of Magnitude 1.
+    pub fn to_mv(&self) -> Multivector {
+        Multivector { components: vec![self.to_component()], blades: vec![self.to_blade()] }
     }
 
     /// # From Str

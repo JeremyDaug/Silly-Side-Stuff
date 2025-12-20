@@ -3,7 +3,7 @@ use std::ops;
 
 use regex::Regex;
 
-use crate::{basis::ONBasis, multivector::{Multivector, self}};
+use crate::{basis::ONBasis, blade::Blade, multivector::Multivector, vector::Vector};
 
 /// # Component
 ///
@@ -24,13 +24,9 @@ pub struct Component {
     ///
     /// The basis of the component. IE the e_{bases} of the component.
     /// These should always be in id order after being new'd up.
-    bases: Vec<ONBasis>
+    pub bases: Vec<ONBasis>
 }
 
-/// # Zero Component
-///
-/// Returns a component with a magnitude of 0.0 and no bases.
-pub const ZERO: Component = Component { mag: 0.0, bases: vec![] };
 
 impl Default for Component {
     fn default() -> Self {
@@ -39,11 +35,16 @@ impl Default for Component {
 }
 
 impl Component {
+    /// # Zero Component
+    ///
+    /// Returns a component with a magnitude of 0.0 and no bases.
+    pub const ZERO: Component = Component { mag: 0.0, bases: vec![] };
+
     /// # Default
     /// 
     /// Returns a default (zero) component.
     pub fn default() -> Component {
-        ZERO
+        Component::ZERO
     }
 
     /// # Grade
@@ -53,13 +54,6 @@ impl Component {
         self.bases.len()
     }
 
-    /// # Bases
-    /// 
-    /// Gets a reference to the component's bases.
-    pub fn bases(&self) -> &[ONBasis] {
-        self.bases.as_ref()
-    }
-
     /// # New
     ///
     /// creates a new component based on a magnitude and basis.
@@ -67,7 +61,7 @@ impl Component {
     /// If basis is not ordered correctly, it reorders the bases appropriately.
     /// 
     /// Duplicate Basis vectors in the Bases will also be consolidated and treated 
-    /// as thouh multiplying.
+    /// as though multiplying.
     pub fn new(mag: f64, bases: Vec<ONBasis>) -> Component {
         if bases.len() > 0 {
             for idx in 0..(bases.len()-1) {
@@ -111,7 +105,7 @@ impl Component {
                     result.mag *= basis.sqr();
                     // If duplicate basis are degenerate (square to 0) return ZERO and move on.
                     if result.mag == 0.0 {
-                        return ZERO;
+                        return Component::ZERO;
                     }
                     change = true;
                     // if after the removal we would step out of the list, get out of the current loop.
@@ -155,17 +149,10 @@ impl Component {
             // if bases match, then add magnitudes
             let res = Component::quick_new(self.mag + rhs.mag, self.bases.clone());
             // if magnitude is zero, then return zero component for simplicity reasons.
-            return if res.mag == 0.0 { Some(ZERO) } else { Some(res) };
+            return if res.mag == 0.0 { Some(Component::ZERO) } else { Some(res) };
         } else {
             None
         }
-    }
-
-    /// # To Multivector
-    ///
-    /// A quick conversion from Component to Multivector.
-    pub fn to_mv(&self) -> Multivector {
-        Multivector::new(vec![self.clone()])
     }
 
     /// # Standard Addition
@@ -198,7 +185,8 @@ impl Component {
         let res_mag = self.mag * rhs.mag;
         //println!("Product Magnitude: {:?}", res_mag);
         if res_mag == 0.0 {
-            return ZERO;
+            // if zero, just return zero.
+            return Component::ZERO;
         }
         // combine bases first
         let mut bases = self.bases.clone();
@@ -216,7 +204,7 @@ impl Component {
         // check for magnitudes multiplying to zero.
         let mag = self.mag * rhs.mag;
         if mag == 0.0 {
-            return ZERO;
+            return Component::ZERO;
         };
         // check for overlapping bases
         let mut uniques = HashSet::new();
@@ -226,11 +214,11 @@ impl Component {
         for basis in rhs.bases.iter() {
             // if any overlap, return ZERO.
             if !uniques.insert(basis) {
-                return ZERO;
+                return Component::ZERO;
             }
         }
         // if we get here, then the all basis are unique.
-        let mut bases = self.bases.clone();
+        let mut bases = vec![];
         bases.extend(rhs.bases.clone());
         Component { mag, bases }
     }
@@ -248,16 +236,16 @@ impl Component {
         }
     }
 
-    /// # Inner Product f64
+    /// # Scalar Product
     ///
-    /// Performs a inner/dot product, but always returns a f64
+    /// Performs a inner/dot product, but only returns if results in a scalar value.
     /// 
     /// This is equivalent to Geometric product, but select only the scalar part. Which
     /// is the same as the Scalar Product.
     ///
     /// Note: This is only meant for blades, all components are blades,
     /// but multivectors or other k-vectors may not be blades.
-    pub fn inner_product_f64(&self, rhs: &Component) -> f64 {
+    pub fn scalar_product(&self, rhs: &Component) -> f64 {
         let result = self.geo_product(rhs);
         if result.grade() > 0 {
             0.0
@@ -277,7 +265,7 @@ impl Component {
     /// efficient as it creates a new component, and applies
     /// reversion to it, just so it can drop it.
     pub fn norm_sqrd(&self) -> f64 {
-        self.inner_product_f64(&self.reversion())
+        self.scalar_product(&self.reversion())
     }
 
     /// # Norm
@@ -286,7 +274,7 @@ impl Component {
     ///
     /// Remember, negative values will return Nan.
     pub fn norm(&self) -> f64 {
-        self.inner_product_f64(self).sqrt()
+        self.scalar_product(self).sqrt()
     }
 
     /// # Involution
@@ -353,7 +341,7 @@ impl Component {
         // shortcircuit if self.grade > rhs.grade
         if self.grade() > rhs.grade() {
             println!("lhs.grade > rhs.grade");
-            return ZERO;
+            return Component::ZERO;
         }
         // Geometric Product, select grade rhs.grade - self.grade
         let result = self * rhs;
@@ -362,7 +350,7 @@ impl Component {
             result
         } else {
             println!("Left Contraction Grade Mismatch");
-            ZERO
+            Component::ZERO
         }
     }
 
@@ -372,21 +360,20 @@ impl Component {
     pub fn right_cont(&self, rhs: &Component) -> Component {
         // shortcircuit if rhs.grade > self.grade
         if self.grade() < rhs.grade() {
-            return  ZERO;
+            return  Component::ZERO;
         }
         // otherwise geometric product, select grade self.grade - rhs.grade
         let result = self * rhs;
         if result.grade() == (self.grade() - rhs.grade()) {
             result
         } else {
-            ZERO
+            Component::ZERO
         }
     }
 
     /// # Component Product
     /// 
-    /// Performs an inner/dot product, but only returns a value if the grade 
-    /// resulting is zero.
+    /// Performs an inner/dot product, taking whichever 
     /// 
     /// This function forces the result to be a component instead of a float.
     /// 
@@ -398,7 +385,7 @@ impl Component {
     pub fn inner_product(&self, rhs: &Component) -> Component {
         let result = self * rhs;
         if result.grade() > 0 {
-            ZERO
+            Component::ZERO
         } else {
             result
         }
@@ -514,14 +501,14 @@ impl Component {
     /// Returns Zero if the component given is degenerate.
     pub fn reciprocal_frame(&self, i: usize) -> Component {
         if i >= self.bases.len() {
-            ZERO
+            Component::ZERO
         } else if let Some(inv) = self.inverse() {
             let mut rep_bas = self.bases.clone();
             rep_bas.remove(i);
             (-1.0_f64).powi(i as i32) * Component::new(self.mag,
                 rep_bas) << inv
         } else {
-            ZERO
+            Component::ZERO
         }
     }
 
@@ -562,12 +549,57 @@ impl Component {
         Component::new(*rhs, vec![])
     }
 
+    /// # To Vector
+    /// 
+    /// Converts a Component to a vector if component is of grade 1.
+    pub fn to_vector(&self) -> Option<Vector> {
+        if self.grade() == 1 {
+            Some(Vector::new(&vec![self.clone()]))
+        } else {
+            None
+        }
+    }
+
+    /// # Vector Decomposition
+    /// 
+    /// Takesa Component of any grade and returns a decomposition form of it, such that
+    /// the vectors returned will make an equivalent component if combined via outer
+    /// product.
+    /// 
+    /// The first component always has the same magnitude as the component, the rest
+    /// are of magnitude 1.
+    pub fn vector_decomposition(&self) -> Vec<Vector> {
+        let mut result = vec![];
+
+        for b in self.bases.iter() {
+            let mut current = Component::ZERO;
+            if result.len() == 0 {
+                current.mag = self.mag;
+            }
+            current.bases.push(*b);
+            result.push(current.to_vector().expect("Somehow recieved a component not of grade 1."));
+        }
+
+        result
+    }
+
+    /// # To Blade
+    /// 
+    /// Coverts the component to a blade.
+    pub fn to_blade(&self) -> Blade {
+        Blade { components: vec![self.clone()], vectors: self.vector_decomposition() }
+    }
+
+    pub fn to_mv(&self) -> Multivector {
+        Multivector { components: vec![self.clone()], blades: vec![self.to_blade()] }
+    }
+
     /// # Geometric Product between Multivectors
     /// 
     /// Takes the Geometric product between a component and a Multivector with
     /// the Component on the left and multivector on the right.
     pub fn geo_product_mv(&self, rhs: &Multivector) -> Multivector {
-        let mut result = multivector::ZERO;
+        let mut result = Multivector::ZERO;
         for comp in rhs.components().iter() {
             result = result + self * comp;
         }
@@ -586,7 +618,7 @@ impl Component {
         //let Some(caps) = re.captures(val) else {Err};
         // get value from the first, checking to ensure nothing is wrong.
         if val.len() == 0 {
-            return Ok(ZERO);
+            return Ok(Component::ZERO);
         }
         let mut whole = String::new();
         let mut decimal_found = false;
@@ -899,7 +931,7 @@ impl ops::Add<&Component> for Component {
 // Into Multivector
 impl Into<Multivector> for Component {
     fn into(self) -> Multivector {
-        Multivector::new(vec![self.clone()])
+        Multivector { components: vec![self.clone()], blades: vec![self.to_blade()]}
     }
 }
 

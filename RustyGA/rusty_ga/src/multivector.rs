@@ -1,6 +1,6 @@
 use std::{collections::HashSet, ops::{self, Add}};
 
-use crate::component::{Component, self};
+use crate::{blade::Blade, component::{self, Component}};
 
 /// # Multivector
 /// 
@@ -12,35 +12,17 @@ use crate::component::{Component, self};
 /// to highest id. Any other ordering is not applied.
 #[derive(Debug, Clone)]
 pub struct Multivector {
-    components: Vec<Component>,
+    /// The Component form of the Multivector
+    pub components: Vec<Component>,
+    /// The blade form of the multivector.
+    pub blades: Vec<Blade>
 }
 
-/// # Zero Multivector
-/// 
-/// Has No components.
-pub const ZERO: Multivector = Multivector { components: vec![] };
-
 impl Multivector {
-    /// # New
+    /// # Zero Multivector
     /// 
-    /// Generates a multivector based on a list of components.
-    /// 
-    /// When created, it sorts the components by grade before puting them into the
-    /// resulting multivector.
-    /// 
-    /// # Note
-    /// 
-    /// Components may have duplicate component bases and currently this function
-    /// does not automatically consolidate them for efficiency reasons.
-    /// 
-    /// If you want to ensure that consolidation occurs, use alternative methods
-    /// to create this such as addition 
-    pub fn new(components: Vec<Component>) -> Multivector {
-        let mut components = components
-            .clone();
-        components.sort_by(|a, b| a.grade().cmp(&b.grade()));
-        Multivector { components }
-    }
+    /// Has No components.
+    pub const ZERO: Multivector = Multivector { components: vec![], blades: vec![] };
 
     /// # Length
     /// 

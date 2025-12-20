@@ -1,6 +1,6 @@
-use crate::{basis, blade::{self, Blade}, component::Component, multivector::Multivector};
+use std::ops::Mul;
 
-pub const ZERO: Vector = Vector { components: vec![] };
+use crate::{basis::{self, ONBasis}, blade::{self, Blade}, component::Component, multivector::Multivector};
 
 /// # D1 Vector
 /// 
@@ -15,42 +15,48 @@ pub const ZERO: Vector = Vector { components: vec![] };
 /// Components are organized by basis in the component vector for consistency and 
 /// possible later improvements.
 /// 
-/// TODO: Consider making component into a special restricted variant for D1Vector. Would reduce size, increase speed, and reduce extraction code for the basis.
+/// TODO: Consider making component into a special restricted variant for Vector. Would reduce size, increase speed, and reduce extraction code for the basis.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Vector {
-    /// The components that make up our D1Vector
+    /// The components that make up our Vector
     pub components: Vec<Component>,
 }
 
 impl Vector {
+    pub const ZERO: Vector = Vector { components: vec![] };
+
+    pub fn components(&self) -> &[Component] {
+        &self.components
+    }
+
     /// # Length
     /// 
-    /// Gets how many components are in the D1Vector.
+    /// Gets how many components are in the Vector.
     pub fn len(&self) -> usize {
         self.components.len()
     }
 
     /// # New
     /// 
-    /// Creates a new D1Vector.
+    /// Creates a new Vector.
     /// 
     /// # Note
     /// 
     /// If a component is not of grade 1, it skips that component, so do be aware of
     /// that.
     pub fn new(components: &Vec<Component>) -> Self {
-        let mut result = ZERO;
+        let mut result = Vector::ZERO;
         for component in components {
             result = result.comp_add(component);
         }
         result
     }
 
-    /// # Component Wise Add
+    /// # Component Add
     /// 
-    /// Adds a given component to a D1Vector and returns the result.
+    /// Adds a given component to a Vector and returns the result.
     /// 
-    /// If component is not of grade 1, it returns the original D1Vector safely.
+    /// If component is not of grade 1, it returns the original Vector safely.
     pub fn comp_add(&self, component: &Component) -> Self {
         let mut result = self.clone();
         if component.grade() != 1 {
@@ -59,10 +65,10 @@ impl Vector {
         // binary search for a match.
         let mut low = 0;
         let mut high = self.len().saturating_sub(1);
-        let other_basis = component.bases()[0];
+        let other_basis = component.bases[0];
         while low <= high {
             let mid = low + (high - low) / 2;
-            let current_basis = self.components[mid].bases()[0];
+            let current_basis = self.components[mid].bases[0];
             if current_basis == other_basis { // found basis match, add and break out.
                 result.components.get_mut(mid).unwrap().mag += component.mag;
                 return result;
@@ -79,15 +85,17 @@ impl Vector {
 
     /// # Sorted Insert
     /// 
-    /// Used to insert a component into a D1Vector in a way consistent with our 
-    /// pre-defined ordering.
+    /// Used to insert a component into a Vector in a way consistent with our 
+    /// pre-defined ordering. 
+    /// 
+    /// A shortcut for internal use only. All other 'insertions' should use comp_add to ensure proper use.
     fn sorted_insert(&mut self, component: &Component) {
         debug_assert_eq!(component.grade(), 1, "Component must be of grade 1! -> Component {:?}", component);
 
         let mut idx = 0;
-        let comp_b = component.bases().first().unwrap();
+        let comp_b = component.bases.first().unwrap();
         while idx < self.len() {
-            let self_b = self.components.get(idx).unwrap().bases().first().unwrap();
+            let self_b = self.components.get(idx).unwrap().bases.first().unwrap();
             match comp_b.cmp(&self_b) {
                 std::cmp::Ordering::Less => idx += 1,
                 std::cmp::Ordering::Equal => panic!("Should never reach here as components being added should already be guaranteed not duplicated."),
@@ -105,13 +113,13 @@ impl Vector {
     /// 
     /// Does so intelligently by zipping them together.
     pub fn vec_add(&self, other: &Self) -> Self {
-        let mut result = ZERO;
+        let mut result = Vector::ZERO;
         let mut s_idx = 0;
         let mut o_idx = 0;
         while s_idx < self.len() && o_idx < other.len() {
             let self_comp = self.components.get(s_idx).unwrap();
             let other_comp = self.components.get(o_idx).unwrap();
-            match self_comp.bases()[0].cmp(&other_comp.bases()[0]) {
+            match self_comp.bases[0].cmp(&other_comp.bases[0]) {
                 std::cmp::Ordering::Less => {
                     // if self less than other, push the self_comp and increment self idx
                     s_idx += 1;
@@ -136,7 +144,7 @@ impl Vector {
             result.components.push(self.components[s_idx].clone());
             s_idx += 1;
         }
-        while o_idx< self.len() {
+        while o_idx < self.len() {
             result.components.push(other.components[o_idx].clone());
             o_idx += 1;
         }
@@ -151,11 +159,11 @@ impl Vector {
         self.clone()
     }
 
-    /// # Scalar Product
+    /// # Scalar Multiplication
     /// 
-    /// Multiplies a vector by a scalar value.
-    pub fn scalar_product(&self, scalar: f64) -> Vector {
-        let mut result = ZERO;
+    /// Multiplies a vector by a scalar value. Shortcut for such events.
+    pub fn scalar_mult(&self, scalar: f64) -> Vector {
+        let mut result = Vector::ZERO;
         for comp in self.components.iter() {
             result.components.push(comp.scalar_mult(scalar));
         }
@@ -164,18 +172,77 @@ impl Vector {
 
     /// # Component Geometric Product
     /// 
-    /// Does a geometric product on a singular component.
+    /// Does a geometric product with a singular component.
+    /// 
+    /// Returns a multivector due to the possibility of grade splits.
     pub fn component_geo_product(&self, component: &Component) -> Multivector {
-        let result = blade::ZERO;
+        let result = Multivector::ZERO;
+        for comp in self.components.iter() {
+            result.component_add(&comp.geo_product(component));
+        }
 
         return result;
     }
 
-    /// # Dot Product
+    /// # Scalar Product
     /// 
-    /// Dot product between two vectors.
-    pub fn dot(&self, rhs: &Self) -> f64 {
+    /// Dot product between two vectors. Always returns an f64, so will just do that.
+    /// 
+    /// This can only work between two vectors, as such, it only accepts a vector.
+    pub fn scalar_product(&self, rhs: &Self) -> f64 {
+        let mut result = 0.0;
+        // be smart and ZIP!
+        let (mut lidx, mut ridx) = (0,0);
+        while lidx < self.len() && ridx < rhs.len() {
+            let left = self.components.get(lidx).unwrap();
+            let right = rhs.components.get(ridx).unwrap();
+            match left.bases[0].cmp(&right.bases[0]) {
+                std::cmp::Ordering::Less => {
+                    // if self less than other, push the left and increment self idx
+                    lidx += 1;
+                },
+                std::cmp::Ordering::Equal => {
+                    // if they are equal, increment both and add together.
+                    lidx += 1;
+                    ridx += 1;
+                    result += right.mag * left.mag;
+                },
+                std::cmp::Ordering::Greater => {
+                    // if self greater than other, push other and increment other_idx
+                    ridx += 1;
+                },
+            }
+        }
+        // if either reached the end, then no more matching can occur. Skip out.
 
+        result
+    }
+
+    /// # Outer Product to Blade
+    /// 
+    /// Gets the outer product of two vectors, returning it in the form of a blade.
+    /// 
+    /// Blade can be 0.
+    pub fn outer_product_blade(&self, rhs: &Self) -> Blade {
+        let result = self.to_blade();
+        //result.outer_product_vec(rhs);
+        todo!()
+    }
+
+    /// # Outer Product
+    /// 
+    /// Outer Product with anotehr vector. Returns a multivector.
+    pub fn vector_outer_product_mv(&self, rhs: &Self) -> Multivector {
+        let result = Multivector::ZERO;
+        for lcomp in self.components.iter() {
+            for rcomp in rhs.components.iter() {
+                let res = lcomp.outer_product(rcomp);
+                if res.mag != 0.0 {
+                    result.component_add(&res);
+                }
+            }
+        }
+        result
     }
 
     /// # Norm Squared
@@ -184,5 +251,37 @@ impl Vector {
     pub fn norm_sqrd(&self) -> f64 {
         // Norm_sqrd is effectively the dot product of a vector with itself.
         todo!()
+    }
+
+    /// # From Orthonormal Basis
+    /// 
+    /// Converts an ONBasis to a vector of unit length 1.
+    pub fn from_orthonormal_basis(basis: ONBasis) -> Self {
+        Vector { components: vec![Component::new(1.0, vec![basis])] }
+    }
+
+    /// # From Component
+    /// 
+    /// Converts a component to a vector if the vector is of grade 1.
+    pub fn from_component(component: &Component) -> Option<Self> {
+        if component.grade() == 1 {
+            Some(Vector { components: vec![component.clone()]})
+        } else {
+            None
+        }
+    }
+
+    /// # To Blade
+    /// 
+    /// Converts a vector to blade.
+    pub fn to_blade(&self) -> Blade {
+        Blade::new(&vec![self.clone()])
+    }
+
+    /// # To MV
+    /// 
+    /// Converts Vector to Multivector.
+    pub fn to_mv(&self) -> Multivector {
+        Multivector { components: self.components.clone(), blades: vec![self.to_blade()]}
     }
 }

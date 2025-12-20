@@ -57,7 +57,7 @@ mod tests {
         mod from_string_should {
             use regex::Regex;
 
-            use crate::{basis::ONBasis, component::{Component, ZERO}};
+            use crate::{basis::ONBasis, component::Component};
 
             #[test]
             pub fn correctly_regex_string() {
@@ -188,7 +188,7 @@ mod tests {
                 let result = Component::from_string(
                     &String::from("")
                 ).expect("Invalid Conversion");
-                assert_eq!(result, ZERO);
+                assert_eq!(result, Component::ZERO);
             }
 
             #[test]
@@ -267,18 +267,18 @@ mod tests {
                     vec![e2.clone(), e1.clone(), e3.clone()],
                 );
                 assert_eq!(c1.mag, -1.0);
-                assert_eq!(c1.bases()[0].unwrap(), 0);
-                assert_eq!(c1.bases()[1].unwrap(), 1);
-                assert_eq!(c1.bases()[2].unwrap(), 2);
+                assert_eq!(c1.bases[0].unwrap(), 0);
+                assert_eq!(c1.bases[1].unwrap(), 1);
+                assert_eq!(c1.bases[2].unwrap(), 2);
         
                 let c2 = Component::new(
                     1.0,
                     vec![e2.clone(), e3.clone(), e1.clone()],
                 );
                 assert_eq!(c2.mag, 1.0);
-                assert_eq!(c2.bases()[0].unwrap(), 0);
-                assert_eq!(c2.bases()[1].unwrap(), 1);
-                assert_eq!(c2.bases()[2].unwrap(), 2);
+                assert_eq!(c2.bases[0].unwrap(), 0);
+                assert_eq!(c2.bases[1].unwrap(), 1);
+                assert_eq!(c2.bases[2].unwrap(), 2);
             }
         }
 
@@ -352,7 +352,7 @@ mod tests {
 
                 for lhs in comps.iter() {
                     for rhs in comps.iter() {
-                        let result = lhs.inner_product_f64(rhs);
+                        let result = lhs.scalar_product(rhs);
                         if lhs == rhs {
                             // if along the diagonal, it should have a value.
                             if lhs.grade() / 2 % 2 > 0 { // magnitude flips every 2 grades.
@@ -379,13 +379,13 @@ mod tests {
                 let n = Component::new(1.0, vec![n_1]);
                 let z = Component::new(1.0, vec![z_1]);
 
-                let resp = p.inner_product_f64(&p);
+                let resp = p.scalar_product(&p);
                 assert_eq!(resp, 1.0);
 
-                let resn = n.inner_product_f64(&n);
+                let resn = n.scalar_product(&n);
                 assert_eq!(resn, -1.0);
 
-                let resz = z.inner_product_f64(&z);
+                let resz = z.scalar_product(&z);
                 assert_eq!(resz, 0.0);
             }
         }
@@ -415,15 +415,15 @@ mod tests {
                 let c12 = &c1 ^ &c2;
                 assert_eq!(c12.mag, 1.0);
                 assert_eq!(c12.grade(), 2);
-                assert_eq!(c12.bases()[0].unwrap(), 1);
-                assert_eq!(c12.bases()[1].unwrap(), 2);
+                assert_eq!(c12.bases[0].unwrap(), 1);
+                assert_eq!(c12.bases[1].unwrap(), 2);
 
                 let c123 = c1 ^ c2 ^ c3;
                 assert_eq!(c123.mag, 1.0);
                 assert_eq!(c123.grade(), 3);
-                assert_eq!(c123.bases()[0].unwrap(), 1);
-                assert_eq!(c123.bases()[1].unwrap(), 2);
-                assert_eq!(c123.bases()[2].unwrap(), 3);
+                assert_eq!(c123.bases[0].unwrap(), 1);
+                assert_eq!(c123.bases[1].unwrap(), 2);
+                assert_eq!(c123.bases[2].unwrap(), 3);
             }
 
             #[test]
@@ -520,13 +520,13 @@ mod tests {
                         let res = lhs << rhs;
                         if lhs.grade() > rhs.grade() {
                             assert_eq!(res.mag, 0.0);
-                            assert_eq!(res.bases().len(), 0);
+                            assert_eq!(res.bases.len(), 0);
                         } else if lhs.grade() == rhs.grade() {
-                            assert_eq!(res.bases().len(), 0);
-                            if lhs.bases().iter().any(|x| !rhs.bases().contains(x)) {
+                            assert_eq!(res.bases.len(), 0);
+                            if lhs.bases.iter().any(|x| !rhs.bases.contains(x)) {
                                 // if any basis in left is not in the right, should be 0
                                 assert_eq!(res.mag, 0.0);
-                                assert_eq!(res.bases().len(), 0);
+                                assert_eq!(res.bases.len(), 0);
                             } else {
                                 // if lhs in rhs, should have magnitude.
                                 if lhs.grade() > 1 { // for matches d2+ = -1
@@ -536,15 +536,15 @@ mod tests {
                                 }
                             }
                         } else { // lhs.grade() < rhs.grade()
-                            if lhs.bases().iter().any(|x| !rhs.bases().contains(x)) {
+                            if lhs.bases.iter().any(|x| !rhs.bases.contains(x)) {
                                 // if any basis in left is not in the right, should be 0
                                 assert_eq!(res.mag, 0.0);
-                                assert_eq!(res.bases().len(), 0);
+                                assert_eq!(res.bases.len(), 0);
                             } else {
                                 // if all lhs bases in rhs bases, expect those not overlapping.
-                                for basis in rhs.bases().iter() {
-                                    if !lhs.bases().contains(basis) {
-                                        assert!(res.bases().contains(basis));
+                                for basis in rhs.bases.iter() {
+                                    if !lhs.bases.contains(basis) {
+                                        assert!(res.bases.contains(basis));
                                     }
                                 }
                                 // magnitude should flip based on swaps.
@@ -690,13 +690,13 @@ mod tests {
                         let res = lhs >> rhs;
                         if lhs.grade() < rhs.grade() {
                             assert_eq!(res.mag, 0.0);
-                            assert_eq!(res.bases().len(), 0);
+                            assert_eq!(res.bases.len(), 0);
                         } else if lhs.grade() == rhs.grade() {
-                            assert_eq!(res.bases().len(), 0);
-                            if lhs.bases().iter().any(|x| !rhs.bases().contains(x)) {
+                            assert_eq!(res.bases.len(), 0);
+                            if lhs.bases.iter().any(|x| !rhs.bases.contains(x)) {
                                 // if any basis in left is not in the right, should be 0
                                 assert_eq!(res.mag, 0.0);
-                                assert_eq!(res.bases().len(), 0);
+                                assert_eq!(res.bases.len(), 0);
                             } else {
                                 // if lhs in rhs, should have magnitude.
                                 if lhs.grade() > 1 { // for matches d2+ = -1
@@ -706,15 +706,15 @@ mod tests {
                                 }
                             }
                         } else { // lhs.grade() > rhs.grade()
-                            if rhs.bases().iter().any(|x| !lhs.bases().contains(x)) {
+                            if rhs.bases.iter().any(|x| !lhs.bases.contains(x)) {
                                 // if any basis in left is not in the right, should be 0
                                 assert_eq!(res.mag, 0.0);
-                                assert_eq!(res.bases().len(), 0);
+                                assert_eq!(res.bases.len(), 0);
                             } else {
                                 // if all lhs bases in rhs bases, expect those not overlapping.
-                                for basis in lhs.bases().iter() {
-                                    if !rhs.bases().contains(basis) {
-                                        assert!(res.bases().contains(basis));
+                                for basis in lhs.bases.iter() {
+                                    if !rhs.bases.contains(basis) {
+                                        assert!(res.bases.contains(basis));
                                     }
                                 }
                                 // magnitude should flip based on swaps.
@@ -809,26 +809,26 @@ mod tests {
                 );
                 let c0r = c0.reversion();
                 assert_eq!(c0r.mag, 1.0);
-                assert_eq!(c0r.bases().len(), 0);
+                assert_eq!(c0r.bases.len(), 0);
 
                 let c1r = c1.reversion();
                 assert_eq!(c1r.mag, 1.0);
-                assert_eq!(c1r.bases(), c1.bases());
+                assert_eq!(c1r.bases, c1.bases);
 
                 let c12 = &c1 ^ &c2;
                 let c12r = c12.reversion();
                 assert_eq!(c12r.mag, -1.0);
-                assert_eq!(c12r.bases(), c12.bases());
+                assert_eq!(c12r.bases, c12.bases);
 
                 let c123 = &c1 ^ &c2 ^ &c3;
                 let c123r = c123.reversion();
                 assert_eq!(c123r.mag, -1.0);
-                assert_eq!(c123r.bases(), c123.bases());
+                assert_eq!(c123r.bases, c123.bases);
 
                 let c1234 = &c1 ^ &c2 ^ &c3 ^ &c4;
                 let c1234r = c1234.reversion();
                 assert_eq!(c1234r.mag, 1.0);
-                assert_eq!(c1234r.bases(), c1234.bases());
+                assert_eq!(c1234r.bases, c1234.bases);
             }
         }
 
@@ -857,28 +857,28 @@ mod tests {
                 // vector inverse
                 let inv = c1.inverse().unwrap();
                 assert_eq!(inv.mag, 1.0/2.0);
-                assert_eq!(inv.bases(), c1.bases());
+                assert_eq!(inv.bases, c1.bases);
                 let combo = &c1 << &inv;
                 assert_eq!(combo.mag, 1.0);
-                assert_eq!(combo.bases().len(), 0);
+                assert_eq!(combo.bases.len(), 0);
 
                 // bivector inverse
                 let c = &c1 ^ &c2;
                 let inv = c.inverse().unwrap();
                 assert_eq!(inv.mag, -1.0/6.0);
-                assert_eq!(inv.bases(), c.bases());
+                assert_eq!(inv.bases, c.bases);
                 let combo = &c << &inv;
                 assert_eq!(combo.mag, 1.0);
-                assert_eq!(combo.bases().len(), 0);
+                assert_eq!(combo.bases.len(), 0);
 
                 // trivector inverse
                 let c = c1 ^ c2 ^ c3;
                 let inv = c.inverse().unwrap();
                 assert_eq!(inv.mag, -1.0/24.0);
-                assert_eq!(inv.bases(), c.bases());
+                assert_eq!(inv.bases, c.bases);
                 let combo = &c << &inv;
                 assert_eq!(combo.mag, 1.0);
-                assert_eq!(combo.bases().len(), 0);
+                assert_eq!(combo.bases.len(), 0);
             }
         }
     
@@ -920,64 +920,64 @@ mod tests {
                 // no change in magnitude
                 assert_eq!(val.mag, dual1.mag);
                 // no overlapping bases
-                assert!(!val.bases().iter().any(|x| dual1.bases().contains(x)));
+                assert!(!val.bases.iter().any(|x| dual1.bases.contains(x)));
                 // should combine to the full pseudoscalar
-                assert_eq!((&val ^ &dual1).bases(), i1.bases());
+                assert_eq!((&val ^ &dual1).bases, i1.bases);
 
                 let dual2 = val.dual(i2).unwrap();
 
                 // no change in magnitude
                 assert_eq!(-val.mag, dual2.mag);
                 // no overlapping bases
-                assert!(!val.bases().iter().any(|x| dual2.bases().contains(x)));
+                assert!(!val.bases.iter().any(|x| dual2.bases.contains(x)));
                 // should combine to the full pseudoscalar
-                assert_eq!((&val ^ &dual2).bases(), i2.bases());
+                assert_eq!((&val ^ &dual2).bases, i2.bases);
 
                 let dual3 = val.dual(i3).unwrap();
 
                 // no change in magnitude
                 assert_eq!(-val.mag, dual3.mag);
                 // no overlapping bases
-                assert!(!val.bases().iter().any(|x| dual3.bases().contains(x)));
+                assert!(!val.bases.iter().any(|x| dual3.bases.contains(x)));
                 // should combine to the full pseudoscalar
-                assert_eq!((&val ^ &dual3).bases(), i3.bases());
+                assert_eq!((&val ^ &dual3).bases, i3.bases);
 
                 let dual4 = val.dual(i4).unwrap();
 
                 // no change in magnitude
                 assert_eq!(val.mag, dual4.mag);
                 // no overlapping bases
-                assert!(!val.bases().iter().any(|x| dual4.bases().contains(x)));
+                assert!(!val.bases.iter().any(|x| dual4.bases.contains(x)));
                 // should combine to the full pseudoscalar
-                assert_eq!((&val ^ &dual4).bases(), i4.bases());
+                assert_eq!((&val ^ &dual4).bases, i4.bases);
 
                 let ddual1 = dual1.dual(i1).unwrap();
 
                 // no change in magnitude
                 assert_eq!(val.mag, ddual1.mag);
                 // no overlapping bases
-                assert!(val.bases().iter().all(|x| ddual1.bases().contains(x)));
+                assert!(val.bases.iter().all(|x| ddual1.bases.contains(x)));
 
                 let ddual2 = dual2.dual(i2).unwrap();
 
                 // no change in magnitude
                 assert_eq!(-val.mag, ddual2.mag);
                 // no overlapping bases
-                assert!(val.bases().iter().all(|x| ddual2.bases().contains(x)));
+                assert!(val.bases.iter().all(|x| ddual2.bases.contains(x)));
 
                 let ddual3 = dual3.dual(i3).unwrap();
 
                 // no change in magnitude
                 assert_eq!(-val.mag, ddual3.mag);
                 // no overlapping bases
-                assert!(val.bases().iter().all(|x| ddual3.bases().contains(x)));
+                assert!(val.bases.iter().all(|x| ddual3.bases.contains(x)));
 
                 let ddual4 = dual4.dual(i4).unwrap();
 
                 // no change in magnitude
                 assert_eq!(val.mag, ddual4.mag);
                 // no overlapping bases
-                assert!(val.bases().iter().all(|x| ddual4.bases().contains(x)));
+                assert!(val.bases.iter().all(|x| ddual4.bases.contains(x)));
 
                 let undual1 = dual1.undual(i1).unwrap();
 
@@ -1035,7 +1035,7 @@ mod tests {
                 // dot i with reciprocal of i and ensure c_i . c^i = 1
                 for (cidx, c) in cs.iter().enumerate() {
                     for (ridx, r) in rs.iter().enumerate() {
-                        let result = c.inner_product_f64(r);
+                        let result = c.scalar_product(r);
                         println!("{}", result.to_string());
                         if cidx == ridx {
                             assert_eq!(result, 1.0, "{} . {}", c.to_string(), r.to_string());
@@ -1176,6 +1176,7 @@ mod tests {
                 let result = Multivector::from_string(
                     &String::from("P(1)")
                 ).expect("Single Component");
+                assert_eq!(result, ONBasis::P(1).to_mv());
                 assert_eq!(result, Multivector::new(vec![
                     Component::new(1.0, vec![ONBasis::P(1)])
                 ]));
