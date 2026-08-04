@@ -2,7 +2,6 @@ use std::{cmp::Ordering::{self}, hash::Hash};
 
 use regex::Regex;
 
-use crate::{blade::Blade, component::Component, multivector::Multivector, vector::Vector};
 
 pub const BASIS_REGEX: &str = r"^(?<e>[PNZ])[(](?<id>0|[1-9][0-9]*)[)]$";
 
@@ -20,22 +19,48 @@ pub enum ONBasis {
 }
 
 impl ONBasis {
-    /// # Unwrap
-    /// 
-    /// Get's the id of the basis.
     pub fn unwrap(&self) -> usize {
         match self {
-            ONBasis::P(i) | 
-            ONBasis::Z(i) |
-            ONBasis::N(i) => *i,
+            ONBasis::P(id) |
+            ONBasis::Z(id) |
+            ONBasis::N(id) => *id
         }
     }
 
-    /// # Square
+    pub fn is_positive(&self) -> bool {
+        match self {
+            ONBasis::P(_) => true,
+            ONBasis::Z(_) => false,
+            ONBasis::N(_) => false
+        }
+    }
+
+    pub fn is_negative(&self) -> bool {
+        match self {
+            ONBasis::P(_) => false,
+            ONBasis::Z(_) => false,
+            ONBasis::N(_) => true
+        }
+    }
+
+    pub fn is_zero(&self) -> bool {
+        match self {
+            ONBasis::P(_) => false,
+            ONBasis::Z(_) => true,
+            ONBasis::N(_) => false
+        }
+    }
+
+    /// # Is Degenerate
     /// 
-    /// Used when a basis is multiplied against itself.
+    /// Checks if the Orthonormal Basis is Degenerate (squares to 0)
+    pub fn is_degenerate(&self) -> bool {
+        self.is_zero()
+    }
+
+    /// # Squared
     /// 
-    /// Produces the result of the multiplication.
+    /// Gets the square of an ONBasis
     pub fn sqr(&self) -> f64 {
         match self {
             ONBasis::P(_) => 1.0,
@@ -44,115 +69,15 @@ impl ONBasis {
         }
     }
 
-    /// # Is Positive
+    /// # Dot Product
     /// 
-    /// Checks if the basis squares to +1
-    pub fn is_pos(&self) -> bool {
-        match self {
-            ONBasis::P(_) => true,
-            ONBasis::Z(_) => false,
-            ONBasis::N(_) => false,
-        }
-    }
-
-    /// # Is Zero
-    /// 
-    /// Checks if the basis squares to 0
-    pub fn is_zero(&self) -> bool {
-        match self {
-            ONBasis::P(_) => false,
-            ONBasis::Z(_) => true,
-            ONBasis::N(_) => false,
-        }
-    }
-
-    /// # Is Negative
-    /// 
-    /// Checks if the basis squares to -1
-    pub fn is_neg(&self) -> bool {
-        match self {
-            ONBasis::P(_) => false,
-            ONBasis::Z(_) => false,
-            ONBasis::N(_) => true,
-        }
-    }
-
-    pub fn to_string(&self) -> String {
-        match self {
-            ONBasis::P(id) => format!("p{}", id),
-            ONBasis::Z(id) => format!("z{}", id),
-            ONBasis::N(id) => format!("n{}", id),
-        }
-    }
-
-    /// # Dot function
-    /// 
-    /// Used to take the inner product between two bases.
-    pub fn dot(&self, rhs: &ONBasis) -> f64 {
+    /// Gets the dot between two ONBasis.
+    pub fn dot(&self, rhs: &Self) -> f64 {
         if self == rhs {
             self.sqr()
         } else {
             0.0
         }
-    }
-
-    /// # To Component
-    /// 
-    /// Converts an Orthonormal Basis to a Component of magnitude 1.
-    pub fn to_component(&self) -> Component {
-        Component { mag: 1.0, bases: vec![self.clone()] }
-    }
-
-    /// # To Vector 
-    /// 
-    /// Converts an Orthonormal Basis to a Vector of magnitude 1.
-    pub fn to_vector(&self) -> Vector {
-        Vector { components: vec![self.to_component()] }
-    }
-
-    /// # To Blade
-    /// 
-    /// Converts an Orthonormal Basis to a Blade of magnitude 1.
-    pub fn to_blade(&self) -> Blade {
-        Blade { components: vec![self.to_component()], vectors: vec![self.to_vector()]}
-    }
-
-    /// # To Multivector
-    /// 
-    /// Converts an Orthonormal Basis to a Multivector of Magnitude 1.
-    pub fn to_mv(&self) -> Multivector {
-        Multivector { components: vec![self.to_component()], blades: vec![self.to_blade()] }
-    }
-
-    /// # From Str
-    /// 
-    /// Takes a str, processes it, and outputs an ONBasis, if possible.
-    /// 
-    /// If fails, it returns an error.
-    pub fn from_string(val: &String) -> Result<ONBasis, String> {
-        // Use Regex to break it up nicely.
-        let re = Regex::new(BASIS_REGEX).unwrap();
-        // If it doesn't match the regex, return an error.
-        // This also checks if the Basis is P,N, or Z.
-        let Some(caps) = re.captures(val) else {
-            return Err(format!("'{val}' does not match the form P(#), N(#), or Z(#)."));
-        };
-        // Get the basis name and basis ID.
-        let e = &caps["e"];
-        let id = &caps["id"];
-
-        // If ID can't be parsed into uint, return error.
-        let Ok(id_val) = id.parse::<usize>() else {
-            return Err(String::from(format!("Id in '{val}' could not parse into integer.")));
-        };
-
-        // turns e and ID into an ON Basis and returns.
-        Ok(match e {
-            "P" => ONBasis::P(id_val),
-            "N" => ONBasis::N(id_val),
-            "Z" => ONBasis::Z(id_val),
-            _ => unreachable!()
-        })
     }
 }
 
